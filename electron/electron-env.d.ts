@@ -36,12 +36,27 @@ interface ElectronAPI {
     onMediaControl: (callback: (action: string) => void) => () => void;
   };
 
+  // アップデート機能
+  updater: {
+    // 手動でアップデートをチェック
+    checkForUpdates: () => Promise<boolean>;
+    // アップデートが利用可能になったときのリスナーを登録
+    onUpdateAvailable: (callback: () => void) => () => void;
+    // ダウンロード進捗のリスナーを登録
+    onDownloadProgress: (callback: (progressObj: any) => void) => () => void;
+    // アップデートのダウンロードが完了したときのリスナーを登録
+    onUpdateDownloaded: (callback: (info: any) => void) => () => void;
+  };
+
   // IPC通信
   ipc: {
     // メインプロセスにメッセージを送信し、応答を待つ
     invoke: <T = any>(channel: string, ...args: any[]) => Promise<T>;
     // メインプロセスからのメッセージを受信
-    on: <T = any>(channel: string, callback: (...args: T[]) => void) => () => void;
+    on: <T = any>(
+      channel: string,
+      callback: (...args: T[]) => void
+    ) => () => void;
     // メインプロセスにメッセージを送信（応答を待たない）
     send: (channel: string, ...args: any[]) => void;
   };

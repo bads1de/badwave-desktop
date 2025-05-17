@@ -11,10 +11,12 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
+    "create-icons": "node scripts/create-icons.js",
     "dev:electron": "concurrently \"next dev\" \"electron .\"",
     "build:electron": "next build && tsc -p electron",
     "package:electron": "electron-builder",
-    "dist:electron": "npm run build:electron && npm run package:electron"
+    "dist:electron": "npm run build:electron && npm run create-icons && npm run package:electron",
+    "test:electron": "node scripts/test-electron.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.726.1",

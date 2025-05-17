@@ -10,10 +10,11 @@ import {
 } from "electron";
 import * as path from "path";
 import * as url from "url";
+import { setupAutoUpdater, manualCheckForUpdates } from "./updater";
 
-// electron-serveとelectron-storeをrequireで読み込む
-const serve = require("electron-serve");
-const Store = require("electron-store");
+// electron-serveとelectron-storeをインポート
+import serve from "electron-serve";
+import Store from "electron-store";
 
 // 開発モードかどうかを判定
 const isDev = process.env.NODE_ENV === "development";
@@ -112,7 +113,7 @@ async function createMainWindow() {
 // システムトレイの設定
 function setupTray() {
   const icon = nativeImage
-    .createFromPath(path.join(__dirname, "../public/icon.png"))
+    .createFromPath(path.join(__dirname, "../public/logo.png"))
     .resize({ width: 16, height: 16 });
 
   tray = new Tray(icon);
@@ -204,6 +205,11 @@ function setupIPC() {
   ipcMain.handle("window-close", () => {
     mainWindow?.hide();
   });
+
+  // 手動アップデートチェック
+  ipcMain.handle("check-for-updates", () => {
+    return manualCheckForUpdates();
+  });
 }
 
 // アプリケーションの初期化
@@ -219,6 +225,11 @@ app.whenReady().then(() => {
 
   // IPC通信のセットアップ
   setupIPC();
+
+  // 自動アップデートの設定
+  if (mainWindow) {
+    setupAutoUpdater(mainWindow);
+  }
 
   app.on("activate", () => {
     // macOSでは、Dockアイコンクリック時に

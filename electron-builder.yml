@@ -3,9 +3,9 @@ productName: BadWave
 copyright: Copyright © 2024 BadWave
 
 # アプリケーションのアイコン設定
-# 拡張子は自動的に選択される
+# 各プラットフォーム向けに適切なアイコンファイルを指定
 # Windows: .ico, macOS: .icns, Linux: .png
-icon: public/logo.svg
+# 共通のアイコンは指定せず、各プラットフォーム固有の設定で指定
 
 # ファイル設定
 files:
@@ -27,7 +27,7 @@ win:
       arch:
         - x64
   # アイコンファイルのパス
-  icon: public/logo.svg
+  icon: public/logo.ico
   # ファイルの関連付け
   fileAssociations:
     - ext: mp3
@@ -54,7 +54,7 @@ mac:
       arch:
         - universal
   # アイコンファイルのパス
-  icon: public/logo.svg
+  icon: public/logo.icns
   # カテゴリ
   category: public.app-category.music
   # 署名と公証
@@ -88,7 +88,7 @@ linux:
     - target: deb
     - target: rpm
   # アイコンファイルのパス
-  icon: public/logo.svg
+  icon: public/logo.png
   # カテゴリ
   category: Audio;Music;Player;AudioVideo
   # ファイルの関連付け

@@ -124,6 +124,43 @@ export const mediaControls = {
 };
 
 /**
+ * アップデート機能
+ */
+export const updater = {
+  // 手動でアップデートをチェック
+  checkForUpdates: async (): Promise<boolean> => {
+    if (isElectron()) {
+      return (window as any).electron.updater.checkForUpdates();
+    }
+    return Promise.resolve(false);
+  },
+
+  // アップデートが利用可能になったときのリスナーを登録
+  onUpdateAvailable: (callback: () => void): (() => void) => {
+    if (isElectron()) {
+      return (window as any).electron.updater.onUpdateAvailable(callback);
+    }
+    return () => {};
+  },
+
+  // ダウンロード進捗のリスナーを登録
+  onDownloadProgress: (callback: (progressObj: any) => void): (() => void) => {
+    if (isElectron()) {
+      return (window as any).electron.updater.onDownloadProgress(callback);
+    }
+    return () => {};
+  },
+
+  // アップデートのダウンロードが完了したときのリスナーを登録
+  onUpdateDownloaded: (callback: (info: any) => void): (() => void) => {
+    if (isElectron()) {
+      return (window as any).electron.updater.onUpdateDownloaded(callback);
+    }
+    return () => {};
+  },
+};
+
+/**
  * IPC通信
  */
 export const ipc = {
@@ -167,5 +204,6 @@ export const electronAPI = {
   windowControls,
   store,
   mediaControls,
+  updater,
   ipc,
 };
