@@ -1,0 +1,105 @@
+appId: com.badwave.app
+productName: BadWave
+copyright: Copyright © 2024 BadWave
+
+# アプリケーションのアイコン設定
+# 拡張子は自動的に選択される
+# Windows: .ico, macOS: .icns, Linux: .png
+icon: public/logo.svg
+
+# ファイル設定
+files:
+  - from: out
+    to: out
+  - electron/main.js
+  - electron/preload.js
+  - package.json
+
+# 公開設定
+publish:
+  provider: github
+  releaseType: draft
+
+# Windows向け設定
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # アイコンファイルのパス
+  icon: public/logo.svg
+  # ファイルの関連付け
+  fileAssociations:
+    - ext: mp3
+      name: MP3 Audio File
+      description: BadWave Audio Player
+    - ext: wav
+      name: WAV Audio File
+      description: BadWave Audio Player
+
+# Windows インストーラー設定
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: BadWave
+
+# macOS向け設定
+mac:
+  target:
+    - target: dmg
+      arch:
+        - universal
+  # アイコンファイルのパス
+  icon: public/logo.svg
+  # カテゴリ
+  category: public.app-category.music
+  # 署名と公証
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # ファイルの関連付け
+  fileAssociations:
+    - ext: mp3
+      name: MP3 Audio File
+      role: Viewer
+    - ext: wav
+      name: WAV Audio File
+      role: Viewer
+
+# macOS DMG設定
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# Linux向け設定
+linux:
+  target:
+    - target: AppImage
+    - target: deb
+    - target: rpm
+  # アイコンファイルのパス
+  icon: public/logo.svg
+  # カテゴリ
+  category: Audio;Music;Player;AudioVideo
+  # ファイルの関連付け
+  mimeTypes:
+    - audio/mpeg
+    - audio/wav
+  # デスクトップエントリ
+  desktop:
+    Name: BadWave
+    Comment: Music Player Application
+    Keywords: Music;Player;Audio;
+    StartupNotify: true
+    StartupWMClass: badwave
+# 自動アップデート設定は別途実装
