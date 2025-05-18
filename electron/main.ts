@@ -10,7 +10,22 @@ import {
 } from "electron";
 import * as path from "path";
 import * as url from "url";
+import * as fs from "fs";
+import * as dotenv from "dotenv";
 import { setupAutoUpdater, manualCheckForUpdates } from "./updater";
+import { setupAuth } from "./auth";
+
+// .env.localファイルを読み込む
+const envPath = path.join(app.getAppPath(), ".env.local");
+if (fs.existsSync(envPath)) {
+  console.log("Loading environment variables from:", envPath);
+  const envConfig = dotenv.parse(fs.readFileSync(envPath));
+  for (const key in envConfig) {
+    process.env[key] = envConfig[key];
+  }
+} else {
+  console.warn(".env.localファイルが見つかりません:", envPath);
+}
 
 // electron-serveとelectron-storeをインポート
 import serve from "electron-serve";
@@ -25,7 +40,7 @@ const store = new Store();
 
 // 静的ファイル配信のセットアップ（本番環境用）
 const serveURL = serve({
-  directory: path.join(__dirname, "../out"),
+  directory: path.join(__dirname, "../.next"),
 });
 
 // グローバル参照を保持（ガベージコレクションを防ぐため）
@@ -99,9 +114,65 @@ async function createMainWindow() {
     mainWindow.webContents.openDevTools();
     await mainWindow.loadURL("http://localhost:3000");
   } else {
-    // 本番環境では静的ファイルを配信
-    await serveURL(mainWindow);
-    await mainWindow.loadURL("app://./index.html");
+    try {
+      // 本番環境ではNext.jsサーバーを起動
+      const { createServer } = require("http");
+      const { parse } = require("url");
+      const next = require("next");
+
+      const app = next({ dev: false });
+      const handle = app.getRequestHandler();
+
+      await app.prepare();
+
+      // 使用可能なポートを探す
+      let port = 3000;
+      let serverStarted = false;
+      let maxAttempts = 10;
+
+      while (!serverStarted && maxAttempts > 0) {
+        try {
+          const server = createServer((req: any, res: any) => {
+            const parsedUrl = parse(req.url, true);
+            handle(req, res, parsedUrl);
+          });
+
+          await new Promise<void>((resolve, reject) => {
+            server.listen(port, () => {
+              console.log(`Next.jsサーバーが起動しました (ポート: ${port})`);
+              serverStarted = true;
+              resolve();
+            });
+
+            server.on("error", (err: any) => {
+              if (err.code === "EADDRINUSE") {
+                console.log(
+                  `ポート ${port} は既に使用されています。別のポートを試します。`
+                );
+                port++;
+                maxAttempts--;
+                resolve();
+              } else {
+                reject(err);
+              }
+            });
+          });
+
+          if (serverStarted && mainWindow) {
+            mainWindow.loadURL(`http://localhost:${port}`);
+          }
+        } catch (err) {
+          console.error("サーバー起動中にエラーが発生しました:", err);
+          maxAttempts--;
+        }
+      }
+
+      if (!serverStarted) {
+        console.error("利用可能なポートが見つかりませんでした。");
+      }
+    } catch (err) {
+      console.error("Next.jsサーバーの起動中にエラーが発生しました:", err);
+    }
   }
 
   // ウィンドウが閉じられたときの処理
@@ -229,6 +300,8 @@ app.whenReady().then(() => {
   // 自動アップデートの設定
   if (mainWindow) {
     setupAutoUpdater(mainWindow);
+    // 認証処理の設定
+    setupAuth(mainWindow);
   }
 
   app.on("activate", () => {

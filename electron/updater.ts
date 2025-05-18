@@ -1,9 +1,8 @@
-import { app, autoUpdater, dialog, BrowserWindow } from 'electron';
-import * as path from 'path';
-import * as os from 'os';
+import { app, autoUpdater, dialog, BrowserWindow } from "electron";
+import * as os from "os";
 
 // 開発モードかどうかを判定
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = process.env.NODE_ENV === "development";
 
 /**
  * 自動アップデート機能の設定
@@ -12,25 +11,27 @@ const isDev = process.env.NODE_ENV === 'development';
 export function setupAutoUpdater(mainWindow: BrowserWindow) {
   // 開発モードでは自動アップデートを無効化
   if (isDev) {
-    console.log('開発モードのため、自動アップデートは無効化されています');
+    console.log("開発モードのため、自動アップデートは無効化されています");
     return;
   }
 
   // macOSの場合は署名が必要
-  if (process.platform === 'darwin') {
+  if (process.platform === "darwin") {
     // アップデートサーバーのURL
     // 実際のURLに置き換える必要があります
     autoUpdater.setFeedURL({
-      url: `https://your-update-server.com/update/${process.platform}/${app.getVersion()}`,
+      url: `https://your-update-server.com/update/${
+        process.platform
+      }/${app.getVersion()}`,
       headers: {
-        'User-Agent': `${app.getName()}/${app.getVersion()} (${os.platform()} ${os.arch()})`
-      }
+        "User-Agent": `${app.getName()}/${app.getVersion()} (${os.platform()} ${os.arch()})`,
+      },
     });
   }
 
   // アップデートのチェック間隔（1時間）
   const CHECK_INTERVAL = 60 * 60 * 1000;
-  
+
   // 定期的にアップデートをチェック
   setInterval(() => {
     checkForUpdates();
@@ -40,38 +41,40 @@ export function setupAutoUpdater(mainWindow: BrowserWindow) {
   checkForUpdates();
 
   // アップデートが利用可能になったとき
-  autoUpdater.on('update-available', () => {
-    console.log('アップデートが利用可能です');
-    
+  autoUpdater.on("update-available", () => {
+    console.log("アップデートが利用可能です");
+
     // メインウィンドウにアップデート情報を送信
-    mainWindow.webContents.send('update-available');
+    mainWindow.webContents.send("update-available");
   });
 
   // アップデートのダウンロード進捗
-  autoUpdater.on('download-progress', (progressObj) => {
+  // @ts-ignore - Electronの型定義が不完全なため
+  autoUpdater.on("download-progress", (progressObj) => {
     console.log(`ダウンロード進捗: ${progressObj.percent}%`);
-    
+
     // メインウィンドウにダウンロード進捗を送信
-    mainWindow.webContents.send('download-progress', progressObj);
+    mainWindow.webContents.send("download-progress", progressObj);
   });
 
   // アップデートのダウンロードが完了したとき
-  autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
-    console.log('アップデートのダウンロードが完了しました');
-    
+  autoUpdater.on("update-downloaded", (_event, releaseNotes, releaseName) => {
+    console.log("アップデートのダウンロードが完了しました");
+
     // メインウィンドウにアップデート完了を通知
-    mainWindow.webContents.send('update-downloaded', {
+    mainWindow.webContents.send("update-downloaded", {
       releaseNotes,
       releaseName,
     });
-    
+
     // ダイアログを表示
     const dialogOpts = {
-      type: 'info',
-      buttons: ['再起動', '後で'],
-      title: 'アプリケーションアップデート',
-      message: process.platform === 'win32' ? releaseNotes : releaseName,
-      detail: 'アップデートがダウンロードされました。アプリケーションを再起動して適用しますか？'
+      type: "info" as const,
+      buttons: ["再起動", "後で"],
+      title: "アプリケーションアップデート",
+      message: process.platform === "win32" ? releaseNotes : releaseName,
+      detail:
+        "アップデートがダウンロードされました。アプリケーションを再起動して適用しますか？",
     };
 
     dialog.showMessageBox(dialogOpts).then((returnValue) => {
@@ -83,8 +86,8 @@ export function setupAutoUpdater(mainWindow: BrowserWindow) {
   });
 
   // エラーが発生したとき
-  autoUpdater.on('error', (error) => {
-    console.error('アップデート中にエラーが発生しました:', error);
+  autoUpdater.on("error", (error) => {
+    console.error("アップデート中にエラーが発生しました:", error);
   });
 }
 
@@ -93,9 +96,21 @@ export function setupAutoUpdater(mainWindow: BrowserWindow) {
  */
 function checkForUpdates() {
   try {
+    // 開発モードではアップデートチェックをスキップ
+    if (isDev) {
+      console.log("開発モードのため、アップデートチェックをスキップします");
+      return;
+    }
+
+    // アップデートURLが設定されているか確認
+    if (!process.env.UPDATE_SERVER_URL) {
+      console.warn("アップデートURLが設定されていません");
+      return;
+    }
+
     autoUpdater.checkForUpdates();
   } catch (error) {
-    console.error('アップデートのチェック中にエラーが発生しました:', error);
+    console.error("アップデートのチェック中にエラーが発生しました:", error);
   }
 }
 
@@ -105,10 +120,22 @@ function checkForUpdates() {
  */
 export function manualCheckForUpdates(): boolean {
   try {
+    // 開発モードではアップデートチェックをスキップ
+    if (isDev) {
+      console.log("開発モードのため、アップデートチェックをスキップします");
+      return true;
+    }
+
+    // アップデートURLが設定されているか確認
+    if (!process.env.UPDATE_SERVER_URL) {
+      console.warn("アップデートURLが設定されていません");
+      return false;
+    }
+
     autoUpdater.checkForUpdates();
     return true;
   } catch (error) {
-    console.error('手動アップデートチェック中にエラーが発生しました:', error);
+    console.error("手動アップデートチェック中にエラーが発生しました:", error);
     return false;
   }
 }

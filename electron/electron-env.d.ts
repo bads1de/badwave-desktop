@@ -30,6 +30,22 @@ interface ElectronAPI {
     set: <T>(key: string, value: T) => Promise<boolean>;
   };
 
+  // 認証操作
+  auth: {
+    // メールアドレスとパスワードでログイン
+    signIn: (email: string, password: string) => Promise<any>;
+    // メールアドレスとパスワードでサインアップ
+    signUp: (email: string, password: string, fullName: string) => Promise<any>;
+    // ログアウト
+    signOut: () => Promise<any>;
+    // 現在のセッションを取得
+    getSession: () => Promise<any>;
+    // OAuthプロバイダーでログイン
+    signInWithOAuth: (provider: string) => Promise<any>;
+    // セッション更新イベントのリスナーを登録
+    onSessionUpdated: (callback: (data: any) => void) => () => void;
+  };
+
   // メディア制御
   media: {
     // メディア制御イベントのリスナーを登録

@@ -31,6 +31,32 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke("set-store-value", key, value),
   },
 
+  // 認証操作
+  auth: {
+    // メールアドレスとパスワードでログイン
+    signIn: (email: string, password: string) =>
+      ipcRenderer.invoke("auth:signIn", { email, password }),
+    // メールアドレスとパスワードでサインアップ
+    signUp: (email: string, password: string, fullName: string) =>
+      ipcRenderer.invoke("auth:signUp", { email, password, fullName }),
+    // ログアウト
+    signOut: () => ipcRenderer.invoke("auth:signOut"),
+    // 現在のセッションを取得
+    getSession: () => ipcRenderer.invoke("auth:getSession"),
+    // OAuthプロバイダーでログイン
+    signInWithOAuth: (provider: string) =>
+      ipcRenderer.invoke("auth:signInWithOAuth", { provider }),
+    // セッション更新イベントのリスナーを登録
+    onSessionUpdated: (callback: (data: any) => void) => {
+      ipcRenderer.on("auth:sessionUpdated", (_, data) => {
+        callback(data);
+      });
+      return () => {
+        ipcRenderer.removeAllListeners("auth:sessionUpdated");
+      };
+    },
+  },
+
   // メディア制御
   media: {
     // メディア制御イベントのリスナーを登録
