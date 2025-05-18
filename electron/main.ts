@@ -86,8 +86,8 @@ function registerProtocolHandlers() {
 // メインウィンドウの作成
 async function createMainWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1600,
+    height: 900,
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
