@@ -4,49 +4,35 @@ import { contextBridge, ipcRenderer } from "electron";
 contextBridge.exposeInMainWorld("electron", {
   // アプリケーション情報
   appInfo: {
-    // アプリケーションのバージョンを取得
     getVersion: () => process.env.npm_package_version,
-    // 実行環境がElectronかどうかを判定
     isElectron: true,
-    // プラットフォーム情報
     platform: process.platform,
   },
 
   // ウィンドウ操作
   window: {
-    // ウィンドウを最小化
     minimize: () => ipcRenderer.invoke("window-minimize"),
-    // ウィンドウを最大化/元のサイズに戻す
     maximize: () => ipcRenderer.invoke("window-maximize"),
-    // ウィンドウを閉じる
     close: () => ipcRenderer.invoke("window-close"),
   },
 
   // 設定ストア操作
   store: {
-    // 設定値を取得
     get: (key: string) => ipcRenderer.invoke("get-store-value", key),
-    // 設定値を保存
     set: (key: string, value: any) =>
       ipcRenderer.invoke("set-store-value", key, value),
   },
 
   // 認証操作
   auth: {
-    // メールアドレスとパスワードでログイン
     signIn: (email: string, password: string) =>
       ipcRenderer.invoke("auth:signIn", { email, password }),
-    // メールアドレスとパスワードでサインアップ
     signUp: (email: string, password: string, fullName: string) =>
       ipcRenderer.invoke("auth:signUp", { email, password, fullName }),
-    // ログアウト
     signOut: () => ipcRenderer.invoke("auth:signOut"),
-    // 現在のセッションを取得
     getSession: () => ipcRenderer.invoke("auth:getSession"),
-    // OAuthプロバイダーでログイン
     signInWithOAuth: (provider: string) =>
       ipcRenderer.invoke("auth:signInWithOAuth", { provider }),
-    // セッション更新イベントのリスナーを登録
     onSessionUpdated: (callback: (data: any) => void) => {
       ipcRenderer.on("auth:sessionUpdated", (_, data) => {
         callback(data);
@@ -103,7 +89,6 @@ contextBridge.exposeInMainWorld("electron", {
       const subscription = (_: any, info: any) => callback(info);
       ipcRenderer.on("update-downloaded", subscription);
 
-      // リスナーの登録解除関数を返す
       return () => {
         ipcRenderer.removeListener("update-downloaded", subscription);
       };
