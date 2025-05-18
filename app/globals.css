@@ -10,6 +10,18 @@ body,
   color-scheme: dark;
 }
 
+:root {
+  --electron-titlebar-height: 0px;
+}
+
+.electron-app {
+  --electron-titlebar-height: 32px;
+}
+
+body {
+  padding-top: var(--electron-titlebar-height);
+}
+
 .range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
