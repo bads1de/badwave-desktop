@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Minus, Square, X } from 'lucide-react';
-import { windowControls, isElectron, getPlatform } from '@/libs/electron-utils';
+import React, { useState, useEffect } from "react";
+import { Minus, Square, X } from "lucide-react";
+import { windowControls, isElectron, getPlatform } from "@/libs/electron-utils";
 
 interface WindowControlsProps {
   className?: string;
@@ -12,15 +12,25 @@ interface WindowControlsProps {
  * Electronウィンドウのカスタムコントロールコンポーネント
  * Windows環境でのみ表示され、最小化・最大化・閉じるボタンを提供します
  */
-const WindowControls: React.FC<WindowControlsProps> = ({ className = '' }) => {
-  // Electronでない場合、またはmacOSの場合は表示しない
-  // (macOSではネイティブのウィンドウコントロールを使用)
-  if (!isElectron() || getPlatform() === 'darwin') {
+const WindowControls: React.FC<WindowControlsProps> = ({ className = "" }) => {
+  const [isClient, setIsClient] = useState(false);
+  const [isElectronApp, setIsElectronApp] = useState(false);
+  const [platform, setPlatform] = useState("");
+
+  // クライアントサイドでのみ実行される副作用
+  useEffect(() => {
+    setIsClient(true);
+    setIsElectronApp(isElectron());
+    setPlatform(getPlatform());
+  }, []);
+
+  // サーバーサイドレンダリング時またはクライアントサイドでの初期レンダリング時は何も表示しない
+  if (!isClient || !isElectronApp || platform === "darwin") {
     return null;
   }
 
   return (
-    <div className={`flex items-center -mr-2 ${className}`}>
+    <div className={`fixed top-0 right-0 flex items-center z-50 ${className}`}>
       {/* 最小化ボタン */}
       <button
         onClick={() => windowControls.minimize()}

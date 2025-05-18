@@ -6,6 +6,7 @@ import getPlaylists from "@/actions/getPlaylists";
 import Player from "@/components/Player/Player";
 import RightSidebar from "@/components/RightSidebar/RightSidebar";
 import Sidebar from "@/components/Sidebar/Sidebar";
+import WindowControls from "@/components/electron/WindowControls";
 
 import ModalProvider from "@/providers/ModalProvider";
 
@@ -35,6 +36,7 @@ export default async function RootLayout({
         <TanStackProvider>
           <UserProvider>
             <ModalProvider />
+            <WindowControls />
             <Sidebar>
               <RightSidebar>{children}</RightSidebar>
             </Sidebar>

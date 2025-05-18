@@ -16,7 +16,6 @@ import { Button } from "../ui/button";
 import Image from "next/image";
 import { GoSidebarCollapse } from "react-icons/go";
 import UserCard from "./UserCard";
-import WindowControls from "../electron/WindowControls";
 
 interface SidebarProps {
   children: React.ReactNode;
@@ -96,7 +95,6 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
             )}
           </div>
           <div className="flex items-center">
-            {!isCollapsed && <WindowControls className="mr-2" />}
             <Button
               variant="ghost"
               size="icon"
