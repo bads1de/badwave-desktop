@@ -36,7 +36,12 @@ const isDev = process.env.NODE_ENV !== "production" || !app.isPackaged;
 const isMac = process.platform === "darwin";
 
 // 設定ストアの初期化
-const store = new Store();
+const store = new Store({
+  name: "badwave-settings", // 設定ファイルの名前
+  clearInvalidConfig: true, // 無効な設定を自動的にクリア
+  // 開発モードでも同じ場所に保存するための設定
+  cwd: app.getPath("userData"),
+});
 
 // 静的ファイル配信のセットアップ（本番環境用）
 const serveURL = serve({
@@ -240,12 +245,23 @@ function setupTray() {
 function setupIPC() {
   // アプリケーション設定の取得
   ipcMain.handle("get-store-value", (_, key: string) => {
-    return store.get(key);
+    const value = store.get(key);
+    console.log(`[Store] 設定値を取得: ${key} =`, value);
+    return value;
   });
 
   // アプリケーション設定の保存
   ipcMain.handle("set-store-value", (_, key: string, value: any) => {
+    console.log(`[Store] 設定値を保存: ${key} =`, value);
     store.set(key, value);
+
+    // 保存後に値を再取得して確認（デバッグ用）
+    const savedValue = store.get(key);
+    console.log(`[Store] 保存後の値を確認: ${key} =`, savedValue);
+
+    // ストア全体の内容をログに出力（デバッグ用）
+    console.log("[Store] 現在のストア内容:", store.store);
+
     return true;
   });
 

@@ -41,6 +41,13 @@ export const CACHED_QUERIES = {
   spotlight: "spotlight",
 } as const;
 
+/**
+ * Electronストアのキー
+ */
+export const ELECTRON_STORE_KEYS = {
+  VOLUME: "player_volume",
+} as const;
+
 export const CACHE_CONFIG = {
   staleTime: 1000 * 60 * 10, // 10分間
   gcTime: 1000 * 60 * 30, // 30分間
