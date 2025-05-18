@@ -1,10 +1,8 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import usePlayer from "@/hooks/player/usePlayer";
-import { isMobile } from "react-device-detect";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
-import { store } from "@/libs/electron-utils";
-import { ELECTRON_STORE_KEYS } from "@/constants";
+import useVolumeStore from "./useVolumeStore";
 
 /**
  * オーディオプレイヤーの状態と操作を管理するカスタムフック
@@ -37,43 +35,12 @@ const useAudioPlayer = (songUrl: string) => {
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  // 初期値を設定せず、ローディング状態を追加
-  const [volume, setVolume] = useState<number | null>(null);
-  const [isVolumeLoaded, setIsVolumeLoaded] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const isRepeating = usePlayer((state) => state.isRepeating);
   const isShuffling = usePlayer((state) => state.isShuffling);
-  // 前回のボリューム値を保持するRef
-  const prevVolumeRef = useRef<number | null>(null);
 
-  // 起動時にストアからボリューム設定を読み込む
-  useEffect(() => {
-    // すでにボリュームが読み込まれている場合は何もしない
-    if (isVolumeLoaded) return;
-
-    const loadVolume = async () => {
-      try {
-        const savedVolume = await store.get<number>(ELECTRON_STORE_KEYS.VOLUME);
-
-        if (savedVolume !== undefined && savedVolume !== null) {
-          setVolume(savedVolume);
-          prevVolumeRef.current = savedVolume;
-        } else {
-          const defaultVolume = isMobile ? 1 : 0.1;
-          setVolume(defaultVolume);
-          prevVolumeRef.current = defaultVolume;
-        }
-        setIsVolumeLoaded(true);
-      } catch (error) {
-        const defaultVolume = isMobile ? 1 : 0.1;
-        setVolume(defaultVolume);
-        prevVolumeRef.current = defaultVolume;
-        setIsVolumeLoaded(true);
-      }
-    };
-
-    loadVolume();
-  }, [isVolumeLoaded]);
+  // ボリューム管理のカスタムフックを使用
+  const { volume, setVolume, isLoaded: isVolumeLoaded } = useVolumeStore();
 
   const Icon = isPlaying ? BsPauseFill : BsPlayFill;
   // ボリュームがnullの場合はデフォルトアイコンを表示
@@ -182,20 +149,6 @@ const useAudioPlayer = (songUrl: string) => {
     if (!audio || volume === null) return;
 
     audio.volume = volume;
-
-    // ボリューム設定をストアに保存
-    const saveVolume = async () => {
-      try {
-        const result = await store.set(ELECTRON_STORE_KEYS.VOLUME, volume);
-        // 保存した値をrefに保持
-        prevVolumeRef.current = volume;
-      } catch (error) {}
-    };
-
-    // 前回保存した値と異なる場合のみ保存処理を実行
-    if (prevVolumeRef.current !== volume) {
-      saveVolume();
-    }
   }, [volume]);
 
   useEffect(() => {
