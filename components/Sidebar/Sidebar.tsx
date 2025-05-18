@@ -94,16 +94,14 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
               </h1>
             )}
           </div>
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-neutral-400 hover:text-white hover:bg-white/5 transition-all duration-300"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-            >
-              {isCollapsed ? "" : <GoSidebarCollapse size={20} />}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-neutral-400 hover:text-white hover:bg-white/5 transition-all duration-300"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+          >
+            {isCollapsed ? "" : <GoSidebarCollapse size={20} />}
+          </Button>
         </div>
 
         <Box className="bg-neutral-900/40 backdrop-blur-xl border border-white/[0.02] shadow-inner">
