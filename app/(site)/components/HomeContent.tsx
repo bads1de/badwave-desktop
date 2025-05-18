@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Song, Spotlight, Playlist } from "@/types";
-import HomeHeader from "@/components/Header/HomeHeader";
 import useMobilePlayer from "@/hooks/player/useMobilePlayer";
 import dynamic from "next/dynamic";
 import SectionSkeleton from "./sections/SectionSkeleton";
@@ -116,16 +115,7 @@ const HomeContent: React.FC<HomeClientProps> = ({
     return (
       <div className="flex bg-[#0d0d0d] h-full overflow-hidden">
         <div className="w-full h-full overflow-y-auto custom-scrollbar">
-          {isMobile && !isMobilePlayer && (
-            <section>
-              <HomeHeader />
-            </section>
-          )}
-          <main
-            className={`px-6 py-8 pb-[70px] md:pb-8 space-y-8 ${
-              isMobile && !isMobilePlayer ? "pt-24" : ""
-            }`}
-          >
+          <main className={`px-6 py-8 pb-[70px] md:pb-8 space-y-8`}>
             {/* トレンドボードセクション - コード分割 */}
             <TrendSection
               selectedPeriod={selectedPeriod}
@@ -153,7 +143,6 @@ const HomeContent: React.FC<HomeClientProps> = ({
     );
   }, [
     isClient,
-    isMobile,
     isMobilePlayer,
     selectedPeriod,
     spotlightData,
