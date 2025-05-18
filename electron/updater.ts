@@ -2,7 +2,7 @@ import { app, autoUpdater, dialog, BrowserWindow } from "electron";
 import * as os from "os";
 
 // 開発モードかどうかを判定
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV !== "production" || !app.isPackaged;
 
 /**
  * 自動アップデート機能の設定
@@ -103,9 +103,12 @@ function checkForUpdates() {
     }
 
     // アップデートURLが設定されているか確認
+    // 開発中は警告を表示するだけで続行
     if (!process.env.UPDATE_SERVER_URL) {
-      console.warn("アップデートURLが設定されていません");
-      return;
+      console.warn(
+        "アップデートURLが設定されていません - 開発モードでは無視されます"
+      );
+      return true; // 開発モードでは成功として扱う
     }
 
     autoUpdater.checkForUpdates();
@@ -127,9 +130,12 @@ export function manualCheckForUpdates(): boolean {
     }
 
     // アップデートURLが設定されているか確認
+    // 開発中は警告を表示するだけで続行
     if (!process.env.UPDATE_SERVER_URL) {
-      console.warn("アップデートURLが設定されていません");
-      return false;
+      console.warn(
+        "アップデートURLが設定されていません - 開発モードでは無視されます"
+      );
+      return true; // 開発モードでは成功として扱う
     }
 
     autoUpdater.checkForUpdates();

@@ -38,7 +38,7 @@ exports.manualCheckForUpdates = manualCheckForUpdates;
 var electron_1 = require("electron");
 var os = __importStar(require("os"));
 // 開発モードかどうかを判定
-var isDev = process.env.NODE_ENV === "development";
+var isDev = process.env.NODE_ENV !== "production" || !electron_1.app.isPackaged;
 /**
  * 自動アップデート機能の設定
  * @param mainWindow メインウィンドウのインスタンス
@@ -120,9 +120,10 @@ function checkForUpdates() {
             return;
         }
         // アップデートURLが設定されているか確認
+        // 開発中は警告を表示するだけで続行
         if (!process.env.UPDATE_SERVER_URL) {
-            console.warn("アップデートURLが設定されていません");
-            return;
+            console.warn("アップデートURLが設定されていません - 開発モードでは無視されます");
+            return true; // 開発モードでは成功として扱う
         }
         electron_1.autoUpdater.checkForUpdates();
     }
@@ -142,9 +143,10 @@ function manualCheckForUpdates() {
             return true;
         }
         // アップデートURLが設定されているか確認
+        // 開発中は警告を表示するだけで続行
         if (!process.env.UPDATE_SERVER_URL) {
-            console.warn("アップデートURLが設定されていません");
-            return false;
+            console.warn("アップデートURLが設定されていません - 開発モードでは無視されます");
+            return true; // 開発モードでは成功として扱う
         }
         electron_1.autoUpdater.checkForUpdates();
         return true;

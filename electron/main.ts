@@ -32,7 +32,7 @@ import serve from "electron-serve";
 import Store from "electron-store";
 
 // 開発モードかどうかを判定
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV !== "production" || !app.isPackaged;
 const isMac = process.platform === "darwin";
 
 // 設定ストアの初期化
@@ -109,69 +109,51 @@ async function createMainWindow() {
     return { action: "deny" };
   });
 
-  // 開発モードの場合はDevToolsを開く
+  // 開発モードの場合
   if (isDev) {
+    // DevToolsを開く（必要に応じてコメントアウト）
     mainWindow.webContents.openDevTools();
-    await mainWindow.loadURL("http://localhost:3000");
-  } else {
+
     try {
-      // 本番環境ではNext.jsサーバーを起動
-      const { createServer } = require("http");
-      const { parse } = require("url");
-      const next = require("next");
-
-      const app = next({ dev: false });
-      const handle = app.getRequestHandler();
-
-      await app.prepare();
-
-      // 使用可能なポートを探す
-      let port = 3000;
-      let serverStarted = false;
-      let maxAttempts = 10;
-
-      while (!serverStarted && maxAttempts > 0) {
-        try {
-          const server = createServer((req: any, res: any) => {
-            const parsedUrl = parse(req.url, true);
-            handle(req, res, parsedUrl);
-          });
-
-          await new Promise<void>((resolve, reject) => {
-            server.listen(port, () => {
-              console.log(`Next.jsサーバーが起動しました (ポート: ${port})`);
-              serverStarted = true;
-              resolve();
-            });
-
-            server.on("error", (err: any) => {
-              if (err.code === "EADDRINUSE") {
-                console.log(
-                  `ポート ${port} は既に使用されています。別のポートを試します。`
-                );
-                port++;
-                maxAttempts--;
-                resolve();
-              } else {
-                reject(err);
-              }
-            });
-          });
-
-          if (serverStarted && mainWindow) {
-            mainWindow.loadURL(`http://localhost:${port}`);
-          }
-        } catch (err) {
-          console.error("サーバー起動中にエラーが発生しました:", err);
-          maxAttempts--;
-        }
-      }
-
-      if (!serverStarted) {
-        console.error("利用可能なポートが見つかりませんでした。");
-      }
+      // 開発サーバーが起動しているか確認
+      await mainWindow.loadURL("http://localhost:3000");
+      console.log("開発サーバーに接続しました");
     } catch (err) {
-      console.error("Next.jsサーバーの起動中にエラーが発生しました:", err);
+      console.error("開発サーバーへの接続に失敗しました:", err);
+      // 開発サーバーが起動していない場合は、エラーメッセージを表示
+      await mainWindow.loadURL(
+        "data:text/html;charset=utf-8," +
+          encodeURIComponent(
+            "<html><body><h1>エラー</h1><p>開発サーバーに接続できませんでした。</p><p>「npm run dev」を実行して開発サーバーを起動してください。</p></body></html>"
+          )
+      );
+    }
+  }
+  // 本番モードの場合
+  else {
+    try {
+      console.log("本番モードで起動しています");
+      // 静的ファイルの配信を試みる
+      await serveURL(mainWindow);
+    } catch (err) {
+      console.error("静的ファイル配信中にエラーが発生しました:", err);
+
+      // エラーが発生した場合は、ローカルのHTMLファイルを表示
+      const indexPath = path.join(
+        __dirname,
+        "../.next/server/pages/index.html"
+      );
+      if (fs.existsSync(indexPath)) {
+        await mainWindow.loadFile(indexPath);
+      } else {
+        // ファイルが見つからない場合はエラーメッセージを表示
+        await mainWindow.loadURL(
+          "data:text/html;charset=utf-8," +
+            encodeURIComponent(
+              "<html><body><h1>エラー</h1><p>アプリケーションの起動に失敗しました。</p><p>「npm run build」を実行してアプリケーションをビルドしてください。</p></body></html>"
+            )
+        );
+      }
     }
   }
 
