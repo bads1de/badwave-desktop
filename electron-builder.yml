@@ -5,7 +5,7 @@ copyright: Copyright © 2024 BadWave
 # アプリケーションのアイコン設定
 # 各プラットフォーム向けに適切なアイコンファイルを指定
 # Windows: .ico, macOS: .icns, Linux: .png
-# 共通のアイコンを指定
+# 共通のアイコンを指定（プラットフォーム固有の設定がない場合に使用）
 icon: public/logo.png
 
 # ファイル設定
@@ -29,7 +29,7 @@ win:
       arch:
         - x64
   # アイコンファイルのパス
-  icon: public/logo.png
+  icon: public/logo.ico
   # ファイルの関連付け
   fileAssociations:
     - ext: mp3
@@ -56,7 +56,7 @@ mac:
       arch:
         - universal
   # アイコンファイルのパス
-  icon: public/logo.png
+  icon: public/logo.icns
   # カテゴリ
   category: public.app-category.music
   # 署名と公証

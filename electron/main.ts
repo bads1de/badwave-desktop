@@ -101,6 +101,8 @@ async function createMainWindow() {
     titleBarStyle: isMac ? "hiddenInset" : "default",
     // Windowsではフレームレスにする
     frame: isMac ? true : false,
+    // アプリケーションアイコンを設定
+    icon: path.join(__dirname, "../public/logo.png"),
   });
 
   // 外部リンクをデフォルトブラウザで開く
@@ -165,8 +167,13 @@ async function createMainWindow() {
 
 // システムトレイの設定
 function setupTray() {
+  // SVGファイルが存在する場合はそれを使用し、なければPNGにフォールバック
+  const iconPath = fs.existsSync(path.join(__dirname, "../public/logo.svg"))
+    ? path.join(__dirname, "../public/logo.svg")
+    : path.join(__dirname, "../public/logo.png");
+
   const icon = nativeImage
-    .createFromPath(path.join(__dirname, "../public/logo.png"))
+    .createFromPath(iconPath)
     .resize({ width: 16, height: 16 });
 
   tray = new Tray(icon);
