@@ -10,28 +10,180 @@ body,
   color-scheme: dark;
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #4c1d95; /* from-violet-950 */
+  cursor: pointer;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+.range-slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #4c1d95; /* from-violet-950 */
+  cursor: pointer;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
+.active-tab {
+  color: #4c1d95;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+.song-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-/* Electron用のスタイル */
-.electron-draggable {
-  -webkit-app-region: drag;
+.scroll-container {
+  overflow: hidden;
 }
 
-.electron-no-drag {
-  -webkit-app-region: no-drag;
+.scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+@layer utilities {
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 92, 246, 0.3) rgba(0, 0, 0, 0);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 100vh;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.2);
+    border-radius: 100vh;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.4);
+  }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+}
+
+.smooth-scroll > * {
+  scroll-snap-align: start;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.hover-scale {
+  transition: transform 0.3s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-neutral-300;
+}
+
+.scrolling-text-container {
+  overflow: hidden; /* テキストがはみ出さないようにする */
+  white-space: nowrap; /* テキストを折り返さない */
+  width: 100%; /* コンテナの幅を親要素に合わせる */
+}
+
+.scrolling-text {
+  display: inline-block; /* インライン要素として扱う */
+  animation-name: scroll-text; /* 適用するアニメーションの名前 */
+  animation-timing-function: linear; /* 等速アニメーション */
+  animation-iteration-count: infinite; /* 無限に繰り返す */
+}
+
+@keyframes scroll-text {
+  from {
+    transform: translateX(100%); /* 開始位置: 右端 */
+  }
+  to {
+    transform: translateX(-100%); /* 終了位置: 左端 */
+  }
 }

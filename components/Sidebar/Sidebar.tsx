@@ -128,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
           <UserCard userDetails={userDetails} isCollapsed={isCollapsed} />
         </div>
       </div>
-      <main className="h-full flex-1 overflow-y-auto bg-gradient-to-b from-neutral-900 to-black">
+      <main className="h-full flex-1 overflow-y-auto  bg-gradient-to-b from-neutral-900 to-black">
         {children}
       </main>
     </div>
