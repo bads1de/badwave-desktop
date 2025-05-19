@@ -1,37 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -72,21 +39,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.setupAuth = setupAuth;
 var electron_1 = require("electron");
 var supabase_js_1 = require("@supabase/supabase-js");
-var path = __importStar(require("path"));
-var fs = __importStar(require("fs"));
-var dotenv = __importStar(require("dotenv"));
-// .env.localファイルを読み込む
-var envPath = path.join(electron_1.app.getAppPath(), ".env.local");
-if (fs.existsSync(envPath)) {
-    console.log("Loading environment variables from:", envPath);
-    var envConfig = dotenv.parse(fs.readFileSync(envPath));
-    for (var key in envConfig) {
-        process.env[key] = envConfig[key];
-    }
-}
-else {
-    console.warn(".env.localファイルが見つかりません:", envPath);
-}
+var utils_1 = require("./utils");
+// 環境変数を読み込む
+(0, utils_1.loadEnvVariables)();
 // 環境変数の確認
 var supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 var supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -104,7 +59,7 @@ var supabase = (0, supabase_js_1.createClient)(supabaseUrl || "", supabaseAnonKe
 function setupAuth(mainWindow) {
     var _this = this;
     // ログインリクエストを処理
-    electron_1.ipcMain.handle("auth:signIn", function (event_1, _a) { return __awaiter(_this, [event_1, _a], void 0, function (event, _b) {
+    electron_1.ipcMain.handle("auth:signIn", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
         var _c, data, error, error_1;
         var email = _b.email, password = _b.password;
         return __generator(this, function (_d) {
@@ -129,7 +84,7 @@ function setupAuth(mainWindow) {
         });
     }); });
     // サインアップリクエストを処理
-    electron_1.ipcMain.handle("auth:signUp", function (event_1, _a) { return __awaiter(_this, [event_1, _a], void 0, function (event, _b) {
+    electron_1.ipcMain.handle("auth:signUp", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
         var _c, data, error, error_2;
         var email = _b.email, password = _b.password, fullName = _b.fullName;
         return __generator(this, function (_d) {
@@ -201,7 +156,7 @@ function setupAuth(mainWindow) {
         });
     }); });
     // OAuth認証を処理
-    electron_1.ipcMain.handle("auth:signInWithOAuth", function (event_1, _a) { return __awaiter(_this, [event_1, _a], void 0, function (event, _b) {
+    electron_1.ipcMain.handle("auth:signInWithOAuth", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
         var _c, data, error, authWindow, error_5;
         var provider = _b.provider;
         return __generator(this, function (_d) {

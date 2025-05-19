@@ -37,15 +37,14 @@ exports.setupAutoUpdater = setupAutoUpdater;
 exports.manualCheckForUpdates = manualCheckForUpdates;
 var electron_1 = require("electron");
 var os = __importStar(require("os"));
-// 開発モードかどうかを判定
-var isDev = process.env.NODE_ENV !== "production" || !electron_1.app.isPackaged;
+var utils_1 = require("./utils");
 /**
  * 自動アップデート機能の設定
  * @param mainWindow メインウィンドウのインスタンス
  */
 function setupAutoUpdater(mainWindow) {
     // 開発モードでは自動アップデートを無効化
-    if (isDev) {
+    if (utils_1.isDev) {
         console.log("開発モードのため、自動アップデートは無効化されています");
         return;
     }
@@ -110,35 +109,16 @@ function setupAutoUpdater(mainWindow) {
     });
 }
 /**
- * アップデートをチェックする
+ * アップデートをチェックする共通関数
+ *
+ * @param {boolean} isManual - 手動チェックかどうか
+ * @returns {boolean} アップデートのチェックが開始されたかどうか
  */
-function checkForUpdates() {
+function checkForUpdatesCore(isManual) {
+    if (isManual === void 0) { isManual = false; }
     try {
         // 開発モードではアップデートチェックをスキップ
-        if (isDev) {
-            console.log("開発モードのため、アップデートチェックをスキップします");
-            return;
-        }
-        // アップデートURLが設定されているか確認
-        // 開発中は警告を表示するだけで続行
-        if (!process.env.UPDATE_SERVER_URL) {
-            console.warn("アップデートURLが設定されていません - 開発モードでは無視されます");
-            return true; // 開発モードでは成功として扱う
-        }
-        electron_1.autoUpdater.checkForUpdates();
-    }
-    catch (error) {
-        console.error("アップデートのチェック中にエラーが発生しました:", error);
-    }
-}
-/**
- * 手動でアップデートをチェックする
- * @returns アップデートのチェックが開始されたかどうか
- */
-function manualCheckForUpdates() {
-    try {
-        // 開発モードではアップデートチェックをスキップ
-        if (isDev) {
+        if (utils_1.isDev) {
             console.log("開発モードのため、アップデートチェックをスキップします");
             return true;
         }
@@ -152,8 +132,25 @@ function manualCheckForUpdates() {
         return true;
     }
     catch (error) {
-        console.error("手動アップデートチェック中にエラーが発生しました:", error);
+        var errorMessage = isManual
+            ? "手動アップデートチェック中にエラーが発生しました:"
+            : "アップデートのチェック中にエラーが発生しました:";
+        console.error(errorMessage, error);
         return false;
     }
+}
+/**
+ * 自動アップデートをチェックする
+ * 戻り値を返さないバージョン（定期チェック用）
+ */
+function checkForUpdates() {
+    checkForUpdatesCore(false);
+}
+/**
+ * 手動でアップデートをチェックする
+ * @returns アップデートのチェックが開始されたかどうか
+ */
+function manualCheckForUpdates() {
+    return checkForUpdatesCore(true);
 }
 //# sourceMappingURL=updater.js.map

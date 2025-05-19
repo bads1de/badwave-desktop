@@ -172,7 +172,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
                 >
                   <div className="flex flex-col items-center">
                     <Slider
-                      value={volume}
+                      value={volume !== null ? volume : undefined}
                       onChange={(value) => setVolume(value)}
                     />
                   </div>

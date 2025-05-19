@@ -4,7 +4,7 @@ import * as RadixSlider from "@radix-ui/react-slider";
 import React from "react";
 
 interface SliderProps {
-  value?: number;
+  value?: number | undefined;
   onChange?: (value: number) => void;
 }
 
@@ -13,11 +13,14 @@ const Slider: React.FC<SliderProps> = ({ value = 1, onChange }) => {
     onChange?.(value[0]);
   };
 
+  // valueがundefinedの場合はデフォルト値を使用
+  const sliderValue = value !== undefined ? [value] : [1];
+
   return (
     <RadixSlider.Root
       className="relative flex items-center select-none touch-none h-[100px] "
       defaultValue={[1]}
-      value={[value]}
+      value={sliderValue}
       onValueChange={handleChange}
       max={1}
       step={0.1}

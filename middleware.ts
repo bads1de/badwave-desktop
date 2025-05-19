@@ -39,5 +39,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // PROTECTED_ROUTESの各ルートに対してマッチャーを生成
-  matcher: PROTECTED_ROUTES.map((route) => `${route}/:path*`),
+  matcher: ["/account/:path*", "/liked/:path*"],
 };

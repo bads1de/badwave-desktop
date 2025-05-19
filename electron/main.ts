@@ -11,9 +11,19 @@ import {
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
-import { setupAutoUpdater, manualCheckForUpdates } from "./updater";
+// import { setupAutoUpdater, manualCheckForUpdates } from "./updater";
 import { setupAuth } from "./auth";
 import { loadEnvVariables, isDev, debugLog } from "./utils";
+
+// 一時的なスタブ関数
+const setupAutoUpdater = (window: BrowserWindow) => {
+  console.log("自動アップデート機能は一時的に無効化されています");
+};
+
+const manualCheckForUpdates = () => {
+  console.log("手動アップデートチェック機能は一時的に無効化されています");
+  return false;
+};
 
 // 環境変数を読み込む
 loadEnvVariables();
