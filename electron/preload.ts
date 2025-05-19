@@ -18,21 +18,9 @@ const ALLOWED_INVOKE_CHANNELS = [
   "window-maximize",
   "window-close",
   "api-request",
-  "check-for-updates",
-  "auth:signIn",
-  "auth:signUp",
-  "auth:signOut",
-  "auth:getSession",
-  "auth:signInWithOAuth",
 ];
 
-const ALLOWED_ON_CHANNELS = [
-  "media-control",
-  "update-available",
-  "download-progress",
-  "update-downloaded",
-  "auth:sessionUpdated",
-];
+const ALLOWED_ON_CHANNELS = ["media-control"];
 
 const ALLOWED_SEND_CHANNELS = ["log", "player-state-change"];
 
@@ -59,26 +47,6 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke("set-store-value", key, value),
   },
 
-  // 認証操作
-  auth: {
-    signIn: (email: string, password: string) =>
-      ipcRenderer.invoke("auth:signIn", { email, password }),
-    signUp: (email: string, password: string, fullName: string) =>
-      ipcRenderer.invoke("auth:signUp", { email, password, fullName }),
-    signOut: () => ipcRenderer.invoke("auth:signOut"),
-    getSession: () => ipcRenderer.invoke("auth:getSession"),
-    signInWithOAuth: (provider: string) =>
-      ipcRenderer.invoke("auth:signInWithOAuth", { provider }),
-    onSessionUpdated: (callback: (data: any) => void) => {
-      const subscription = (_: any, data: any) => callback(data);
-      ipcRenderer.on("auth:sessionUpdated", subscription);
-
-      return () => {
-        ipcRenderer.removeListener("auth:sessionUpdated", subscription);
-      };
-    },
-  },
-
   // メディア制御
   media: {
     // メディア制御イベントのリスナーを登録
@@ -89,44 +57,6 @@ contextBridge.exposeInMainWorld("electron", {
       // リスナーの登録解除関数を返す
       return () => {
         ipcRenderer.removeListener("media-control", subscription);
-      };
-    },
-  },
-
-  // アップデート機能
-  updater: {
-    // 手動でアップデートをチェック
-    checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
-
-    // アップデートが利用可能になったときのリスナーを登録
-    onUpdateAvailable: (callback: () => void) => {
-      const subscription = () => callback();
-      ipcRenderer.on("update-available", subscription);
-
-      // リスナーの登録解除関数を返す
-      return () => {
-        ipcRenderer.removeListener("update-available", subscription);
-      };
-    },
-
-    // ダウンロード進捗のリスナーを登録
-    onDownloadProgress: (callback: (progressObj: any) => void) => {
-      const subscription = (_: any, progressObj: any) => callback(progressObj);
-      ipcRenderer.on("download-progress", subscription);
-
-      // リスナーの登録解除関数を返す
-      return () => {
-        ipcRenderer.removeListener("download-progress", subscription);
-      };
-    },
-
-    // アップデートのダウンロードが完了したときのリスナーを登録
-    onUpdateDownloaded: (callback: (info: any) => void) => {
-      const subscription = (_: any, info: any) => callback(info);
-      ipcRenderer.on("update-downloaded", subscription);
-
-      return () => {
-        ipcRenderer.removeListener("update-downloaded", subscription);
       };
     },
   },

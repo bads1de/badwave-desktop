@@ -14,8 +14,6 @@ files:
     to: .next
   - electron/main.js
   - electron/preload.js
-  - electron/updater.js
-  - electron/auth.js
   - electron/utils.js
   - package.json
   - node_modules
@@ -107,4 +105,3 @@ linux:
     Keywords: Music;Player;Audio;
     StartupNotify: true
     StartupWMClass: badwave
-# 自動アップデート設定は別途実装

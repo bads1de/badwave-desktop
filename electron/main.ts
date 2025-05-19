@@ -11,19 +11,7 @@ import {
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
-// import { setupAutoUpdater, manualCheckForUpdates } from "./updater";
-import { setupAuth } from "./auth";
 import { loadEnvVariables, isDev, debugLog } from "./utils";
-
-// 一時的なスタブ関数
-const setupAutoUpdater = (window: BrowserWindow) => {
-  console.log("自動アップデート機能は一時的に無効化されています");
-};
-
-const manualCheckForUpdates = () => {
-  console.log("手動アップデートチェック機能は一時的に無効化されています");
-  return false;
-};
 
 // 環境変数を読み込む
 loadEnvVariables();
@@ -138,13 +126,22 @@ async function createMainWindow() {
       console.log("開発サーバーに接続しました");
     } catch (err) {
       console.error("開発サーバーへの接続に失敗しました:", err);
-      // 開発サーバーが起動していない場合は、エラーメッセージを表示
-      await mainWindow.loadURL(
-        "data:text/html;charset=utf-8," +
-          encodeURIComponent(
-            "<html><body><h1>エラー</h1><p>開発サーバーに接続できませんでした。</p><p>「npm run dev」を実行して開発サーバーを起動してください。</p></body></html>"
-          )
-      );
+      console.log("デプロイ済みのURLに接続を試みます...");
+
+      try {
+        // デプロイ済みのURLに接続
+        await mainWindow.loadURL("https://bad-wave.vercel.app/");
+        console.log("デプロイ済みのURLに接続しました");
+      } catch (deployErr) {
+        console.error("デプロイ済みのURLへの接続にも失敗しました:", deployErr);
+        // 両方とも失敗した場合はエラーメッセージを表示
+        await mainWindow.loadURL(
+          "data:text/html;charset=utf-8," +
+            encodeURIComponent(
+              "<html><body><h1>エラー</h1><p>開発サーバーとデプロイ済みのURLどちらにも接続できませんでした。</p><p>インターネット接続を確認してください。</p></body></html>"
+            )
+        );
+      }
     }
   }
   // 本番モードの場合
@@ -164,13 +161,27 @@ async function createMainWindow() {
       if (fs.existsSync(indexPath)) {
         await mainWindow.loadFile(indexPath);
       } else {
-        // ファイルが見つからない場合はエラーメッセージを表示
-        await mainWindow.loadURL(
-          "data:text/html;charset=utf-8," +
-            encodeURIComponent(
-              "<html><body><h1>エラー</h1><p>アプリケーションの起動に失敗しました。</p><p>「npm run build」を実行してアプリケーションをビルドしてください。</p></body></html>"
-            )
+        console.log(
+          "ローカルのHTMLファイルが見つかりません。デプロイ済みのURLに接続を試みます..."
         );
+
+        try {
+          // デプロイ済みのURLに接続
+          await mainWindow.loadURL("https://bad-wave.vercel.app/");
+          console.log("デプロイ済みのURLに接続しました");
+        } catch (deployErr) {
+          console.error(
+            "デプロイ済みのURLへの接続にも失敗しました:",
+            deployErr
+          );
+          // 両方とも失敗した場合はエラーメッセージを表示
+          await mainWindow.loadURL(
+            "data:text/html;charset=utf-8," +
+              encodeURIComponent(
+                "<html><body><h1>エラー</h1><p>アプリケーションの起動に失敗しました。</p><p>インターネット接続を確認してください。</p></body></html>"
+              )
+          );
+        }
       }
     }
   }
@@ -295,11 +306,6 @@ function setupIPC() {
   ipcMain.handle("window-close", () => {
     mainWindow?.hide();
   });
-
-  // 手動アップデートチェック
-  ipcMain.handle("check-for-updates", () => {
-    return manualCheckForUpdates();
-  });
 }
 
 // アプリケーションの初期化
@@ -315,13 +321,6 @@ app.whenReady().then(() => {
 
   // IPC通信のセットアップ
   setupIPC();
-
-  // 自動アップデートの設定
-  if (mainWindow) {
-    setupAutoUpdater(mainWindow);
-    // 認証処理の設定
-    setupAuth(mainWindow);
-  }
 
   app.on("activate", () => {
     // macOSでは、Dockアイコンクリック時に
