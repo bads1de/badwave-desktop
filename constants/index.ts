@@ -46,6 +46,7 @@ export const CACHED_QUERIES = {
  */
 export const ELECTRON_STORE_KEYS = {
   VOLUME: "player_volume",
+  RIGHT_SIDEBAR_WIDTH: "right_sidebar_width",
 } as const;
 
 export const CACHE_CONFIG = {
