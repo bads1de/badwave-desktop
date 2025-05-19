@@ -1,8 +1,6 @@
 import { app, autoUpdater, dialog, BrowserWindow } from "electron";
 import * as os from "os";
-
-// 開発モードかどうかを判定
-const isDev = process.env.NODE_ENV !== "production" || !app.isPackaged;
+import { isDev } from "./utils";
 
 /**
  * 自動アップデート機能の設定
@@ -92,36 +90,12 @@ export function setupAutoUpdater(mainWindow: BrowserWindow) {
 }
 
 /**
- * アップデートをチェックする
+ * アップデートをチェックする共通関数
+ *
+ * @param {boolean} isManual - 手動チェックかどうか
+ * @returns {boolean} アップデートのチェックが開始されたかどうか
  */
-function checkForUpdates() {
-  try {
-    // 開発モードではアップデートチェックをスキップ
-    if (isDev) {
-      console.log("開発モードのため、アップデートチェックをスキップします");
-      return;
-    }
-
-    // アップデートURLが設定されているか確認
-    // 開発中は警告を表示するだけで続行
-    if (!process.env.UPDATE_SERVER_URL) {
-      console.warn(
-        "アップデートURLが設定されていません - 開発モードでは無視されます"
-      );
-      return true; // 開発モードでは成功として扱う
-    }
-
-    autoUpdater.checkForUpdates();
-  } catch (error) {
-    console.error("アップデートのチェック中にエラーが発生しました:", error);
-  }
-}
-
-/**
- * 手動でアップデートをチェックする
- * @returns アップデートのチェックが開始されたかどうか
- */
-export function manualCheckForUpdates(): boolean {
+function checkForUpdatesCore(isManual: boolean = false): boolean {
   try {
     // 開発モードではアップデートチェックをスキップ
     if (isDev) {
@@ -141,7 +115,26 @@ export function manualCheckForUpdates(): boolean {
     autoUpdater.checkForUpdates();
     return true;
   } catch (error) {
-    console.error("手動アップデートチェック中にエラーが発生しました:", error);
+    const errorMessage = isManual
+      ? "手動アップデートチェック中にエラーが発生しました:"
+      : "アップデートのチェック中にエラーが発生しました:";
+    console.error(errorMessage, error);
     return false;
   }
+}
+
+/**
+ * 自動アップデートをチェックする
+ * 戻り値を返さないバージョン（定期チェック用）
+ */
+function checkForUpdates() {
+  checkForUpdatesCore(false);
+}
+
+/**
+ * 手動でアップデートをチェックする
+ * @returns アップデートのチェックが開始されたかどうか
+ */
+export function manualCheckForUpdates(): boolean {
+  return checkForUpdatesCore(true);
 }

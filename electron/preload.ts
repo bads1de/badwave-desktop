@@ -1,5 +1,41 @@
 import { contextBridge, ipcRenderer } from "electron";
 
+// チャンネル検証用の共通関数
+function validateChannel(channel: string, allowedChannels: string[]): boolean {
+  if (!allowedChannels.includes(channel)) {
+    throw new Error(
+      `Channel "${channel}" is not allowed for security reasons.`
+    );
+  }
+  return true;
+}
+
+// 許可されたチャンネルのリスト
+const ALLOWED_INVOKE_CHANNELS = [
+  "get-store-value",
+  "set-store-value",
+  "window-minimize",
+  "window-maximize",
+  "window-close",
+  "api-request",
+  "check-for-updates",
+  "auth:signIn",
+  "auth:signUp",
+  "auth:signOut",
+  "auth:getSession",
+  "auth:signInWithOAuth",
+];
+
+const ALLOWED_ON_CHANNELS = [
+  "media-control",
+  "update-available",
+  "download-progress",
+  "update-downloaded",
+  "auth:sessionUpdated",
+];
+
+const ALLOWED_SEND_CHANNELS = ["log", "player-state-change"];
+
 // Electronの機能をウィンドウオブジェクトに安全に公開
 contextBridge.exposeInMainWorld("electron", {
   // アプリケーション情報
@@ -34,11 +70,11 @@ contextBridge.exposeInMainWorld("electron", {
     signInWithOAuth: (provider: string) =>
       ipcRenderer.invoke("auth:signInWithOAuth", { provider }),
     onSessionUpdated: (callback: (data: any) => void) => {
-      ipcRenderer.on("auth:sessionUpdated", (_, data) => {
-        callback(data);
-      });
+      const subscription = (_: any, data: any) => callback(data);
+      ipcRenderer.on("auth:sessionUpdated", subscription);
+
       return () => {
-        ipcRenderer.removeAllListeners("auth:sessionUpdated");
+        ipcRenderer.removeListener("auth:sessionUpdated", subscription);
       };
     },
   },
@@ -99,36 +135,14 @@ contextBridge.exposeInMainWorld("electron", {
   ipc: {
     // メインプロセスにメッセージを送信し、応答を待つ
     invoke: (channel: string, ...args: any[]) => {
-      // 許可されたチャンネルのみ通信可能
-      const validChannels = [
-        "get-store-value",
-        "set-store-value",
-        "window-minimize",
-        "window-maximize",
-        "window-close",
-        "api-request",
-      ];
-
-      if (validChannels.includes(channel)) {
+      if (validateChannel(channel, ALLOWED_INVOKE_CHANNELS)) {
         return ipcRenderer.invoke(channel, ...args);
       }
-
-      throw new Error(
-        `Channel "${channel}" is not allowed for security reasons.`
-      );
     },
 
     // メインプロセスからのメッセージを受信
     on: (channel: string, callback: (...args: any[]) => void) => {
-      // 許可されたチャンネルのみ通信可能
-      const validChannels = [
-        "media-control",
-        "update-available",
-        "download-progress",
-        "update-downloaded",
-      ];
-
-      if (validChannels.includes(channel)) {
+      if (validateChannel(channel, ALLOWED_ON_CHANNELS)) {
         const subscription = (_: any, ...args: any[]) => callback(...args);
         ipcRenderer.on(channel, subscription);
 
@@ -137,23 +151,12 @@ contextBridge.exposeInMainWorld("electron", {
           ipcRenderer.removeListener(channel, subscription);
         };
       }
-
-      throw new Error(
-        `Channel "${channel}" is not allowed for security reasons.`
-      );
     },
 
     // メインプロセスにメッセージを送信（応答を待たない）
     send: (channel: string, ...args: any[]) => {
-      // 許可されたチャンネルのみ通信可能
-      const validChannels = ["log", "player-state-change"];
-
-      if (validChannels.includes(channel)) {
+      if (validateChannel(channel, ALLOWED_SEND_CHANNELS)) {
         ipcRenderer.send(channel, ...args);
-      } else {
-        throw new Error(
-          `Channel "${channel}" is not allowed for security reasons.`
-        );
       }
     },
   },

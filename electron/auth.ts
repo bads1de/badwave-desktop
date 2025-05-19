@@ -1,20 +1,9 @@
-import { BrowserWindow, ipcMain, app } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import { createClient } from "@supabase/supabase-js";
-import * as path from "path";
-import * as fs from "fs";
-import * as dotenv from "dotenv";
+import { loadEnvVariables } from "./utils";
 
-// .env.localファイルを読み込む
-const envPath = path.join(app.getAppPath(), ".env.local");
-if (fs.existsSync(envPath)) {
-  console.log("Loading environment variables from:", envPath);
-  const envConfig = dotenv.parse(fs.readFileSync(envPath));
-  for (const key in envConfig) {
-    process.env[key] = envConfig[key];
-  }
-} else {
-  console.warn(".env.localファイルが見つかりません:", envPath);
-}
+// 環境変数を読み込む
+loadEnvVariables();
 
 // 環境変数の確認
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -38,7 +27,7 @@ const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "");
  */
 export function setupAuth(mainWindow: BrowserWindow) {
   // ログインリクエストを処理
-  ipcMain.handle("auth:signIn", async (event, { email, password }) => {
+  ipcMain.handle("auth:signIn", async (_, { email, password }) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -54,28 +43,25 @@ export function setupAuth(mainWindow: BrowserWindow) {
   });
 
   // サインアップリクエストを処理
-  ipcMain.handle(
-    "auth:signUp",
-    async (event, { email, password, fullName }) => {
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-            },
+  ipcMain.handle("auth:signUp", async (_, { email, password, fullName }) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
           },
-        });
+        },
+      });
 
-        if (error) throw error;
-        return { data };
-      } catch (error) {
-        console.error("サインアップエラー:", error);
-        return { error };
-      }
+      if (error) throw error;
+      return { data };
+    } catch (error) {
+      console.error("サインアップエラー:", error);
+      return { error };
     }
-  );
+  });
 
   // ログアウトリクエストを処理
   ipcMain.handle("auth:signOut", async () => {
@@ -102,7 +88,7 @@ export function setupAuth(mainWindow: BrowserWindow) {
   });
 
   // OAuth認証を処理
-  ipcMain.handle("auth:signInWithOAuth", async (event, { provider }) => {
+  ipcMain.handle("auth:signInWithOAuth", async (_, { provider }) => {
     try {
       // OAuthプロバイダーのURLを取得
       const { data, error } = await supabase.auth.signInWithOAuth({

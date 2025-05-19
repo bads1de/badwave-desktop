@@ -11,28 +11,18 @@ import {
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
-import * as dotenv from "dotenv";
 import { setupAutoUpdater, manualCheckForUpdates } from "./updater";
 import { setupAuth } from "./auth";
+import { loadEnvVariables, isDev, debugLog } from "./utils";
 
-// .env.localファイルを読み込む
-const envPath = path.join(app.getAppPath(), ".env.local");
-if (fs.existsSync(envPath)) {
-  console.log("Loading environment variables from:", envPath);
-  const envConfig = dotenv.parse(fs.readFileSync(envPath));
-  for (const key in envConfig) {
-    process.env[key] = envConfig[key];
-  }
-} else {
-  console.warn(".env.localファイルが見つかりません:", envPath);
-}
+// 環境変数を読み込む
+loadEnvVariables();
 
 // electron-serveとelectron-storeをインポート
 import serve from "electron-serve";
 import Store from "electron-store";
 
-// 開発モードかどうかを判定
-const isDev = process.env.NODE_ENV !== "production" || !app.isPackaged;
+// プラットフォーム判定
 const isMac = process.platform === "darwin";
 
 // 設定ストアの初期化
@@ -54,6 +44,15 @@ let tray: Tray | null = null;
 
 // プロトコルハンドラーの登録
 function registerProtocolHandlers() {
+  // appプロトコルのハンドラー
+  registerAppProtocol();
+
+  // fileプロトコルのインターセプト
+  interceptFileProtocol();
+}
+
+// appプロトコルのハンドラーを登録
+function registerAppProtocol() {
   protocol.registerFileProtocol(
     "app",
     (
@@ -66,8 +65,10 @@ function registerProtocolHandlers() {
       callback(filePath);
     }
   );
+}
 
-  // file プロトコルのインターセプト（Next.jsの静的ファイル用）
+// fileプロトコルをインターセプト（Next.jsの静的ファイル用）
+function interceptFileProtocol() {
   protocol.interceptFileProtocol(
     "file",
     (
@@ -75,12 +76,12 @@ function registerProtocolHandlers() {
       callback: (response: string) => void
     ) => {
       const requestedUrl = request.url.slice("file://".length);
+
       if (path.isAbsolute(requestedUrl)) {
-        callback(
-          path.normalize(
-            path.join(__dirname, "../out", decodeURI(requestedUrl))
-          )
+        const normalizedPath = path.normalize(
+          path.join(__dirname, "../out", decodeURI(requestedUrl))
         );
+        callback(normalizedPath);
       } else {
         callback(decodeURI(requestedUrl));
       }
@@ -246,21 +247,24 @@ function setupIPC() {
   // アプリケーション設定の取得
   ipcMain.handle("get-store-value", (_, key: string) => {
     const value = store.get(key);
-    console.log(`[Store] 設定値を取得: ${key} =`, value);
+    debugLog(`[Store] 設定値を取得: ${key} =`, value);
     return value;
   });
 
   // アプリケーション設定の保存
   ipcMain.handle("set-store-value", (_, key: string, value: any) => {
-    console.log(`[Store] 設定値を保存: ${key} =`, value);
+    debugLog(`[Store] 設定値を保存: ${key} =`, value);
     store.set(key, value);
 
-    // 保存後に値を再取得して確認（デバッグ用）
-    const savedValue = store.get(key);
-    console.log(`[Store] 保存後の値を確認: ${key} =`, savedValue);
+    // 開発環境のみ、保存後の確認ログを出力
+    if (isDev) {
+      // 保存後に値を再取得して確認（デバッグ用）
+      const savedValue = store.get(key);
+      debugLog(`[Store] 保存後の値を確認: ${key} =`, savedValue);
 
-    // ストア全体の内容をログに出力（デバッグ用）
-    console.log("[Store] 現在のストア内容:", store.store);
+      // ストア全体の内容をログに出力（デバッグ用）
+      debugLog("[Store] 現在のストア内容:", store.store);
+    }
 
     return true;
   });
