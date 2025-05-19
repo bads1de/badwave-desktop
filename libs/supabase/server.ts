@@ -21,10 +21,14 @@ export async function createClient() {
             // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
-            console.log("Cookie setting error in server component:", error);
             // エラーを無視して処理を続行します
             // ミドルウェアがセッションをリフレッシュする場合、
             // このエラーは問題ありません
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                "Cookie setting error in server component (expected, can be ignored)"
+              );
+            }
           }
         },
       },
