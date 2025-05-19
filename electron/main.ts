@@ -268,24 +268,12 @@ function setupIPC() {
   // アプリケーション設定の取得
   ipcMain.handle("get-store-value", (_, key: string) => {
     const value = store.get(key);
-    debugLog(`[Store] 設定値を取得: ${key} =`, value);
     return value;
   });
 
   // アプリケーション設定の保存
   ipcMain.handle("set-store-value", (_, key: string, value: any) => {
-    debugLog(`[Store] 設定値を保存: ${key} =`, value);
     store.set(key, value);
-
-    // 開発環境のみ、保存後の確認ログを出力
-    if (isDev) {
-      // 保存後に値を再取得して確認（デバッグ用）
-      const savedValue = store.get(key);
-      debugLog(`[Store] 保存後の値を確認: ${key} =`, savedValue);
-
-      // ストア全体の内容をログに出力（デバッグ用）
-      debugLog("[Store] 現在のストア内容:", store.store);
-    }
 
     return true;
   });
