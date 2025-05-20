@@ -209,31 +209,35 @@ function setupTray() {
   try {
     // アプリケーションのルートディレクトリからの絶対パスを構築
     const appPath = app.getAppPath();
-    const svgPath = path.join(appPath, "public", "logo.svg");
+    // システムトレイには常にPNGファイルを使用（SVGは互換性の問題があるため）
     const pngPath = path.join(appPath, "public", "logo.png");
 
-    // SVGファイルが存在するか確認
-    const iconPath = fs.existsSync(svgPath) ? svgPath : pngPath;
+    debugLog(`システムトレイアイコンのパス: ${pngPath}`);
 
-    debugLog(`システムトレイアイコンのパス: ${iconPath}`);
+    // ファイルの存在確認
+    if (!fs.existsSync(pngPath)) {
+      throw new Error(`アイコンファイルが見つかりません: ${pngPath}`);
+    }
 
     // nativeImageを作成
     let icon;
     try {
-      // ファイルからnativeImageを作成
-      icon = nativeImage.createFromPath(iconPath);
+      // PNGファイルからnativeImageを作成
+      icon = nativeImage.createFromPath(pngPath);
 
       // アイコンが空でないか確認
       if (icon.isEmpty()) {
         throw new Error("アイコンイメージが空です");
       }
 
-      // アイコンをリサイズ（小さいサイズでも鮮明に表示されるように）
+      // アイコンをリサイズ（システムトレイに適したサイズに）
       icon = icon.resize({
-        width: 16,
-        height: 16,
+        width: 24,
+        height: 24,
         quality: "best",
       });
+
+      debugLog("システムトレイアイコンを正常に読み込みました");
     } catch (imgError) {
       console.error("アイコン画像の読み込みに失敗しました:", imgError);
       // フォールバック: 空のイメージを作成
@@ -241,7 +245,12 @@ function setupTray() {
     }
 
     // トレイを作成
+    debugLog("システムトレイを作成しています...");
     tray = new Tray(icon);
+    debugLog("システムトレイが作成されました");
+
+    // コンテキストメニューを作成
+    debugLog("システムトレイのコンテキストメニューを作成しています...");
     const contextMenu = Menu.buildFromTemplate([
       { label: "BadWave", enabled: false },
       { type: "separator" },
@@ -301,6 +310,49 @@ function setupTray() {
     });
   } catch (error) {
     console.error("システムトレイの設定中にエラーが発生しました:", error);
+
+    // エラーの詳細情報を出力
+    if (error instanceof Error) {
+      console.error("エラーメッセージ:", error.message);
+      console.error("スタックトレース:", error.stack);
+    }
+
+    // エラーが発生した場合でもアプリケーションは続行
+    // 空のトレイオブジェクトを作成して最低限の機能を提供
+    try {
+      if (!tray) {
+        const emptyIcon = nativeImage.createEmpty();
+        tray = new Tray(emptyIcon);
+        tray.setToolTip("BadWave");
+
+        // 最小限のコンテキストメニュー
+        const fallbackMenu = Menu.buildFromTemplate([
+          { label: "BadWave", enabled: false },
+          { type: "separator" },
+          {
+            label: "アプリを表示",
+            click: () => {
+              if (mainWindow) {
+                mainWindow.show();
+                mainWindow.focus();
+              } else {
+                createMainWindow();
+              }
+            },
+          },
+          {
+            label: "終了",
+            click: () => {
+              app.quit();
+            },
+          },
+        ]);
+
+        tray.setContextMenu(fallbackMenu);
+      }
+    } catch (fallbackError) {
+      console.error("フォールバックトレイの作成に失敗しました:", fallbackError);
+    }
   }
 }
 
