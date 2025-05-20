@@ -45,9 +45,9 @@ const SpotlightBoardComponent: React.FC<SpotlightBoardProps> = ({
         if (video) {
           // Electronのストアから取得した音量を使用（50%に調整）
           if (volume !== null) {
-            video.volume = volume * 0.5; // 音量を50%に調整
+            video.volume = volume;
           } else {
-            video.volume = 0.5; // デフォルト値
+            video.volume = 0.5;
           }
         }
       });
@@ -74,9 +74,8 @@ const SpotlightBoardComponent: React.FC<SpotlightBoardProps> = ({
                 ref={(el) => {
                   if (el) {
                     videoRefs.current[index] = el;
-                    // 音量設定を追加（50%に調整）
                     if (volume !== null) {
-                      el.volume = volume * 0.5; // 音量を50%に調整
+                      el.volume = volume;
                     }
                   }
                 }}
