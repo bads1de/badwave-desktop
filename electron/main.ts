@@ -16,8 +16,7 @@ import { loadEnvVariables, isDev, debugLog } from "./utils";
 // 環境変数を読み込む
 loadEnvVariables();
 
-// electron-serveとelectron-storeをインポート
-import serve from "electron-serve";
+// electron-storeをインポート
 import Store from "electron-store";
 
 // プラットフォーム判定
@@ -31,10 +30,10 @@ const store = new Store({
   cwd: app.getPath("userData"),
 });
 
-// 静的ファイル配信のセットアップ（本番環境用）
-const serveURL = serve({
-  directory: path.join(__dirname, "../.next"),
-});
+// 静的ファイル配信は使用しない（外部URLのみを使用）
+// const serveURL = serve({
+//   directory: path.join(__dirname, "../.next"),
+// });
 
 // グローバル参照を保持（ガベージコレクションを防ぐため）
 let mainWindow: BrowserWindow | null = null;
@@ -44,9 +43,6 @@ let tray: Tray | null = null;
 function registerProtocolHandlers() {
   // appプロトコルのハンドラー
   registerAppProtocol();
-
-  // fileプロトコルのインターセプト
-  interceptFileProtocol();
 }
 
 // appプロトコルのハンドラーを登録
@@ -61,28 +57,6 @@ function registerAppProtocol() {
         "file://" + request.url.slice("app://".length)
       );
       callback(filePath);
-    }
-  );
-}
-
-// fileプロトコルをインターセプト（Next.jsの静的ファイル用）
-function interceptFileProtocol() {
-  protocol.interceptFileProtocol(
-    "file",
-    (
-      request: Electron.ProtocolRequest,
-      callback: (response: string) => void
-    ) => {
-      const requestedUrl = request.url.slice("file://".length);
-
-      if (path.isAbsolute(requestedUrl)) {
-        const normalizedPath = path.normalize(
-          path.join(__dirname, "../out", decodeURI(requestedUrl))
-        );
-        callback(normalizedPath);
-      } else {
-        callback(decodeURI(requestedUrl));
-      }
     }
   );
 }
@@ -116,17 +90,18 @@ async function createMainWindow() {
   });
 
   // 開発モードの場合
-  console.log(
-    "isDev =",
-    isDev,
-    "process.env.NODE_ENV =",
-    process.env.NODE_ENV,
-    "app.isPackaged =",
-    app.isPackaged
-  );
   if (isDev) {
-    // DevToolsを開く（必要に応じてコメントアウト）
-    mainWindow.webContents.openDevTools();
+    console.log(
+      "isDev =",
+      isDev,
+      "process.env.NODE_ENV =",
+      process.env.NODE_ENV,
+      "app.isPackaged =",
+      app.isPackaged
+    );
+  }
+
+  if (isDev) {
     console.log("開発モードで起動しています");
 
     try {
@@ -142,7 +117,7 @@ async function createMainWindow() {
 
       try {
         // デプロイ済みのURLに接続
-        await mainWindow.loadURL("https://bad-wave.vercel.app/");
+        await mainWindow.loadURL("https://badwave-desktop.vercel.app/");
         console.log("デプロイ済みのURLに接続しました");
       } catch (deployErr) {
         console.error("デプロイ済みのURLへの接続にも失敗しました:", deployErr);
@@ -158,43 +133,21 @@ async function createMainWindow() {
   }
   // 本番モードの場合
   else {
+    // 本番モードではDevToolsを開かない
+    mainWindow.webContents.closeDevTools();
+
+    // 本番モードでのログは最小限に
     try {
-      console.log("本番モードで起動しています");
-      // 静的ファイルの配信を試みる
-      await serveURL(mainWindow);
+      // 外部URLに直接接続
+      await mainWindow.loadURL("https://badwave-desktop.vercel.app/");
     } catch (err) {
-      console.error("静的ファイル配信中にエラーが発生しました:", err);
-
-      // エラーが発生した場合は、ローカルのHTMLファイルを表示
-      const indexPath = path.join(
-        __dirname,
-        "../.next/server/pages/index.html"
+      // 接続に失敗した場合はエラーメッセージを表示
+      await mainWindow.loadURL(
+        "data:text/html;charset=utf-8," +
+          encodeURIComponent(
+            "<html><body><h1>エラー</h1><p>アプリケーションの起動に失敗しました。</p><p>インターネット接続を確認してください。</p></body></html>"
+          )
       );
-      if (fs.existsSync(indexPath)) {
-        await mainWindow.loadFile(indexPath);
-      } else {
-        console.log(
-          "ローカルのHTMLファイルが見つかりません。デプロイ済みのURLに接続を試みます..."
-        );
-
-        try {
-          // デプロイ済みのURLに接続
-          await mainWindow.loadURL("https://bad-wave.vercel.app/");
-          console.log("デプロイ済みのURLに接続しました");
-        } catch (deployErr) {
-          console.error(
-            "デプロイ済みのURLへの接続にも失敗しました:",
-            deployErr
-          );
-          // 両方とも失敗した場合はエラーメッセージを表示
-          await mainWindow.loadURL(
-            "data:text/html;charset=utf-8," +
-              encodeURIComponent(
-                "<html><body><h1>エラー</h1><p>アプリケーションの起動に失敗しました。</p><p>インターネット接続を確認してください。</p></body></html>"
-              )
-          );
-        }
-      }
     }
   }
 

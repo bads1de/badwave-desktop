@@ -10,8 +10,7 @@ icon: public/logo.png
 
 # ファイル設定
 files:
-  - from: .next
-    to: .next
+  # 静的ファイル（.next）は使用しないため含めない
   - electron/main.js
   - electron/preload.js
   - electron/utils.js
