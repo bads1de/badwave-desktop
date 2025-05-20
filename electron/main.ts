@@ -26,14 +26,8 @@ const isMac = process.platform === "darwin";
 const store = new Store({
   name: "badwave-settings", // 設定ファイルの名前
   clearInvalidConfig: true, // 無効な設定を自動的にクリア
-  // 開発モードでも同じ場所に保存するための設定
-  cwd: app.getPath("userData"),
+  cwd: app.getPath("userData"), // 開発モードでも同じ場所に保存するための設定
 });
-
-// 静的ファイル配信は使用しない（外部URLのみを使用）
-// const serveURL = serve({
-//   directory: path.join(__dirname, "../.next"),
-// });
 
 // グローバル参照を保持（ガベージコレクションを防ぐため）
 let mainWindow: BrowserWindow | null = null;
@@ -160,23 +154,70 @@ async function createMainWindow() {
 // システムトレイの設定
 function setupTray() {
   try {
-    // アプリケーションのルートディレクトリからの絶対パスを構築
-    const appPath = app.getAppPath();
-    // システムトレイには常にPNGファイルを使用（SVGは互換性の問題があるため）
-    const pngPath = path.join(appPath, "public", "logo.png");
+    // 利用可能なすべてのパスを試す
+    const possiblePaths = [];
 
-    debugLog(`システムトレイアイコンのパス: ${pngPath}`);
+    // 開発環境のパス
+    const appPath = app.getAppPath();
+    possiblePaths.push(path.join(appPath, "public", "logo.png"));
+
+    // 本番環境の可能性のあるパス
+    if (app.isPackaged) {
+      const resourcePath = process.resourcesPath;
+      const exePath = path.dirname(app.getPath("exe"));
+
+      // リソースディレクトリ内のパス
+      possiblePaths.push(
+        path.join(resourcePath, "app.asar.unpacked", "public", "logo.png")
+      );
+      possiblePaths.push(
+        path.join(resourcePath, "app.asar.unpacked", "build", "logo.png")
+      );
+      possiblePaths.push(path.join(resourcePath, "logo.png"));
+
+      // 実行ファイルディレクトリ内のパス
+      possiblePaths.push(path.join(exePath, "resources", "logo.png"));
+      possiblePaths.push(
+        path.join(
+          exePath,
+          "resources",
+          "app.asar.unpacked",
+          "public",
+          "logo.png"
+        )
+      );
+      possiblePaths.push(path.join(exePath, "public", "logo.png"));
+
+      // その他の可能性のあるパス
+      possiblePaths.push(path.join(resourcePath, "public", "logo.png"));
+      possiblePaths.push(path.join(resourcePath, "..", "public", "logo.png"));
+      possiblePaths.push(
+        path.join(exePath, "..", "resources", "public", "logo.png")
+      );
+    }
+
+    // 存在するパスを見つける
+    let pngPath = null;
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        pngPath = p;
+        break;
+      }
+    }
 
     // ファイルの存在確認
-    if (!fs.existsSync(pngPath)) {
-      throw new Error(`アイコンファイルが見つかりません: ${pngPath}`);
+    if (!pngPath || !fs.existsSync(pngPath)) {
+      throw new Error(`アイコンファイルが見つかりません`);
     }
 
     // nativeImageを作成
     let icon;
     try {
-      // PNGファイルからnativeImageを作成
-      icon = nativeImage.createFromPath(pngPath);
+      // ファイルの内容を読み込んでバッファとして保持
+      const iconBuffer = fs.readFileSync(pngPath);
+
+      // バッファからnativeImageを作成
+      icon = nativeImage.createFromBuffer(iconBuffer);
 
       // アイコンが空でないか確認
       if (icon.isEmpty()) {
@@ -189,122 +230,155 @@ function setupTray() {
         height: 24,
         quality: "best",
       });
-
-      debugLog("システムトレイアイコンを正常に読み込みました");
     } catch (imgError) {
-      console.error("アイコン画像の読み込みに失敗しました:", imgError);
-      // フォールバック: 空のイメージを作成
-      icon = nativeImage.createEmpty();
+      // 代替方法: 組み込みのアイコンを使用
+      try {
+        // Electronの組み込みアイコンを使用
+        const electronPath = require.resolve("electron");
+        const electronDir = path.dirname(electronPath);
+        const defaultIconPath = path.join(
+          electronDir,
+          "default_app.asar",
+          "icon.png"
+        );
+
+        if (fs.existsSync(defaultIconPath)) {
+          icon = nativeImage.createFromPath(defaultIconPath);
+        } else {
+          icon = nativeImage.createEmpty();
+        }
+      } catch (fallbackError) {
+        // 最終手段: 空のイメージを作成
+        icon = nativeImage.createEmpty();
+      }
     }
 
     // トレイを作成
-    debugLog("システムトレイを作成しています...");
     tray = new Tray(icon);
-    debugLog("システムトレイが作成されました");
 
     // コンテキストメニューを作成
-    debugLog("システムトレイのコンテキストメニューを作成しています...");
-    const contextMenu = Menu.buildFromTemplate([
-      { label: "BadWave", enabled: false },
-      { type: "separator" },
-      {
-        label: "再生/一時停止",
-        click: () => {
-          mainWindow?.webContents.send("media-control", "play-pause");
+    try {
+      // メニューテンプレートを作成
+      const menuTemplate: Electron.MenuItemConstructorOptions[] = [
+        { label: "BadWave", enabled: false },
+        { type: "separator" },
+        {
+          label: "再生/一時停止",
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send("media-control", "play-pause");
+            }
+          },
         },
-      },
-      {
-        label: "次の曲",
-        click: () => {
-          mainWindow?.webContents.send("media-control", "next");
+        {
+          label: "次の曲",
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send("media-control", "next");
+            }
+          },
         },
-      },
-      {
-        label: "前の曲",
-        click: () => {
-          mainWindow?.webContents.send("media-control", "previous");
+        {
+          label: "前の曲",
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send("media-control", "previous");
+            }
+          },
         },
-      },
-      { type: "separator" },
-      {
-        label: "アプリを表示",
-        click: () => {
-          if (mainWindow) {
+        { type: "separator" },
+        {
+          label: "アプリを表示",
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.show();
+              mainWindow.focus();
+            } else {
+              createMainWindow();
+            }
+          },
+        },
+        {
+          label: "終了",
+          click: () => {
+            app.quit();
+          },
+        },
+      ];
+
+      // メニューを構築
+      const contextMenu = Menu.buildFromTemplate(menuTemplate);
+
+      // トレイにメニューを設定
+      tray.setToolTip("BadWave");
+      tray.setContextMenu(contextMenu);
+
+      // トレイアイコンのクリックでウィンドウを表示/非表示
+      tray.on("click", () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          if (mainWindow.isVisible()) {
+            mainWindow.hide();
+          } else {
             mainWindow.show();
             mainWindow.focus();
-          } else {
-            createMainWindow();
           }
-        },
-      },
-      {
-        label: "終了",
-        click: () => {
-          app.quit();
-        },
-      },
-    ]);
-
-    tray.setToolTip("BadWave");
-    tray.setContextMenu(contextMenu);
-
-    // トレイアイコンのクリックでウィンドウを表示/非表示
-    tray.on("click", () => {
-      if (mainWindow) {
-        if (mainWindow.isVisible()) {
-          mainWindow.hide();
         } else {
-          mainWindow.show();
-          mainWindow.focus();
+          createMainWindow();
         }
-      } else {
-        createMainWindow();
-      }
-    });
-  } catch (error) {
-    console.error("システムトレイの設定中にエラーが発生しました:", error);
-
-    // エラーの詳細情報を出力
-    if (error instanceof Error) {
-      console.error("エラーメッセージ:", error.message);
-      console.error("スタックトレース:", error.stack);
+      });
+    } catch (menuError) {
+      // エラーが発生した場合でもアプリケーションは続行
     }
-
+  } catch (error) {
     // エラーが発生した場合でもアプリケーションは続行
     // 空のトレイオブジェクトを作成して最低限の機能を提供
     try {
       if (!tray) {
-        const emptyIcon = nativeImage.createEmpty();
-        tray = new Tray(emptyIcon);
+        // Base64エンコードされた最小限のアイコン（1x1ピクセルの透明PNG）
+        const transparentPixel =
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        const iconBuffer = Buffer.from(transparentPixel, "base64");
+
+        try {
+          const emptyIcon = nativeImage.createFromBuffer(iconBuffer);
+          tray = new Tray(emptyIcon);
+        } catch (iconError) {
+          const emptyIcon = nativeImage.createEmpty();
+          tray = new Tray(emptyIcon);
+        }
+
         tray.setToolTip("BadWave");
 
         // 最小限のコンテキストメニュー
         const fallbackMenu = Menu.buildFromTemplate([
-          { label: "BadWave", enabled: false },
-          { type: "separator" },
+          {
+            label: "BadWave",
+            enabled: false,
+          } as Electron.MenuItemConstructorOptions,
+          { type: "separator" } as Electron.MenuItemConstructorOptions,
           {
             label: "アプリを表示",
             click: () => {
-              if (mainWindow) {
+              if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.show();
                 mainWindow.focus();
               } else {
                 createMainWindow();
               }
             },
-          },
+          } as Electron.MenuItemConstructorOptions,
           {
             label: "終了",
             click: () => {
               app.quit();
             },
-          },
+          } as Electron.MenuItemConstructorOptions,
         ]);
 
         tray.setContextMenu(fallbackMenu);
       }
     } catch (fallbackError) {
-      console.error("フォールバックトレイの作成に失敗しました:", fallbackError);
+      // フォールバックトレイの作成に失敗した場合も続行
     }
   }
 }
