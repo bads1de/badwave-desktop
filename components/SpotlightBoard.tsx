@@ -1,7 +1,8 @@
-import React, { useState, useRef, memo } from "react";
+import React, { useState, useRef, memo, useEffect } from "react";
 import { Spotlight } from "@/types";
 import useSpotlightModal from "@/hooks/modal/useSpotlightModal";
 import ScrollableContainer from "./common/ScrollableContainer";
+import useVolumeStore from "@/hooks/audio/useVolumeStore";
 
 interface SpotlightBoardProps {
   spotlightData: Spotlight[];
@@ -16,6 +17,8 @@ const SpotlightBoardComponent: React.FC<SpotlightBoardProps> = ({
   const [isMuted, setIsMuted] = useState(true);
   const videoRefs = useRef<HTMLVideoElement[]>([]);
   const spotlightModal = useSpotlightModal();
+  // Electronのストアからボリューム設定を取得
+  const { volume } = useVolumeStore();
 
   const handleVideoHover = (index: number) => {
     setHoveredIndex(index);
@@ -34,7 +37,21 @@ const SpotlightBoardComponent: React.FC<SpotlightBoardProps> = ({
   };
 
   const handleMuteToggle = () => {
-    setIsMuted(!isMuted);
+    const newMutedState = !isMuted;
+    setIsMuted(newMutedState);
+    if (!newMutedState) {
+      // ミュートが解除された場合
+      videoRefs.current.forEach((video) => {
+        if (video) {
+          // Electronのストアから取得した音量を使用（50%に調整）
+          if (volume !== null) {
+            video.volume = volume * 0.5; // 音量を50%に調整
+          } else {
+            video.volume = 0.5; // デフォルト値
+          }
+        }
+      });
+    }
   };
 
   return (
@@ -55,7 +72,13 @@ const SpotlightBoardComponent: React.FC<SpotlightBoardProps> = ({
             >
               <video
                 ref={(el) => {
-                  if (el) videoRefs.current[index] = el;
+                  if (el) {
+                    videoRefs.current[index] = el;
+                    // 音量設定を追加（50%に調整）
+                    if (volume !== null) {
+                      el.volume = volume * 0.5; // 音量を50%に調整
+                    }
+                  }
                 }}
                 src={item.video_path}
                 muted={isMuted}

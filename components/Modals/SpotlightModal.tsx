@@ -2,16 +2,25 @@ import React, { useEffect, useRef } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import useSpotlightModal from "@/hooks/modal/useSpotlightModal";
+import useVolumeStore from "@/hooks/audio/useVolumeStore";
 
 const SpotlightModal = () => {
   const { isOpen, onClose } = useSpotlightModal();
   const selectedItem = useSpotlightModal((state) => state.selectedItem);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  // Electronのストアからボリューム設定を取得
+  const { volume } = useVolumeStore();
 
   useEffect(() => {
     const playVideo = async () => {
       if (videoRef.current && isOpen) {
         try {
+          // 音量設定を追加（50%に調整）
+          if (volume !== null) {
+            videoRef.current.volume = volume * 0.5; // 音量を50%に調整
+          } else {
+            videoRef.current.volume = 0.5; // デフォルト値
+          }
           await videoRef.current.play();
         } catch (error) {
           console.error("Video playback failed:", error);
@@ -28,7 +37,7 @@ const SpotlightModal = () => {
     return () => {
       videoRef.current?.pause();
     };
-  }, [isOpen, selectedItem]);
+  }, [isOpen, selectedItem, volume]);
 
   if (!selectedItem) return null;
 
