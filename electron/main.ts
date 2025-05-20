@@ -206,73 +206,102 @@ async function createMainWindow() {
 
 // システムトレイの設定
 function setupTray() {
-  // SVGファイルが存在する場合はそれを使用し、なければPNGにフォールバック
-  const iconPath = fs.existsSync(path.join(__dirname, "../public/logo.svg"))
-    ? path.join(__dirname, "../public/logo.svg")
-    : path.join(__dirname, "../public/logo.png");
+  try {
+    // アプリケーションのルートディレクトリからの絶対パスを構築
+    const appPath = app.getAppPath();
+    const svgPath = path.join(appPath, "public", "logo.svg");
+    const pngPath = path.join(appPath, "public", "logo.png");
 
-  const icon = nativeImage
-    .createFromPath(iconPath)
-    .resize({ width: 16, height: 16 });
+    // SVGファイルが存在するか確認
+    const iconPath = fs.existsSync(svgPath) ? svgPath : pngPath;
 
-  tray = new Tray(icon);
-  const contextMenu = Menu.buildFromTemplate([
-    { label: "BadMusicApp", enabled: false },
-    { type: "separator" },
-    {
-      label: "再生/一時停止",
-      click: () => {
-        mainWindow?.webContents.send("media-control", "play-pause");
+    debugLog(`システムトレイアイコンのパス: ${iconPath}`);
+
+    // nativeImageを作成
+    let icon;
+    try {
+      // ファイルからnativeImageを作成
+      icon = nativeImage.createFromPath(iconPath);
+
+      // アイコンが空でないか確認
+      if (icon.isEmpty()) {
+        throw new Error("アイコンイメージが空です");
+      }
+
+      // アイコンをリサイズ（小さいサイズでも鮮明に表示されるように）
+      icon = icon.resize({
+        width: 16,
+        height: 16,
+        quality: "best",
+      });
+    } catch (imgError) {
+      console.error("アイコン画像の読み込みに失敗しました:", imgError);
+      // フォールバック: 空のイメージを作成
+      icon = nativeImage.createEmpty();
+    }
+
+    // トレイを作成
+    tray = new Tray(icon);
+    const contextMenu = Menu.buildFromTemplate([
+      { label: "BadWave", enabled: false },
+      { type: "separator" },
+      {
+        label: "再生/一時停止",
+        click: () => {
+          mainWindow?.webContents.send("media-control", "play-pause");
+        },
       },
-    },
-    {
-      label: "次の曲",
-      click: () => {
-        mainWindow?.webContents.send("media-control", "next");
+      {
+        label: "次の曲",
+        click: () => {
+          mainWindow?.webContents.send("media-control", "next");
+        },
       },
-    },
-    {
-      label: "前の曲",
-      click: () => {
-        mainWindow?.webContents.send("media-control", "previous");
+      {
+        label: "前の曲",
+        click: () => {
+          mainWindow?.webContents.send("media-control", "previous");
+        },
       },
-    },
-    { type: "separator" },
-    {
-      label: "アプリを表示",
-      click: () => {
-        if (mainWindow) {
+      { type: "separator" },
+      {
+        label: "アプリを表示",
+        click: () => {
+          if (mainWindow) {
+            mainWindow.show();
+            mainWindow.focus();
+          } else {
+            createMainWindow();
+          }
+        },
+      },
+      {
+        label: "終了",
+        click: () => {
+          app.quit();
+        },
+      },
+    ]);
+
+    tray.setToolTip("BadWave");
+    tray.setContextMenu(contextMenu);
+
+    // トレイアイコンのクリックでウィンドウを表示/非表示
+    tray.on("click", () => {
+      if (mainWindow) {
+        if (mainWindow.isVisible()) {
+          mainWindow.hide();
+        } else {
           mainWindow.show();
           mainWindow.focus();
-        } else {
-          createMainWindow();
         }
-      },
-    },
-    {
-      label: "終了",
-      click: () => {
-        app.quit();
-      },
-    },
-  ]);
-
-  tray.setToolTip("BadMusicApp");
-  tray.setContextMenu(contextMenu);
-
-  // トレイアイコンのクリックでウィンドウを表示/非表示
-  tray.on("click", () => {
-    if (mainWindow) {
-      if (mainWindow.isVisible()) {
-        mainWindow.hide();
       } else {
-        mainWindow.show();
-        mainWindow.focus();
+        createMainWindow();
       }
-    } else {
-      createMainWindow();
-    }
-  });
+    });
+  } catch (error) {
+    console.error("システムトレイの設定中にエラーが発生しました:", error);
+  }
 }
 
 // IPC通信のセットアップ

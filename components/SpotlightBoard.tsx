@@ -1,4 +1,4 @@
-import React, { useState, useRef, memo, useEffect } from "react";
+import React, { useState, useRef, memo } from "react";
 import { Spotlight } from "@/types";
 import useSpotlightModal from "@/hooks/modal/useSpotlightModal";
 import ScrollableContainer from "./common/ScrollableContainer";
@@ -17,7 +17,6 @@ const SpotlightBoardComponent: React.FC<SpotlightBoardProps> = ({
   const [isMuted, setIsMuted] = useState(true);
   const videoRefs = useRef<HTMLVideoElement[]>([]);
   const spotlightModal = useSpotlightModal();
-  // Electronのストアからボリューム設定を取得
   const { volume } = useVolumeStore();
 
   const handleVideoHover = (index: number) => {

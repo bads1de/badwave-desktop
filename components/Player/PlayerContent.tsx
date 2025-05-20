@@ -12,6 +12,7 @@ import AddPlaylist from "../Playlist/AddPlaylist";
 import MobilePlayerContent from "../Mobile/MobilePlayerContent";
 import useAudioPlayer from "@/hooks/audio/useAudioPlayer";
 import useLyricsStore from "@/hooks/stores/useLyricsStore";
+import { mediaControls } from "@/libs/electron-utils";
 
 interface PlayerContentProps {
   song: Song;
@@ -62,6 +63,33 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
 
       return () => clearTimeout(timeout);
     }, [showVolumeSlider, setShowVolumeSlider]);
+
+    // メディアコントロールのイベントを受け取る
+    useEffect(() => {
+      // Electronのメディアコントロールイベントを受け取るリスナーを登録
+      const unsubscribe = mediaControls.onMediaControl((action) => {
+        console.log("メディアコントロールイベントを受信:", action);
+
+        switch (action) {
+          case "play-pause":
+            handlePlay();
+            break;
+          case "next":
+            onPlayNext();
+            break;
+          case "previous":
+            onPlayPrevious();
+            break;
+          default:
+            console.log("未知のメディアコントロールアクション:", action);
+        }
+      });
+
+      // コンポーネントのアンマウント時にリスナーを解除
+      return () => {
+        unsubscribe();
+      };
+    }, [handlePlay, onPlayNext, onPlayPrevious]);
 
     return (
       <>
