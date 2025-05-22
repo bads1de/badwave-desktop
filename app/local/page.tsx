@@ -1,33 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "@/components/Header/Header";
 import { Button } from "@/components/ui/button";
 import LocalPlayerContent from "@/components/Player/LocalPlayerContent";
 import { Song } from "@/types";
-import { DataTable } from "@/components/ui/data-table";
-import { ColumnDef } from "@tanstack/react-table";
-import { Play, Music, Clock, Disc, User } from "lucide-react";
-import { formatTime } from "@/libs/helpers";
-
-// Electron APIの型定義 (必要に応じて拡張)
-interface ElectronApi {
-  ipc: {
-    invoke: (channel: string, ...args: any[]) => Promise<any>;
-  };
-}
+import LocalFileTable, {
+  ElectronApi,
+  LocalFile,
+} from "@/app/local/components/LocalFileTable";
+import { mapFileToSong } from "@/libs/localFileMappers";
 
 declare global {
   interface Window {
     electron: ElectronApi;
   }
-}
-
-// ローカルファイルの型定義
-interface LocalFile {
-  path: string;
-  metadata?: any;
-  error?: string;
 }
 
 const LocalPage = () => {
@@ -40,125 +27,6 @@ const LocalPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPlayingFile, setCurrentPlayingFile] = useState<Song | null>(
     null
-  );
-
-  // テーブルのカラム定義
-  const columns = useMemo<ColumnDef<LocalFile>[]>(
-    () => [
-      {
-        accessorKey: "title",
-        header: () => (
-          <div className="flex items-center gap-2">
-            <Music className="h-4 w-4 text-purple-400" />
-            <span>タイトル</span>
-          </div>
-        ),
-        cell: ({ row }) => {
-          const file = row.original;
-          const title =
-            file.metadata?.common?.title ||
-            (file.path ? file.path.split(/[\\/]/).pop() : "読み込み中...");
-
-          return (
-            <div className="flex items-center gap-2 group">
-              <div className="w-8 h-8 bg-[#202020] rounded-md flex items-center justify-center mr-2 group-hover:bg-purple-900/30 transition-colors duration-300">
-                <Play className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-medium text-white truncate max-w-[300px] group-hover:text-purple-300 transition-colors duration-300">
-                  {title}
-                </span>
-                {file.error && (
-                  <span className="text-red-400 text-xs">メタデータエラー</span>
-                )}
-              </div>
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "artist",
-        header: () => (
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-purple-400" />
-            <span>アーティスト</span>
-          </div>
-        ),
-        cell: ({ row }) => {
-          const artist =
-            row.original.metadata?.common?.artist || "不明なアーティスト";
-          return (
-            <div className="flex items-center">
-              <span className="text-neutral-300 group-hover:text-white transition-colors duration-300">
-                {artist}
-              </span>
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "album",
-        header: () => (
-          <div className="flex items-center gap-2">
-            <Disc className="h-4 w-4 text-purple-400" />
-            <span>アルバム</span>
-          </div>
-        ),
-        cell: ({ row }) => {
-          const album =
-            row.original.metadata?.common?.album || "不明なアルバム";
-          return (
-            <div className="flex items-center">
-              <span className="text-neutral-300 group-hover:text-white transition-colors duration-300 truncate max-w-[200px]">
-                {album}
-              </span>
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "duration",
-        header: () => (
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-purple-400" />
-            <span>長さ</span>
-          </div>
-        ),
-        cell: ({ row }) => {
-          const duration = row.original.metadata?.format?.duration || 0;
-          return (
-            <div className="flex items-center">
-              <span className="text-neutral-300 group-hover:text-white transition-colors duration-300 font-mono">
-                {formatTime(duration)}
-              </span>
-            </div>
-          );
-        },
-      },
-      {
-        id: "genre",
-        accessorFn: (row) => row.metadata?.common?.genre?.[0] || "",
-        header: () => (
-          <div className="flex items-center gap-2">
-            <span className="text-purple-400 text-xs">#</span>
-            <span>ジャンル</span>
-          </div>
-        ),
-        cell: ({ row }) => {
-          const genre = row.original.metadata?.common?.genre?.[0] || "不明";
-          return genre !== "不明" ? (
-            <div className="flex items-center">
-              <span className="px-2 py-1 rounded-full text-xs bg-purple-900/20 text-purple-300 border border-purple-800/30">
-                {genre}
-              </span>
-            </div>
-          ) : (
-            <span className="text-neutral-500 text-xs">-</span>
-          );
-        },
-      },
-    ],
-    []
   );
 
   const handleSelectDirectory = async () => {
@@ -383,12 +251,7 @@ const LocalPage = () => {
         {/* テーブルコンポーネントを使用 */}
         {mp3Files.length > 0 && !isLoading && !isLoadingMetadata && (
           <div className="mt-6 mb-4">
-            <DataTable
-              columns={columns}
-              data={mp3Files}
-              searchKey="title"
-              onRowClick={handlePlayFile}
-            />
+            <LocalFileTable mp3Files={mp3Files} onPlayFile={handlePlayFile} />
           </div>
         )}
       </div>
@@ -408,30 +271,3 @@ const LocalPage = () => {
 };
 
 export default LocalPage;
-
-/**
- * ローカルファイルデータをSong型に変換するヘルパー関数
- *
- * @param {LocalFile} file - 変換するローカルファイル
- * @returns {Song} Song型に変換されたデータ
- */
-function mapFileToSong(file: LocalFile): Song {
-  // ファイルパスからタイトルを抽出（メタデータがない場合用）
-  const titleFromFile = file.path
-    ? file.path.split(/[\\/]/).pop() || "不明なタイトル"
-    : "不明なタイトル";
-
-  return {
-    id: file.path, // パスをIDとして使用（一意）
-    user_id: "", // ローカルファイルの場合は空
-    author: file.metadata?.common?.artist || "不明なアーティスト",
-    title: file.metadata?.common?.title || titleFromFile,
-    song_path: file.path,
-    image_path: "", // ローカルファイルの画像パスは現在未対応
-    video_path: "",
-    genre: file.metadata?.common?.genre?.[0] || "",
-    duration: file.metadata?.format?.duration || 0,
-    created_at: new Date().toISOString(), // 現在時刻を作成日時として使用
-    public: false, // ローカルファイルは非公開
-  };
-}
