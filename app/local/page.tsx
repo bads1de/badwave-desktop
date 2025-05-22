@@ -32,21 +32,25 @@ const LocalPage = () => {
   const handleSelectDirectory = async () => {
     setIsLoading(true);
     setError(null);
+
     try {
       const result = await window.electron.ipc.invoke(
         "handle-select-directory"
       );
+
       if (result.canceled) {
         console.log("フォルダ選択がキャンセルされました。");
         setIsLoading(false);
         return;
       }
+
       if (result.error) {
         console.error("フォルダ選択エラー:", result.error);
         setError(`フォルダ選択エラー: ${result.error}`);
         setIsLoading(false);
         return;
       }
+
       setSelectedDirectory(result.filePath);
     } catch (err: any) {
       console.error("フォルダ選択中にエラーが発生しました:", err);
@@ -56,6 +60,7 @@ const LocalPage = () => {
     }
   };
 
+  // ディレクトリ選択時にMP3ファイルをスキャン
   useEffect(() => {
     const fetchMp3Files = async () => {
       if (!selectedDirectory) return;
@@ -88,6 +93,7 @@ const LocalPage = () => {
     fetchMp3Files();
   }, [selectedDirectory]);
 
+  // MP3ファイルリストが更新されたらメタデータを取得
   useEffect(() => {
     const fetchAllMetadata = async () => {
       if (mp3Files.length === 0 || mp3Files.some((file) => !file.path)) return;
