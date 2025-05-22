@@ -8,12 +8,10 @@ interface PlaylistsSectionProps {
 
 /**
  * プレイリストセクションコンポーネント
- * 
+ *
  * @param playlists - プレイリストデータ
  */
-const PlaylistsSection: React.FC<PlaylistsSectionProps> = ({ 
-  playlists 
-}) => {
+const PlaylistsSection: React.FC<PlaylistsSectionProps> = ({ playlists }) => {
   return (
     <section>
       <h2 className="text-3xl font-bold text-white tracking-tight mb-4">

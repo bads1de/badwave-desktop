@@ -8,11 +8,11 @@ interface SpotlightSectionProps {
 
 /**
  * スポットライトセクションコンポーネント
- * 
+ *
  * @param spotlightData - スポットライトデータ
  */
-const SpotlightSection: React.FC<SpotlightSectionProps> = ({ 
-  spotlightData 
+const SpotlightSection: React.FC<SpotlightSectionProps> = ({
+  spotlightData,
 }) => {
   return (
     <section>
