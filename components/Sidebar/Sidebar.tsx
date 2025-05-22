@@ -3,7 +3,7 @@
 import { twMerge } from "tailwind-merge";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
-import { HiHome } from "react-icons/hi";
+import { HiHome, HiFolder } from "react-icons/hi";
 import { BiSearch } from "react-icons/bi";
 import Box from "../common/Box";
 import SidebarItem from "./SidebarItem";
@@ -40,6 +40,12 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         label: "検索",
         active: pathname === "/search",
         href: "/search",
+      },
+      {
+        icon: HiFolder,
+        label: "ローカル",
+        active: pathname === "/local",
+        href: "/local",
       },
       ...(user
         ? [

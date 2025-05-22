@@ -7,10 +7,12 @@ import {
   nativeImage,
   shell,
   protocol,
+  dialog,
 } from "electron";
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
+import * as mm from "music-metadata";
 import { loadEnvVariables, isDev, debugLog } from "./utils";
 
 // 環境変数を読み込む
@@ -66,6 +68,7 @@ async function createMainWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
+      webSecurity: false, // ローカルファイルの読み込みを許可
     },
     // macOSでは背景色を設定しないとタイトルバーが白くなる
     backgroundColor: "#121212",
@@ -97,6 +100,7 @@ async function createMainWindow() {
 
   if (isDev) {
     console.log("開発モードで起動しています");
+    mainWindow.webContents.openDevTools();
 
     try {
       // 開発サーバーが起動しているか確認
@@ -425,6 +429,48 @@ function setupIPC() {
 
   ipcMain.handle("window-close", () => {
     mainWindow?.hide();
+  });
+
+  // フォルダ選択ダイアログの表示
+  ipcMain.handle("handle-select-directory", async () => {
+    if (!mainWindow) {
+      return { error: "Main window not available" };
+    }
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ["openDirectory"],
+    });
+    if (result.canceled) {
+      return { canceled: true };
+    } else {
+      return { filePath: result.filePaths[0] };
+    }
+  });
+
+  // 指定されたフォルダ内のMP3ファイルをスキャン
+  ipcMain.handle("handle-scan-mp3-files", async (_, directoryPath: string) => {
+    try {
+      const files = await fs.promises.readdir(directoryPath);
+      const mp3Files = files.filter(
+        (file) => path.extname(file).toLowerCase() === ".mp3"
+      );
+      return {
+        files: mp3Files.map((file) => path.join(directoryPath, file)),
+      };
+    } catch (error: any) {
+      debugLog(`[Error] MP3ファイルのスキャンに失敗: ${directoryPath}`, error);
+      return { error: error.message };
+    }
+  });
+
+  // MP3ファイルのメタデータを取得
+  ipcMain.handle("handle-get-mp3-metadata", async (_, filePath: string) => {
+    try {
+      const metadata = await mm.parseFile(filePath);
+      return { metadata };
+    } catch (error: any) {
+      debugLog(`[Error] メタデータの取得に失敗: ${filePath}`, error);
+      return { error: error.message };
+    }
   });
 }
 

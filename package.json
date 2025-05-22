@@ -59,6 +59,7 @@
     "framer-motion": "^11.18.2",
     "lodash.throttle": "^4.1.1",
     "lucide-react": "^0.383.0",
+    "music-metadata": "^7.14.0",
     "next": "^15.2.1",
     "query-string": "^8.1.0",
     "react": "18.2.0",

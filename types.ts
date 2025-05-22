@@ -12,6 +12,8 @@ export interface Song {
   count?: string;
   like_count?: string;
   lyrics?: string;
+  duration?: number;
+  public?: boolean;
   created_at: string;
 }
 
