@@ -307,7 +307,7 @@ const LocalPage = () => {
 
   return (
     <div className="bg-[#0d0d0d] rounded-lg h-full w-full overflow-hidden overflow-y-auto pb-[80px] custom-scrollbar">
-      <Header className="bg-gradient-to-b from-[#0d0d0d] via-[#0d0d0d] to-transparent sticky top-0 z-10">
+      <Header className="bg-gradient-to-b from-[#0d0d0d] via-[#0d0d0d] to-transparent">
         <div className="mb-4">
           <h1 className="text-white text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-purple-400">
             ローカルファイル
