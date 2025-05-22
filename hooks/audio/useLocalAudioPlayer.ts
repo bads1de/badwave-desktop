@@ -2,12 +2,20 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
 import useVolumeStore from "./useVolumeStore"; // 既存の音量ストアを再利用
+import {
+  AudioPlayerHookProps,
+  AudioPlayerInterface,
+} from "./useAudioPlayerInterface";
 
-interface LocalAudioPlayerHookProps {
-  onEnded?: () => void; // 再生終了時のコールバック
-}
-
-const useLocalAudioPlayer = (props?: LocalAudioPlayerHookProps) => {
+/**
+ * ローカルファイル用のオーディオプレイヤーフック
+ *
+ * @param {AudioPlayerHookProps} props - フックのプロパティ
+ * @returns {AudioPlayerInterface} オーディオプレイヤーインターフェース
+ */
+const useLocalAudioPlayer = (
+  props?: AudioPlayerHookProps
+): AudioPlayerInterface => {
   const { onEnded } = props || {};
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -17,6 +25,7 @@ const useLocalAudioPlayer = (props?: LocalAudioPlayerHookProps) => {
 
   const { volume, setVolume } = useVolumeStore();
 
+  // UI表示用アイコン
   const Icon = isPlaying ? BsPauseFill : BsPlayFill;
   const VolumeIcon =
     volume === null
@@ -25,6 +34,10 @@ const useLocalAudioPlayer = (props?: LocalAudioPlayerHookProps) => {
       ? HiSpeakerXMark
       : HiSpeakerWave;
 
+  /**
+   * 指定されたパスの音声を再生する
+   * @param {string} path - 再生する音声ファイルのパス
+   */
   const play = useCallback(
     (path: string) => {
       const audio = audioRef.current;
@@ -72,6 +85,9 @@ const useLocalAudioPlayer = (props?: LocalAudioPlayerHookProps) => {
     [currentSongPath]
   );
 
+  /**
+   * 現在再生中の音声を一時停止する
+   */
   const pause = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -79,6 +95,10 @@ const useLocalAudioPlayer = (props?: LocalAudioPlayerHookProps) => {
     }
   }, []);
 
+  /**
+   * 再生/一時停止を切り替える
+   * @param {string} path - 再生する音声ファイルのパス（オプション）
+   */
   const togglePlayPause = useCallback(
     (path?: string) => {
       if (isPlaying) {
@@ -98,6 +118,10 @@ const useLocalAudioPlayer = (props?: LocalAudioPlayerHookProps) => {
     [isPlaying, pause, play, currentSongPath]
   );
 
+  /**
+   * 再生位置を指定した時間に設定する
+   * @param {number} time - 設定する再生時間（秒）
+   */
   const handleSeek = useCallback((time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
@@ -105,6 +129,7 @@ const useLocalAudioPlayer = (props?: LocalAudioPlayerHookProps) => {
     }
   }, []);
 
+  // オーディオイベントリスナーの設定
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -141,12 +166,16 @@ const useLocalAudioPlayer = (props?: LocalAudioPlayerHookProps) => {
     };
   }, [onEnded]);
 
+  // 音量変更時の処理
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || volume === null) return;
     audio.volume = volume;
   }, [volume]);
 
+  /**
+   * 時間を「分:秒」形式にフォーマットする関数
+   */
   const formatTime = useMemo(() => {
     return (time: number) => {
       const minutes = Math.floor(time / 60);
@@ -155,6 +184,7 @@ const useLocalAudioPlayer = (props?: LocalAudioPlayerHookProps) => {
     };
   }, []);
 
+  // フォーマット済みの時間表示
   const formattedCurrentTime = useMemo(
     () => formatTime(currentTime),
     [currentTime, formatTime]

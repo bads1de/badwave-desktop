@@ -3,16 +3,24 @@ import { AiFillStepBackward, AiFillStepForward } from "react-icons/ai";
 import SeekBar from "./Seekbar";
 import Slider from "./Slider";
 import useLocalAudioPlayer from "@/hooks/audio/useLocalAudioPlayer";
-import { Song } from "@/types"; // Song型をインポート（ローカルファイル用に調整が必要な場合あり）
+import { Song } from "@/types"; // Song型をインポート
 
+/**
+ * ローカルプレイヤーコンテンツのプロパティ
+ */
 interface LocalPlayerContentProps {
-  song: Song | null; // 現在再生中の曲情報 (ローカルファイル用に拡張する可能性あり)
+  song: Song | null; // 現在再生中の曲情報
   onPlayNext?: () => void; // 次の曲を再生する関数
   onPlayPrevious?: () => void; // 前の曲を再生する関数
 }
 
+/**
+ * ローカルプレイヤーのコンテンツコンポーネント
+ * ローカルファイルの再生UI
+ */
 const LocalPlayerContent: React.FC<LocalPlayerContentProps> = React.memo(
   ({ song, onPlayNext, onPlayPrevious }) => {
+    // オーディオプレイヤーフックを使用
     const {
       Icon,
       VolumeIcon,
@@ -32,6 +40,7 @@ const LocalPlayerContent: React.FC<LocalPlayerContentProps> = React.memo(
       setCurrentSongPath,
     } = useLocalAudioPlayer({ onEnded: onPlayNext }); // 再生終了時に次の曲へ
 
+    // 音量スライダーの表示状態
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
     // 曲が変更されたら新しいパスで再生を開始
@@ -46,6 +55,9 @@ const LocalPlayerContent: React.FC<LocalPlayerContentProps> = React.memo(
       }
     }, [song, currentSongPath, play, pause, setCurrentSongPath]);
 
+    /**
+     * 再生/一時停止ボタンのクリックハンドラー
+     */
     const handlePlayPauseClick = () => {
       if (song?.song_path) {
         togglePlayPause(song.song_path);
@@ -54,18 +66,25 @@ const LocalPlayerContent: React.FC<LocalPlayerContentProps> = React.memo(
       }
     };
 
+    /**
+     * 音量アイコンのクリックハンドラー
+     */
     const handleVolumeIconClick = () => {
       setShowVolumeSlider((prev) => !prev);
     };
 
+    // 音量スライダーの自動非表示
     useEffect(() => {
       if (!showVolumeSlider) return;
+
       const timeout = setTimeout(() => {
         setShowVolumeSlider(false);
       }, 3000);
+
       return () => clearTimeout(timeout);
     }, [showVolumeSlider]);
 
+    // 曲が選択されていない場合の表示
     if (!song || !currentSongPath) {
       return (
         <div className="grid grid-cols-2 md:grid-cols-3 h-full bg-[#121212] border-t border-[#303030] rounded-t-xl">
@@ -80,9 +99,9 @@ const LocalPlayerContent: React.FC<LocalPlayerContentProps> = React.memo(
       <>
         {/* audio要素はuseLocalAudioPlayerフック内で管理 */}
         <div className="grid grid-cols-2 md:grid-cols-3 h-full bg-[#121212] border-t border-[#303030] rounded-t-xl">
+          {/* 曲情報表示部分 */}
           <div className="flex w-full justify-start px-4">
             <div className="flex items-center gap-x-4">
-              {/* ローカル用のMediaItem的なものを表示するか、曲名・アーティスト名直接表示 */}
               <div>
                 <p className="text-white truncate font-semibold">
                   {song.title || song.song_path.split(/[\\/]/).pop()}
@@ -94,6 +113,7 @@ const LocalPlayerContent: React.FC<LocalPlayerContentProps> = React.memo(
             </div>
           </div>
 
+          {/* モバイル用再生コントロール */}
           <div className="flex md:hidden col-auto w-full justify-end items-center">
             <div
               onClick={handlePlayPauseClick}
@@ -106,6 +126,7 @@ const LocalPlayerContent: React.FC<LocalPlayerContentProps> = React.memo(
             </div>
           </div>
 
+          {/* デスクトップ用再生コントロール */}
           <div className="hidden md:flex flex-col w-full md:justify-center items-center max-w-[722px] gap-x-6">
             <div className="flex items-center gap-x-8">
               <AiFillStepBackward
@@ -129,6 +150,7 @@ const LocalPlayerContent: React.FC<LocalPlayerContentProps> = React.memo(
               />
             </div>
 
+            {/* シークバー */}
             <div className="flex items-center gap-x-2 mt-4 w-full lg:max-w-[800px] md:max-w-[300px]">
               <span className="w-[50px] text-center inline-block text-[#f0f0f0]">
                 {formattedCurrentTime}
@@ -145,9 +167,9 @@ const LocalPlayerContent: React.FC<LocalPlayerContentProps> = React.memo(
             </div>
           </div>
 
+          {/* 音量コントロール */}
           <div className="hidden md:flex w-full justify-end pr-6">
             <div className="flex items-center gap-x-8 w-full md:w-[100px] lg:w-[120px]">
-              {/* 音量調整のみ */}
               <div className="relative">
                 <VolumeIcon
                   onClick={handleVolumeIconClick}

@@ -40,7 +40,7 @@ const LocalPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPlayingFile, setCurrentPlayingFile] = useState<Song | null>(
     null
-  ); // 再生中ファイルの状態
+  );
 
   // テーブルのカラム定義
   const columns = useMemo<ColumnDef<LocalFile>[]>(
@@ -191,9 +191,11 @@ const LocalPage = () => {
   useEffect(() => {
     const fetchMp3Files = async () => {
       if (!selectedDirectory) return;
+
       setIsLoading(true);
       setError(null);
-      setMp3Files([]); // ディレクトリ変更時にリストをクリア
+      setMp3Files([]);
+
       try {
         const result = await window.electron.ipc.invoke(
           "handle-scan-mp3-files",
@@ -223,9 +225,11 @@ const LocalPage = () => {
       if (mp3Files.length === 0 || mp3Files.some((file) => !file.path)) return;
 
       setIsLoadingMetadata(true);
+
       const filesWithMetadata = await Promise.all(
         mp3Files.map(async (file) => {
-          if (!file.path) return file; // pathがない場合はそのまま返す
+          if (!file.path) return file;
+
           try {
             const result = await window.electron.ipc.invoke(
               "handle-get-mp3-metadata",
@@ -254,18 +258,28 @@ const LocalPage = () => {
     }
   }, [mp3Files, selectedDirectory]);
 
+  /**
+   * ファイルを再生する
+   * @param {LocalFile} file - 再生するファイル
+   */
   const handlePlayFile = useCallback((file: LocalFile) => {
     if (file.path) {
       setCurrentPlayingFile(mapFileToSong(file));
     }
   }, []);
 
+  /**
+   * 次の曲を再生する
+   */
   const handlePlayNext = useCallback(() => {
     if (!currentPlayingFile) return;
+
     const currentIndex = mp3Files.findIndex(
       (f) => f.path === currentPlayingFile.song_path
     );
+
     if (currentIndex !== -1 && currentIndex < mp3Files.length - 1) {
+      // 次の曲がある場合
       setCurrentPlayingFile(mapFileToSong(mp3Files[currentIndex + 1]));
     } else if (currentIndex === mp3Files.length - 1) {
       // リストの最後の場合は最初の曲へ（ループ再生的な挙動）
@@ -275,15 +289,21 @@ const LocalPage = () => {
     }
   }, [currentPlayingFile, mp3Files]);
 
+  /**
+   * 前の曲を再生する
+   */
   const handlePlayPrevious = useCallback(() => {
     if (!currentPlayingFile) return;
+
     const currentIndex = mp3Files.findIndex(
       (f) => f.path === currentPlayingFile.song_path
     );
+
     if (currentIndex > 0) {
+      // 前の曲がある場合
       setCurrentPlayingFile(mapFileToSong(mp3Files[currentIndex - 1]));
     } else if (currentIndex === 0 && mp3Files.length > 0) {
-      // リストの最初の場合は最後の曲へ
+      // リストの最初の場合は最後の曲へ（ループ再生的な挙動）
       setCurrentPlayingFile(mapFileToSong(mp3Files[mp3Files.length - 1]));
     }
   }, [currentPlayingFile, mp3Files]);
@@ -338,10 +358,10 @@ const LocalPage = () => {
 
         {(isLoading || isLoadingMetadata) && (
           <div className="bg-[#121212] border border-[#303030] rounded-md p-4 mb-4">
-            <p className="text-purple-300 flex items-center gap-2">
-              <div className="animate-pulse h-3 w-3 rounded-full bg-purple-500"></div>
+            <div className="text-purple-300 flex items-center gap-2">
+              <span className="animate-pulse h-3 w-3 rounded-full bg-purple-500 inline-block"></span>
               ファイルをスキャン・メタデータ取得中...
-            </p>
+            </div>
           </div>
         )}
 
@@ -389,24 +409,29 @@ const LocalPage = () => {
 
 export default LocalPage;
 
-// Helper function to map file data to Song type
+/**
+ * ローカルファイルデータをSong型に変換するヘルパー関数
+ *
+ * @param {LocalFile} file - 変換するローカルファイル
+ * @returns {Song} Song型に変換されたデータ
+ */
 function mapFileToSong(file: LocalFile): Song {
-  // Ensure file.path exists before trying to split it
+  // ファイルパスからタイトルを抽出（メタデータがない場合用）
   const titleFromFile = file.path
     ? file.path.split(/[\\/]/).pop() || "不明なタイトル"
     : "不明なタイトル";
 
   return {
-    id: file.path, // Use path as ID (unique)
-    user_id: "", // Empty for local files
+    id: file.path, // パスをIDとして使用（一意）
+    user_id: "", // ローカルファイルの場合は空
     author: file.metadata?.common?.artist || "不明なアーティスト",
     title: file.metadata?.common?.title || titleFromFile,
     song_path: file.path,
-    image_path: "", // Image path needs separate handling for local files, empty for now
+    image_path: "", // ローカルファイルの画像パスは現在未対応
     video_path: "",
     genre: file.metadata?.common?.genre?.[0] || "",
     duration: file.metadata?.format?.duration || 0,
-    created_at: new Date().toISOString(), // Or use file system's creation/modification time if available
-    public: false, // Local files are not public
+    created_at: new Date().toISOString(), // 現在時刻を作成日時として使用
+    public: false, // ローカルファイルは非公開
   };
 }
