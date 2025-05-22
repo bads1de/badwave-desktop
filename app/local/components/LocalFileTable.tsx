@@ -5,7 +5,6 @@ import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Play, Music, Clock, Disc, User } from "lucide-react";
 import { formatTime } from "@/libs/helpers";
-import { Song } from "@/types"; // Song型をインポート
 
 // Electron APIの型定義 (必要に応じて拡張)
 export interface ElectronApi {
@@ -34,7 +33,14 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
   const columns = useMemo<ColumnDef<LocalFile>[]>(
     () => [
       {
-        accessorKey: "title",
+        id: "title",
+        accessorFn: (row) => {
+          // 検索用の値を返す関数
+          return (
+            row.metadata?.common?.title ||
+            (row.path ? row.path.split(/[\\/]/).pop() : "")
+          );
+        },
         header: () => (
           <div className="flex items-center gap-2">
             <Music className="h-4 w-4 text-purple-400" />
@@ -65,7 +71,10 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
         },
       },
       {
-        accessorKey: "artist",
+        id: "artist",
+        accessorFn: (row) => {
+          return row.metadata?.common?.artist || "不明なアーティスト";
+        },
         header: () => (
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-purple-400" />
@@ -85,7 +94,10 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
         },
       },
       {
-        accessorKey: "album",
+        id: "album",
+        accessorFn: (row) => {
+          return row.metadata?.common?.album || "不明なアルバム";
+        },
         header: () => (
           <div className="flex items-center gap-2">
             <Disc className="h-4 w-4 text-purple-400" />
@@ -105,7 +117,10 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
         },
       },
       {
-        accessorKey: "duration",
+        id: "duration",
+        accessorFn: (row) => {
+          return row.metadata?.format?.duration || 0;
+        },
         header: () => (
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-purple-400" />
