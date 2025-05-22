@@ -21,6 +21,7 @@ const ALLOWED_INVOKE_CHANNELS = [
   "handle-select-directory",
   "handle-scan-mp3-files",
   "handle-get-mp3-metadata",
+  "handle-get-saved-music-library",
 ];
 
 const ALLOWED_ON_CHANNELS = ["media-control"];

@@ -47,6 +47,8 @@ export const CACHED_QUERIES = {
 export const ELECTRON_STORE_KEYS = {
   VOLUME: "player_volume",
   RIGHT_SIDEBAR_WIDTH: "right_sidebar_width",
+  MUSIC_LIBRARY: "music_library",
+  MUSIC_LIBRARY_LAST_SCAN: "music_library_last_scan",
 } as const;
 
 export const CACHE_CONFIG = {
