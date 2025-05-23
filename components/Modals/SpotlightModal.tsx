@@ -39,7 +39,9 @@ const SpotlightModal = () => {
     };
   }, [isOpen, selectedItem, volume]);
 
-  if (!selectedItem) return null;
+  if (!selectedItem) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

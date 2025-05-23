@@ -19,7 +19,9 @@ const updateLikeCount = async (
       .eq("id", songId)
       .single();
 
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+      throw fetchError;
+    }
 
     // 新しいlike_countを計算して更新
     const newLikeCount = (data?.like_count || 0) + increment;
@@ -28,7 +30,9 @@ const updateLikeCount = async (
       .update({ like_count: newLikeCount })
       .eq("id", songId);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      throw updateError;
+    }
   } catch (error) {
     console.error("Error updating like count:", error);
     throw new Error("いいねカウントの更新に失敗しました");
@@ -48,7 +52,9 @@ const useLikeMutation = (songId: string, userId?: string) => {
 
   return useMutation({
     mutationFn: async (isCurrentlyLiked: boolean) => {
-      if (!userId) throw new Error("ユーザーIDが必要です");
+      if (!userId) {
+        throw new Error("ユーザーIDが必要です");
+      }
 
       if (isCurrentlyLiked) {
         // いいねを削除
@@ -58,7 +64,9 @@ const useLikeMutation = (songId: string, userId?: string) => {
           .eq("user_id", userId)
           .eq("song_id", songId);
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
 
         // いいねカウントを減らす
         await updateLikeCount(supabaseClient, songId, -1);
@@ -72,7 +80,9 @@ const useLikeMutation = (songId: string, userId?: string) => {
             user_id: userId,
           });
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
 
         // いいねカウントを増やす
         await updateLikeCount(supabaseClient, songId, 1);

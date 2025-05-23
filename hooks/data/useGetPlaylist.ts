@@ -19,7 +19,9 @@ const useGetPlaylist = (playlistId?: string) => {
   } = useQuery({
     queryKey: [CACHED_QUERIES.playlists, playlistId],
     queryFn: async () => {
-      if (!playlistId) return null;
+      if (!playlistId) {
+        return null;
+      }
 
       const { data, error } = await supabaseClient
         .from("playlists")

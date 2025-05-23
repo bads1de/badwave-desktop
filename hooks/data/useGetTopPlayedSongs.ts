@@ -19,7 +19,9 @@ const useGetTopPlayedSongs = (userId?: string, period: Period = "day") => {
   } = useQuery({
     queryKey: [CACHED_QUERIES.getTopSongs, userId, period],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!userId) {
+        return [];
+      }
 
       const { data, error } = await supabase.rpc("get_top_songs", {
         p_user_id: userId,

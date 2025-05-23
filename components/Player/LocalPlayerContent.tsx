@@ -75,7 +75,9 @@ const LocalPlayerContent: React.FC<LocalPlayerContentProps> = React.memo(
 
     // 音量スライダーの自動非表示
     useEffect(() => {
-      if (!showVolumeSlider) return;
+      if (!showVolumeSlider) {
+        return;
+      }
 
       const timeout = setTimeout(() => {
         setShowVolumeSlider(false);

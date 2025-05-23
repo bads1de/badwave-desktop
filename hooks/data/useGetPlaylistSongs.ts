@@ -19,7 +19,9 @@ const useGetPlaylistSongs = (playlistId?: string) => {
   } = useQuery({
     queryKey: [CACHED_QUERIES.playlists, playlistId, "songs"],
     queryFn: async () => {
-      if (!playlistId) return [];
+      if (!playlistId) {
+        return [];
+      }
 
       const { data, error } = await supabaseClient
         .from("playlist_songs")
@@ -33,7 +35,9 @@ const useGetPlaylistSongs = (playlistId?: string) => {
       }
 
       // データがなければ空の配列を返す
-      if (!data) return [];
+      if (!data) {
+        return [];
+      }
 
       // 取得したデータから曲の情報のみを新しい配列にして返す
       return data.map((item) => ({

@@ -132,7 +132,9 @@ const useLocalAudioPlayer = (
   // オーディオイベントリスナーの設定
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio) {
+      return;
+    }
 
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
@@ -169,7 +171,9 @@ const useLocalAudioPlayer = (
   // 音量変更時の処理
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || volume === null) return;
+    if (!audio || volume === null) {
+      return;
+    }
     audio.volume = volume;
   }, [volume]);
 

@@ -64,7 +64,9 @@ const UploadModal: React.FC = memo(() => {
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
-      if (files) handleFiles(files);
+      if (files) {
+        handleFiles(files);
+      }
     },
     []
   );
