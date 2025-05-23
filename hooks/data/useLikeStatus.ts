@@ -19,7 +19,9 @@ const useLikeStatus = (songId: string, userId?: string) => {
   } = useQuery({
     queryKey: [CACHED_QUERIES.likeStatus, songId, userId],
     queryFn: async () => {
-      if (!userId) return false;
+      if (!userId) {
+        return false;
+      }
 
       const { data, error } = await supabaseClient
         .from("liked_songs_regular")

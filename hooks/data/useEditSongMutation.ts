@@ -160,7 +160,9 @@ const useEditSongMutation = (editModal: EditModalHook) => {
         })
         .eq("id", id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       return { id, title };
     },

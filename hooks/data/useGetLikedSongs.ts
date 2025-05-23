@@ -19,7 +19,9 @@ const useGetLikedSongs = (userId?: string) => {
   } = useQuery({
     queryKey: [CACHED_QUERIES.likedSongs, userId],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!userId) {
+        return [];
+      }
 
       const { data, error } = await supabaseClient
         .from("liked_songs_regular")
@@ -33,7 +35,9 @@ const useGetLikedSongs = (userId?: string) => {
       }
 
       // データがなければ空の配列を返す
-      if (!data) return [];
+      if (!data) {
+        return [];
+      }
 
       // 取得したデータから曲の情報のみを新しい配列にして返す
       return data.map((item) => ({

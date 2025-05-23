@@ -32,7 +32,9 @@ const PreviewDownloadModal: React.FC<PreviewDownloadModalProps> = ({
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) {
+          onClose();
+        }
       }}
     >
       <DialogContent

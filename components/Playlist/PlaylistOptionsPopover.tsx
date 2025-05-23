@@ -36,7 +36,9 @@ const PlaylistOptionsPopover: React.FC<PlaylistOptionsPopoverProps> = ({
 
   const updatePlaylistMutation = useMutation({
     mutationFn: async () => {
-      if (!user) throw new Error("Unauthorized");
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
 
       const { error } = await supabase
         .from("playlists")
@@ -44,7 +46,9 @@ const PlaylistOptionsPopover: React.FC<PlaylistOptionsPopoverProps> = ({
         .eq("id", playlistId)
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       return { newTitle };
     },
@@ -63,7 +67,9 @@ const PlaylistOptionsPopover: React.FC<PlaylistOptionsPopoverProps> = ({
 
   const togglePublicMutation = useMutation({
     mutationFn: async () => {
-      if (!user) throw new Error("Unauthorized");
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
 
       const { error } = await supabase
         .from("playlists")
@@ -71,7 +77,9 @@ const PlaylistOptionsPopover: React.FC<PlaylistOptionsPopoverProps> = ({
         .eq("id", playlistId)
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       return { isPublic: !isPublic };
     },
     onSuccess: ({ isPublic }) => {
@@ -90,7 +98,9 @@ const PlaylistOptionsPopover: React.FC<PlaylistOptionsPopoverProps> = ({
 
   const deletePlaylistMutation = useMutation({
     mutationFn: async () => {
-      if (!user) throw new Error("Unauthorized");
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
 
       await supabase
         .from("playlist_songs")

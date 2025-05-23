@@ -119,7 +119,9 @@ const LocalPage = () => {
 
   // 強制的に完全スキャンを実行
   const handleForceFullScan = useCallback(async () => {
-    if (!selectedDirectory) return;
+    if (!selectedDirectory) {
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -153,7 +155,9 @@ const LocalPage = () => {
   // ディレクトリ選択時にMP3ファイルをスキャン（差分スキャン対応）
   useEffect(() => {
     const fetchMp3Files = async () => {
-      if (!selectedDirectory) return;
+      if (!selectedDirectory) {
+        return;
+      }
 
       setIsLoading(true);
       setError(null);
@@ -203,7 +207,9 @@ const LocalPage = () => {
   // MP3ファイルリストが更新されたらメタデータを取得（キャッシュ対応）
   useEffect(() => {
     const fetchAllMetadata = async () => {
-      if (mp3Files.length === 0 || mp3Files.some((file) => !file.path)) return;
+      if (mp3Files.length === 0 || mp3Files.some((file) => !file.path)) {
+        return;
+      }
 
       setIsLoadingMetadata(true);
 
@@ -212,7 +218,9 @@ const LocalPage = () => {
 
       const filesWithMetadata = await Promise.all(
         mp3Files.map(async (file) => {
-          if (!file.path) return file;
+          if (!file.path) {
+            return file;
+          }
 
           try {
             const result = await window.electron.ipc.invoke(
@@ -269,7 +277,9 @@ const LocalPage = () => {
    * 次の曲を再生する
    */
   const handlePlayNext = useCallback(() => {
-    if (!currentPlayingFile) return;
+    if (!currentPlayingFile) {
+      return;
+    }
 
     const currentIndex = mp3Files.findIndex(
       (f) => f.path === currentPlayingFile.song_path
@@ -290,7 +300,9 @@ const LocalPage = () => {
    * 前の曲を再生する
    */
   const handlePlayPrevious = useCallback(() => {
-    if (!currentPlayingFile) return;
+    if (!currentPlayingFile) {
+      return;
+    }
 
     const currentIndex = mp3Files.findIndex(
       (f) => f.path === currentPlayingFile.song_path

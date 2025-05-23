@@ -47,13 +47,17 @@ const useOnPlay = (songs: Song[]) => {
           .eq("id", id)
           .single();
 
-        if (selectError || !songData) throw selectError;
+        if (selectError || !songData) {
+          throw selectError;
+        }
 
         // カウントをインクリメント
         const { data: incrementedCount, error: incrementError } =
           await supabase.rpc("increment", { x: songData.count });
 
-        if (incrementError) throw incrementError;
+        if (incrementError) {
+          throw incrementError;
+        }
 
         // インクリメントされたカウントでsongを更新
         const { error: updateError } = await supabase
@@ -61,7 +65,9 @@ const useOnPlay = (songs: Song[]) => {
           .update({ count: incrementedCount })
           .eq("id", id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          throw updateError;
+        }
 
         // 再生履歴を記録
         await playHistory.recordPlay(id);
