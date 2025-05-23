@@ -373,7 +373,7 @@ const LocalPage = () => {
                   onClick={() =>
                     setSelectedDirectory(savedLibraryInfo.directoryPath || null)
                   }
-                  className="bg-purple-800 hover:bg-purple-700 text-white text-sm"
+                  className="bg-purple-800 hover:bg-purple-700 text-white text-sm rounded-xl"
                 >
                   このライブラリを読み込む
                 </Button>
@@ -385,7 +385,7 @@ const LocalPage = () => {
           <Button
             onClick={handleSelectDirectory}
             disabled={isLoading || isLoadingMetadata}
-            className="bg-gradient-to-r from-purple-800 to-purple-600 hover:from-purple-700 hover:to-purple-500 text-white border-none shadow-md hover:shadow-lg transition-all duration-300 px-6"
+            className="bg-gradient-to-r from-purple-800 to-purple-600 hover:from-purple-700 hover:to-purple-500 text-white border-none shadow-md hover:shadow-lg transition-all duration-300 px-6 rounded-xl"
           >
             {isLoading || isLoadingMetadata ? (
               <div className="flex items-center gap-2">
@@ -409,7 +409,7 @@ const LocalPage = () => {
           {selectedDirectory && !isLoading && !isLoadingMetadata && (
             <Button
               onClick={handleForceFullScan}
-              className="bg-[#303030] hover:bg-[#404040] text-white text-sm flex items-center gap-1"
+              className="bg-[#303030] hover:bg-[#404040] text-white text-sm flex items-center gap-1 rounded-xl"
               title="すべてのファイルを再スキャンします"
             >
               <RefreshCw className="h-4 w-4" />

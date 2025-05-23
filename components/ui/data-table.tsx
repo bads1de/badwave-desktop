@@ -68,16 +68,13 @@ export function DataTable<TData, TValue>({
             onChange={(event) =>
               table.getColumn(searchKey)?.setFilterValue(event.target.value)
             }
-            className="max-w-sm bg-[#121212] text-white border-[#303030] focus-visible:ring-purple-900 focus-visible:border-purple-800 transition-all duration-300 shadow-inner"
+            className="max-w-sm bg-[#121212] text-white border-[#303030] focus-visible:ring-purple-900 focus-visible:border-purple-800 transition-all duration-300 shadow-inner rounded-lg"
           />
         </div>
       )}
       <div className="relative">
         {/* 背景グラデーション効果 */}
-        <div className="absolute -top-2 -left-2 w-full h-full bg-gradient-to-br from-purple-900/20 to-transparent rounded-xl transform rotate-1 opacity-50" />
-        <div className="absolute -top-1 -left-1 w-full h-full bg-gradient-to-tr from-purple-800/10 to-transparent rounded-xl transform -rotate-1 opacity-30" />
-
-        <ScrollArea className="rounded-xl border border-[#303030] bg-[#121212] shadow-lg relative z-10 overflow-hidden">
+        <ScrollArea className="rounded-2xl border border-[#303030] bg-[#121212] shadow-lg relative z-10 overflow-hidden">
           <Table>
             <TableHeader className="bg-[#1a1a1a]">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -114,7 +111,7 @@ export function DataTable<TData, TValue>({
                       onRowClick ? "cursor-pointer" : ""
                     } ${
                       index % 2 === 0 ? "bg-[#151515]" : "bg-[#121212]"
-                    } hover:bg-[#202020] hover:shadow-md`}
+                    } hover:bg-[#202020] hover:shadow-md first:rounded-t-2xl last:rounded-b-2xl`}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="py-3">

@@ -55,7 +55,7 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
 
           return (
             <div className="flex items-center gap-2 group">
-              <div className="w-8 h-8 bg-[#202020] rounded-md flex items-center justify-center mr-2 group-hover:bg-purple-900/30 transition-colors duration-300">
+              <div className="w-8 h-8 bg-[#202020] rounded-lg flex items-center justify-center mr-2 group-hover:bg-purple-900/30 transition-all duration-300">
                 <Play className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
               <div className="flex flex-col">
@@ -151,7 +151,7 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
           const genre = row.original.metadata?.common?.genre?.[0] || "不明";
           return genre !== "不明" ? (
             <div className="flex items-center">
-              <span className="px-2 py-1 rounded-full text-xs bg-purple-900/20 text-purple-300 border border-purple-800/30">
+              <span className="px-3 py-1 rounded-full text-xs bg-purple-900/20 text-purple-300 border border-purple-800/30 hover:bg-purple-800/30 transition-colors duration-300">
                 {genre}
               </span>
             </div>
