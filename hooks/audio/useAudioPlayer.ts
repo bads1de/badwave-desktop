@@ -3,11 +3,15 @@ import usePlayer from "@/hooks/player/usePlayer";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
 import useVolumeStore from "./useVolumeStore";
+import { isLocalSong, toFileUrl } from "@/libs/songUtils";
+import { Song } from "@/types";
 
 /**
  * オーディオプレイヤーの状態と操作を管理するカスタムフック
+ * ストリーミング曲とローカルファイルの両方に対応
  *
- * @param {string} songUrl - 再生する曲のURL
+ * @param {string} songUrl - 再生する曲のURL（ストリーミングまたはローカルファイルパス）
+ * @param {Song} song - 曲オブジェクト（ローカル曲判定用）
  * @returns {Object} プレイヤーの状態と操作関数を含むオブジェクト
  * @property {React.ComponentType} Icon - 再生/一時停止アイコン
  * @property {React.ComponentType} VolumeIcon - 音量アイコン
@@ -28,8 +32,9 @@ import useVolumeStore from "./useVolumeStore";
  * @property {function} onPlayPrevious - 前の曲を再生する関数
  * @property {function} toggleRepeat - リピート切り替え関数
  * @property {function} toggleShuffle - シャッフル切り替え関数
+ * @property {boolean} isLocalFile - ローカルファイルかどうか
  */
-const useAudioPlayer = (songUrl: string) => {
+const useAudioPlayer = (songUrl: string, song?: Song) => {
   const player = usePlayer();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -38,6 +43,9 @@ const useAudioPlayer = (songUrl: string) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const isRepeating = usePlayer((state) => state.isRepeating);
   const isShuffling = usePlayer((state) => state.isShuffling);
+
+  // ローカルファイルかどうかを判定
+  const isLocalFile = useMemo(() => isLocalSong(song), [song]);
 
   // ボリューム管理のカスタムフックを使用
   const { volume, setVolume, isLoaded: isVolumeLoaded } = useVolumeStore();
@@ -112,9 +120,31 @@ const useAudioPlayer = (songUrl: string) => {
         onPlayNext();
       }
     };
-    const handleCanPlayThrough = () => audio.play();
+
+    // ローカルファイルの場合は自動再生を制御
+    const handleCanPlayThrough = () => {
+      if (isLocalFile) {
+        // ローカルファイルの場合は明示的に再生状態をチェック
+        if (isPlaying) {
+          audio.play().catch((error) => {
+            console.error("Error playing local audio:", error);
+            setIsPlaying(false);
+          });
+        }
+      } else {
+        // ストリーミングの場合は従来通り
+        audio.play();
+      }
+    };
+
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+
+    // ローカルファイルの場合のエラーハンドリング
+    const handleError = (e: Event) => {
+      console.error("Audio error:", e);
+      setIsPlaying(false);
+    };
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
@@ -122,6 +152,7 @@ const useAudioPlayer = (songUrl: string) => {
     audio.addEventListener("canplaythrough", handleCanPlayThrough);
     audio.addEventListener("play", handlePlay);
     audio.addEventListener("pause", handlePause);
+    audio.addEventListener("error", handleError);
 
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
@@ -130,8 +161,9 @@ const useAudioPlayer = (songUrl: string) => {
       audio.removeEventListener("canplaythrough", handleCanPlayThrough);
       audio.removeEventListener("play", handlePlay);
       audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("error", handleError);
     };
-  }, [songUrl]);
+  }, [songUrl, isLocalFile, isPlaying, onPlayNext, isRepeating]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -156,8 +188,15 @@ const useAudioPlayer = (songUrl: string) => {
     if (!audio || !songUrl) return;
 
     audio.currentTime = 0;
-    audio.src = songUrl;
-  }, [songUrl]);
+
+    // ローカルファイルの場合はfile://スキーマを付与
+    if (isLocalFile) {
+      audio.src = toFileUrl(songUrl);
+      console.log("[useAudioPlayer] Setting local file source:", audio.src);
+    } else {
+      audio.src = songUrl;
+    }
+  }, [songUrl, isLocalFile]);
 
   const formatTime = useMemo(() => {
     return (time: number) => {
@@ -203,6 +242,7 @@ const useAudioPlayer = (songUrl: string) => {
     onPlayPrevious,
     toggleRepeat,
     toggleShuffle,
+    isLocalFile,
   };
 };
 

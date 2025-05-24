@@ -1,5 +1,6 @@
 import { Song } from "@/types";
 import { LocalFile } from "@/app/local/components/LocalFileTable";
+import { generateLocalSongId } from "./songUtils";
 
 /**
  * ローカルファイルデータをSong型に変換するヘルパー関数
@@ -14,8 +15,8 @@ export function mapFileToSong(file: LocalFile): Song {
     : "不明なタイトル";
 
   return {
-    id: file.path, // パスをIDとして使用（一意）
-    user_id: "", // ローカルファイルの場合は空
+    id: generateLocalSongId(file.path), // ローカル曲用のIDを生成
+    user_id: "local_user", // ローカルファイル用の固定ユーザーID
     author: file.metadata?.common?.artist || "不明なアーティスト",
     title: file.metadata?.common?.title || titleFromFile,
     song_path: file.path,

@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Header from "@/components/Header/Header";
 import { Button } from "@/components/ui/button";
-import LocalPlayerContent from "@/components/Player/LocalPlayerContent";
 import { Song } from "@/types";
 import LocalFileTable, {
   ElectronApi,
@@ -13,6 +12,7 @@ import { mapFileToSong } from "@/libs/localFileMappers";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
 import { AlertCircle, RefreshCw } from "lucide-react";
+import usePlayer from "@/hooks/player/usePlayer";
 
 declare global {
   interface Window {
@@ -48,12 +48,12 @@ const LocalPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentPlayingFile, setCurrentPlayingFile] = useState<Song | null>(
-    null
-  );
   const [savedLibraryInfo, setSavedLibraryInfo] =
     useState<SavedLibraryInfo | null>(null);
   const [lastScanInfo, setLastScanInfo] = useState<ScanInfo | null>(null);
+
+  // 統合プレイヤーシステムを使用
+  const player = usePlayer();
 
   // アプリケーション起動時に保存されたライブラリ情報を取得
   useEffect(() => {
@@ -264,58 +264,34 @@ const LocalPage = () => {
   }, [mp3Files, selectedDirectory]);
 
   /**
-   * ファイルを再生する
+   * ファイルを再生する（統合プレイヤーシステムを使用）
    * @param {LocalFile} file - 再生するファイル
    */
-  const handlePlayFile = useCallback((file: LocalFile) => {
-    if (file.path) {
-      setCurrentPlayingFile(mapFileToSong(file));
-    }
-  }, []);
+  const handlePlayFile = useCallback(
+    (file: LocalFile) => {
+      if (file.path) {
+        const song = mapFileToSong(file);
+        // ローカル曲をプレイヤーストアに保存
+        player.setLocalSong(song);
 
-  /**
-   * 次の曲を再生する
-   */
-  const handlePlayNext = useCallback(() => {
-    if (!currentPlayingFile) {
-      return;
-    }
+        // 全てのローカル曲をプレイヤーストアに保存し、IDリストを作成
+        const songIds: string[] = [];
+        mp3Files.forEach((f) => {
+          if (f.path) {
+            const localSong = mapFileToSong(f);
+            player.setLocalSong(localSong);
+            songIds.push(localSong.id);
+          }
+        });
 
-    const currentIndex = mp3Files.findIndex(
-      (f) => f.path === currentPlayingFile.song_path
-    );
-
-    if (currentIndex !== -1 && currentIndex < mp3Files.length - 1) {
-      // 次の曲がある場合
-      setCurrentPlayingFile(mapFileToSong(mp3Files[currentIndex + 1]));
-    } else if (currentIndex === mp3Files.length - 1) {
-      // リストの最後の場合は最初の曲へ（ループ再生的な挙動）
-      if (mp3Files.length > 0) {
-        setCurrentPlayingFile(mapFileToSong(mp3Files[0]));
+        // プレイリストを設定
+        player.setIds(songIds);
+        // 現在の曲を設定
+        player.setId(song.id);
       }
-    }
-  }, [currentPlayingFile, mp3Files]);
-
-  /**
-   * 前の曲を再生する
-   */
-  const handlePlayPrevious = useCallback(() => {
-    if (!currentPlayingFile) {
-      return;
-    }
-
-    const currentIndex = mp3Files.findIndex(
-      (f) => f.path === currentPlayingFile.song_path
-    );
-
-    if (currentIndex > 0) {
-      // 前の曲がある場合
-      setCurrentPlayingFile(mapFileToSong(mp3Files[currentIndex - 1]));
-    } else if (currentIndex === 0 && mp3Files.length > 0) {
-      // リストの最初の場合は最後の曲へ（ループ再生的な挙動）
-      setCurrentPlayingFile(mapFileToSong(mp3Files[mp3Files.length - 1]));
-    }
-  }, [currentPlayingFile, mp3Files]);
+    },
+    [player, mp3Files]
+  );
 
   return (
     <div className="bg-[#0d0d0d] rounded-lg h-full w-full overflow-hidden overflow-y-auto pb-[80px] custom-scrollbar">
@@ -510,16 +486,7 @@ const LocalPage = () => {
         )}
       </div>
 
-      {/* Playerを画面下部に固定表示 */}
-      {currentPlayingFile && (
-        <div className="fixed bottom-0 left-0 right-0 h-[80px] z-50 bg-[#121212] border-t border-[#303030] shadow-lg">
-          <LocalPlayerContent
-            song={currentPlayingFile}
-            onPlayNext={handlePlayNext}
-            onPlayPrevious={handlePlayPrevious}
-          />
-        </div>
-      )}
+      {/* 統合プレイヤーシステムを使用するため、ここでのプレイヤー表示は不要 */}
     </div>
   );
 };

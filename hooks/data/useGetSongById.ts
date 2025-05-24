@@ -26,6 +26,11 @@ const useGetSongById = (id?: string) => {
         return undefined;
       }
 
+      // ローカル曲のIDの場合は処理をスキップ
+      if (typeof id === "string" && id.startsWith("local_")) {
+        return undefined;
+      }
+
       const { data, error } = await supabaseClient
         .from("songs")
         .select("*")
@@ -40,7 +45,7 @@ const useGetSongById = (id?: string) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!id,
+    enabled: !!id && !(typeof id === "string" && id.startsWith("local_")), // ローカル曲の場合は無効化
     //https://tanstack.com/query/v5/docs/framework/react/guides/paginated-queries
     //新しいデータが到達する前まで古いデータを表示する
     placeholderData: keepPreviousData,

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { Song } from "@/types";
 
 interface PlayerStore {
   ids: string[];
@@ -7,8 +8,11 @@ interface PlayerStore {
   isShuffling: boolean;
   shuffledIds: string[];
   isLoading: boolean;
+  localSongs: Map<string, Song>;
   setId: (id: string) => void;
   setIds: (ids: string[]) => void;
+  setLocalSong: (song: Song) => void;
+  getLocalSong: (id: string) => Song | undefined;
   toggleRepeat: () => void;
   toggleShuffle: () => void;
   reset: () => void;
@@ -45,8 +49,19 @@ const usePlayer = create<PlayerStore>((set, get) => ({
   isShuffling: false,
   shuffledIds: [],
   isLoading: false,
+  localSongs: new Map<string, Song>(),
   setId: (id: string) => set({ activeId: id }),
   setIds: (ids: string[]) => set({ ids }),
+  setLocalSong: (song: Song) =>
+    set((state) => {
+      const newLocalSongs = new Map(state.localSongs);
+      newLocalSongs.set(song.id, song);
+      return { localSongs: newLocalSongs };
+    }),
+  getLocalSong: (id: string) => {
+    const state = get();
+    return state.localSongs.get(id);
+  },
   toggleRepeat: () => set((state) => ({ isRepeating: !state.isRepeating })),
   toggleShuffle: () =>
     set((state) => {
@@ -75,6 +90,7 @@ const usePlayer = create<PlayerStore>((set, get) => ({
     }),
   getNextSongId: () => {
     const { ids, activeId, isShuffling, isRepeating, shuffledIds } = get();
+
     if (ids.length === 0) {
       return undefined;
     }
@@ -100,6 +116,7 @@ const usePlayer = create<PlayerStore>((set, get) => ({
   },
   getPreviousSongId: () => {
     const { ids, activeId, isShuffling, isRepeating, shuffledIds } = get();
+
     if (ids.length === 0) {
       return undefined;
     }
@@ -114,6 +131,7 @@ const usePlayer = create<PlayerStore>((set, get) => ({
     }
 
     let prevIndex: number;
+
     if (isShuffling) {
       prevIndex = (currentIndex - 1 + shuffledIds.length) % shuffledIds.length;
       return shuffledIds[prevIndex];

@@ -13,6 +13,7 @@ import MobilePlayerContent from "../Mobile/MobilePlayerContent";
 import useAudioPlayer from "@/hooks/audio/useAudioPlayer";
 import useLyricsStore from "@/hooks/stores/useLyricsStore";
 import { mediaControls } from "@/libs/electron-utils";
+import { isLocalSong } from "@/libs/songUtils";
 
 interface PlayerContentProps {
   song: Song;
@@ -23,6 +24,9 @@ interface PlayerContentProps {
 
 const PlayerContent: React.FC<PlayerContentProps> = React.memo(
   ({ song, isMobilePlayer, toggleMobilePlayer, playlists }) => {
+    // ローカル曲かどうかを判定
+    const isLocalFile = isLocalSong(song);
+
     const {
       Icon,
       VolumeIcon,
@@ -45,7 +49,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
       handleVolumeClick,
       showVolumeSlider,
       setShowVolumeSlider,
-    } = useAudioPlayer(song?.song_path);
+    } = useAudioPlayer(song?.song_path, song);
     const { toggleLyrics } = useLyricsStore();
 
     useEffect(() => {
@@ -173,18 +177,23 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
 
           <div className="hidden md:flex w-full justify-end pr-6">
             <div className="flex items-center gap-x-8 w-full md:w-[170px] lg:w-[200px]">
-              <AddPlaylist
-                playlists={playlists}
-                songId={song.id}
-                songType="regular"
-              />
-              <LikeButton songId={song.id} songType="regular" />
-              <button
-                onClick={toggleLyrics}
-                className="cursor-pointer text-neutral-400 hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
-              >
-                <MdLyrics size={22} />
-              </button>
+              {/* ローカル曲の場合はオンライン専用機能を非表示 */}
+              {!isLocalFile && (
+                <>
+                  <AddPlaylist
+                    playlists={playlists}
+                    songId={song.id}
+                    songType="regular"
+                  />
+                  <LikeButton songId={song.id} songType="regular" />
+                  <button
+                    onClick={toggleLyrics}
+                    className="cursor-pointer text-neutral-400 hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
+                  >
+                    <MdLyrics size={22} />
+                  </button>
+                </>
+              )}
               <div className="relative">
                 <VolumeIcon
                   onClick={handleVolumeClick}
