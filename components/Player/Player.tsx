@@ -52,7 +52,7 @@ const Player = ({ playlists }: PlayerProps) => {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 w-full ">
+      <div className="fixed bottom-0 left-0 w-full z-50 ">
         <div className="bg-[#121212] border-t border-[#303030] rounded-t-xl w-full h-[100px] pb-[130px] md:pb-0 max-md:px-2">
           <PlayerContent
             song={finalSong}
