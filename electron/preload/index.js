@@ -33,6 +33,10 @@ var ALLOWED_INVOKE_CHANNELS = [
     "check-file-exists",
     "get-local-file-path",
     "delete-song",
+    // Phase 2: Offline handlers
+    "get-offline-songs",
+    "delete-offline-song",
+    "check-offline-status",
 ];
 var ALLOWED_ON_CHANNELS = ["media-control", "download-progress"];
 var ALLOWED_SEND_CHANNELS = ["log", "player-state-change"];
@@ -87,6 +91,21 @@ electron_1.contextBridge.exposeInMainWorld("electron", {
         return electron_1.ipcRenderer.invoke("get-local-file-path", filename);
     },
     deleteSong: function (filename) { return electron_1.ipcRenderer.invoke("delete-song", filename); },
+    // オフライン機能 (Phase 2)
+    offline: {
+        // オフライン（ダウンロード済み）の曲を全て取得
+        getSongs: function () { return electron_1.ipcRenderer.invoke("get-offline-songs"); },
+        // 曲がダウンロード済みかチェック
+        checkStatus: function (songId) {
+            return electron_1.ipcRenderer.invoke("check-offline-status", songId);
+        },
+        // オフライン曲を削除（ファイル + DB）
+        deleteSong: function (songId) {
+            return electron_1.ipcRenderer.invoke("delete-offline-song", songId);
+        },
+        // 曲をダウンロード（メタデータ付き）
+        downloadSong: function (song) { return electron_1.ipcRenderer.invoke("download-song", song); },
+    },
     // IPC通信
     ipc: {
         // メインプロセスにメッセージを送信し、応答を待つ

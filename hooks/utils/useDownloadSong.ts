@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Song } from "@/types";
 import toast from "react-hot-toast";
 
-import { getDownloadFilename } from "@/libs/songUtils";
 import { electronAPI } from "@/libs/electron-utils";
 
 interface UseDownloadSongResult {
@@ -17,6 +16,9 @@ interface UseDownloadSongResult {
 
 /**
  * 曲のダウンロード機能を管理するフック
+ *
+ * Phase 2で実装したオフラインIPCを使用し、曲のダウンロードとDBへの保存を行います。
+ *
  * @param song 対象の曲オブジェクト
  */
 const useDownloadSong = (song: Song | null): UseDownloadSongResult => {
@@ -24,25 +26,20 @@ const useDownloadSong = (song: Song | null): UseDownloadSongResult => {
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getFilename = useCallback(() => {
-    if (!song) return "";
-    return getDownloadFilename(song);
-  }, [song]);
-
   /**
    * ダウンロード済みかどうかを確認
+   * 新しいオフラインIPCを使用してDBからステータスを取得
    */
   const checkStatus = useCallback(async () => {
     if (!song || !electronAPI.isElectron()) return;
 
     try {
-      const filename = getFilename();
-      const exists = await electronAPI.downloader.checkFileExists(filename);
-      setIsDownloaded(exists);
+      const { isDownloaded } = await electronAPI.offline.checkStatus(song.id);
+      setIsDownloaded(isDownloaded);
     } catch (err) {
-      console.error("Failed to check file status:", err);
+      console.error("Failed to check offline status:", err);
     }
-  }, [song, getFilename]);
+  }, [song]);
 
   // マウント時と曲変更時にステータスを確認
   useEffect(() => {
@@ -51,6 +48,7 @@ const useDownloadSong = (song: Song | null): UseDownloadSongResult => {
 
   /**
    * ダウンロードを実行
+   * 新しいオフラインIPCを使用してファイルをダウンロードし、DBに保存
    */
   const download = async () => {
     if (!song || !song.song_path || isDownloaded) return;
@@ -65,11 +63,28 @@ const useDownloadSong = (song: Song | null): UseDownloadSongResult => {
         );
       }
 
-      const filename = getFilename();
-      await electronAPI.downloader.downloadSong(song.song_path, filename);
+      // SongDownloadPayload形式に変換
+      const payload = {
+        id: song.id,
+        userId: song.user_id,
+        title: song.title,
+        author: song.author,
+        song_path: song.song_path,
+        image_path: song.image_path,
+        duration: song.duration,
+        genre: song.genre,
+        lyrics: song.lyrics,
+        created_at: song.created_at,
+      };
 
-      setIsDownloaded(true);
-      toast.success("ダウンロードが完了しました");
+      const result = await electronAPI.offline.downloadSong(payload);
+
+      if (result.success) {
+        setIsDownloaded(true);
+        toast.success("ダウンロードが完了しました");
+      } else {
+        throw new Error(result.error || "ダウンロードに失敗しました");
+      }
     } catch (err) {
       const message =
         err instanceof Error
@@ -86,6 +101,7 @@ const useDownloadSong = (song: Song | null): UseDownloadSongResult => {
 
   /**
    * ダウンロード済みファイルを削除
+   * 新しいオフラインIPCを使用してファイルとDBレコードの両方を削除
    */
   const remove = async () => {
     if (!song || !isDownloaded) return;
@@ -95,14 +111,13 @@ const useDownloadSong = (song: Song | null): UseDownloadSongResult => {
         throw new Error("Electron APIが見つかりません");
       }
 
-      const filename = getFilename();
-      const result = await electronAPI.downloader.deleteSong(filename);
+      const result = await electronAPI.offline.deleteSong(song.id);
 
-      if (result) {
+      if (result.success) {
         setIsDownloaded(false);
-        toast.success("キャッシュから削除しました");
+        toast.success("オフラインデータを削除しました");
       } else {
-        throw new Error("削除に失敗しました");
+        throw new Error(result.error || "削除に失敗しました");
       }
     } catch (err) {
       const message =

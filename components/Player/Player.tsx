@@ -11,24 +11,22 @@ const Player = () => {
   // クライアントサイドでプレイリストを取得（オフライン対応付き）
   const { playlists } = useGetPlaylists();
 
-  // ローカル曲かどうかを判定
-  const isLocalSongId = useMemo(() => {
+  // 1. まずローカルストア（Zustand）から曲を取得（プレフィックス不問）
+  const localSong = useMemo(() => {
+    if (!player.activeId) return null;
+    return player.getLocalSong(player.activeId);
+  }, [player.activeId, player.getLocalSong]);
+
+  // 2. ローカルストアになく、かつIDが local_ で始まらない場合のみ Supabase から取得
+  const isActuallyLocalId = useMemo(() => {
     return (
-      (typeof player.activeId === "string" &&
-        player.activeId.startsWith("local_")) ||
-      false
+      typeof player.activeId === "string" &&
+      player.activeId.startsWith("local_")
     );
   }, [player.activeId]);
 
-  // ローカル曲の場合はローカルストアから、オンライン曲の場合はSupabaseから取得
-  const localSong = useMemo(() => {
-    if (!player.activeId || !isLocalSongId) return null;
-    return player.getLocalSong(player.activeId);
-  }, [player.activeId, isLocalSongId, player.getLocalSong]);
-
-  // オンライン曲の場合のみ useGetSongById を使用
   const { song: onlineSong } = useGetSongById(
-    isLocalSongId ? undefined : player.activeId
+    localSong || isActuallyLocalId ? undefined : player.activeId
   );
 
   // 最終的な曲を決定

@@ -1,5 +1,36 @@
 /// <reference types="electron" />
 
+// オフライン曲の型定義
+interface OfflineSong {
+  id: string;
+  user_id: string;
+  title: string;
+  author: string;
+  song_path: string; // ローカルファイルパス (file://...)
+  image_path: string | null;
+  original_song_path: string | null;
+  original_image_path: string | null;
+  duration: number | null;
+  genre: string | null;
+  lyrics: string | null;
+  created_at: string | null;
+  downloaded_at: Date | null;
+}
+
+// ダウンロード時に渡される曲データの型定義
+interface SongDownloadPayload {
+  id: string;
+  userId: string;
+  title: string;
+  author: string;
+  song_path: string; // リモートURL
+  image_path: string; // リモートURL
+  duration?: number;
+  genre?: string;
+  lyrics?: string;
+  created_at: string;
+}
+
 // Electronのウィンドウオブジェクトに公開されるAPIの型定義
 interface ElectronAPI {
   // アプリケーション情報
@@ -70,6 +101,23 @@ interface ElectronAPI {
   checkFileExists: (filename: string) => Promise<boolean>;
   getLocalFilePath: (filename: string) => Promise<string>;
   deleteSong: (filename: string) => Promise<boolean>;
+
+  // オフライン機能 (Phase 2)
+  offline: {
+    // オフライン（ダウンロード済み）の曲を全て取得
+    getSongs: () => Promise<OfflineSong[]>;
+    checkStatus: (
+      songId: string
+    ) => Promise<{ isDownloaded: boolean; localPath?: string }>;
+    // オフライン曲を削除（ファイル + DB）
+    deleteSong: (
+      songId: string
+    ) => Promise<{ success: boolean; error?: string }>;
+    // 曲をダウンロード（メタデータ付き）
+    downloadSong: (
+      song: SongDownloadPayload
+    ) => Promise<{ success: boolean; localPath?: string; error?: string }>;
+  };
 
   // IPC通信
   ipc: {

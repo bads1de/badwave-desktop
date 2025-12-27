@@ -94,23 +94,20 @@ const useGetSongById = (id?: string | number) => {
       }
 
       try {
-        const { getDownloadFilename, toFileUrl } = await import(
-          "@/libs/songUtils"
-        );
-        const filename = getDownloadFilename(song);
-        const exists = await electronAPI.downloader.checkFileExists(filename);
+        const { isDownloaded, localPath } =
+          await electronAPI.offline.checkStatus(song.id);
 
-        if (exists) {
-          const localPath = await electronAPI.downloader.getLocalFilePath(
-            filename
-          );
-          // file:// プロトコルに変換
-          const fileUrl = toFileUrl(localPath);
+        if (isDownloaded && localPath) {
+          // file:// プロトコルに変換 (localPathが既にfile://を含んでいる場合もあるが念のため確認)
+          // DBには file:// 付きで保存されているはずだが、念のため songUtils の toFileUrl は使わず
+          // そのまま使うか、必要なら処理する。
+          // IPC側実装: songPath: `file://${localSongPath}` となっている。
+          // したがってそのまま使える。
 
           if (isMounted) {
             setFinalSong({
               ...song,
-              song_path: fileUrl,
+              song_path: localPath,
             });
           }
         } else {

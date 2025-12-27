@@ -167,6 +167,113 @@ var setupDownloadHandlers = function () {
             }
         });
     }); });
+    // Get all offline (downloaded) songs
+    electron_1.ipcMain.handle("get-offline-songs", function () { return __awaiter(void 0, void 0, void 0, function () {
+        var offlineSongs, error_3;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    (0, utils_1.debugLog)("[IPC] get-offline-songs request");
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, db.query.songs.findMany({
+                            where: (0, drizzle_orm_1.isNotNull)(schema_1.songs.songPath),
+                        })];
+                case 2:
+                    offlineSongs = _a.sent();
+                    (0, utils_1.debugLog)("[IPC] Found ".concat(offlineSongs.length, " offline songs"));
+                    // Transform to match the Song type expected by the renderer
+                    return [2 /*return*/, offlineSongs.map(function (song) { return ({
+                            id: song.id,
+                            user_id: song.userId,
+                            title: song.title,
+                            author: song.author,
+                            song_path: song.songPath, // Local file path
+                            image_path: song.imagePath,
+                            original_song_path: song.originalSongPath,
+                            original_image_path: song.originalImagePath,
+                            duration: song.duration,
+                            genre: song.genre,
+                            lyrics: song.lyrics,
+                            created_at: song.createdAt,
+                            downloaded_at: song.downloadedAt,
+                        }); })];
+                case 3:
+                    error_3 = _a.sent();
+                    console.error("[IPC] Failed to get offline songs:", error_3);
+                    return [2 /*return*/, []];
+                case 4: return [2 /*return*/];
+            }
+        });
+    }); });
+    // Delete offline song (remove files and DB record)
+    electron_1.ipcMain.handle("delete-offline-song", function (_, songId) { return __awaiter(void 0, void 0, void 0, function () {
+        var songRecord, filesToDelete, localSongPath, localImagePath, _i, filesToDelete_1, filePath, err_1, error_4;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    (0, utils_1.debugLog)("[IPC] delete-offline-song request for: ".concat(songId));
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 10, , 11]);
+                    return [4 /*yield*/, db.query.songs.findFirst({
+                            where: (0, drizzle_orm_1.eq)(schema_1.songs.id, songId),
+                        })];
+                case 2:
+                    songRecord = _a.sent();
+                    if (!songRecord) {
+                        (0, utils_1.debugLog)("[IPC] Song not found in DB: ".concat(songId));
+                        return [2 /*return*/, { success: false, error: "Song not found" }];
+                    }
+                    filesToDelete = [];
+                    if (songRecord.songPath) {
+                        localSongPath = songRecord.songPath.replace("file://", "");
+                        filesToDelete.push(localSongPath);
+                    }
+                    if (songRecord.imagePath) {
+                        localImagePath = songRecord.imagePath.replace("file://", "");
+                        filesToDelete.push(localImagePath);
+                    }
+                    _i = 0, filesToDelete_1 = filesToDelete;
+                    _a.label = 3;
+                case 3:
+                    if (!(_i < filesToDelete_1.length)) return [3 /*break*/, 8];
+                    filePath = filesToDelete_1[_i];
+                    _a.label = 4;
+                case 4:
+                    _a.trys.push([4, 6, , 7]);
+                    return [4 /*yield*/, fs_1.default.promises.unlink(filePath)];
+                case 5:
+                    _a.sent();
+                    (0, utils_1.debugLog)("[IPC] Deleted file: ".concat(filePath));
+                    return [3 /*break*/, 7];
+                case 6:
+                    err_1 = _a.sent();
+                    if (err_1.code !== "ENOENT") {
+                        // Log but don't fail if file doesn't exist
+                        (0, utils_1.debugLog)("[IPC] Warning: Could not delete file: ".concat(filePath), err_1);
+                    }
+                    return [3 /*break*/, 7];
+                case 7:
+                    _i++;
+                    return [3 /*break*/, 3];
+                case 8: 
+                // 3. Delete from database
+                return [4 /*yield*/, db.delete(schema_1.songs).where((0, drizzle_orm_1.eq)(schema_1.songs.id, songId))];
+                case 9:
+                    // 3. Delete from database
+                    _a.sent();
+                    (0, utils_1.debugLog)("[IPC] Deleted song from DB: ".concat(songId));
+                    return [2 /*return*/, { success: true }];
+                case 10:
+                    error_4 = _a.sent();
+                    console.error("[IPC] Failed to delete offline song ".concat(songId, ":"), error_4);
+                    return [2 /*return*/, { success: false, error: error_4.message }];
+                case 11: return [2 /*return*/];
+            }
+        });
+    }); });
 };
 exports.setupDownloadHandlers = setupDownloadHandlers;
 //# sourceMappingURL=offline.js.map

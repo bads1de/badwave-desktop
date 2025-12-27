@@ -7,9 +7,11 @@ import { Song } from "@/types";
 import { electronAPI } from "@/libs/electron-utils";
 import SongItem from "@/components/Song/SongItem";
 import Header from "@/components/Header/Header";
+import usePlayer from "@/hooks/player/usePlayer";
 
 const OfflinePage = () => {
   const router = useRouter();
+  const player = usePlayer();
   const { isOnline } = useNetworkStatus();
   const [offlineSongs, setOfflineSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,13 +29,9 @@ const OfflinePage = () => {
       setIsLoading(true);
       try {
         if (electronAPI.isElectron()) {
-          // TODO: Implement getOfflineSongs in electron-utils and IPC
-          // For now, assume it returns an array
-          // const songs = await electronAPI.offline.getOfflineSongs();
-          // setOfflineSongs(songs);
-
-          // Placeholder logic until IPC is ready
-          console.log("Fetching offline songs...");
+          const songs = await electronAPI.offline.getSongs();
+          // OfflineSong[] を Song[] にキャスト（構造が似ているため）
+          setOfflineSongs(songs as unknown as Song[]);
         }
       } catch (error) {
         console.error("Failed to fetch offline songs:", error);
@@ -44,6 +42,22 @@ const OfflinePage = () => {
 
     fetchOfflineSongs();
   }, []);
+
+  const handlePlay = (id: string) => {
+    const song = offlineSongs.find((s) => s.id === id);
+    if (!song) return;
+
+    // プレイヤーに全オフライン曲をセット
+    player.setIds(offlineSongs.map((s) => s.id));
+
+    // 全てのオフライン曲をローカル曲として登録（IDはそのままで良い）
+    offlineSongs.forEach((s) => {
+      player.setLocalSong(s);
+    });
+
+    // 再生開始
+    player.setId(id);
+  };
 
   return (
     <div className="bg-neutral-900 rounded-lg h-full w-full overflow-hidden overflow-y-auto">
@@ -64,15 +78,9 @@ const OfflinePage = () => {
             <div className="text-neutral-400">No downloaded songs found.</div>
           </div>
         ) : (
-          <div className="flex flex-col gap-y-2 w-full p-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-8 gap-4 p-6">
             {offlineSongs.map((song) => (
-              <SongItem
-                key={song.id}
-                data={song}
-                onClick={(id) => {
-                  /* Play local file logic */
-                }}
-              />
+              <SongItem key={song.id} data={song} onClick={handlePlay} />
             ))}
           </div>
         )}

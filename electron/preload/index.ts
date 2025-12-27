@@ -26,6 +26,10 @@ const ALLOWED_INVOKE_CHANNELS = [
   "check-file-exists",
   "get-local-file-path",
   "delete-song",
+  // Phase 2: Offline handlers
+  "get-offline-songs",
+  "delete-offline-song",
+  "check-offline-status",
 ];
 
 const ALLOWED_ON_CHANNELS = ["media-control", "download-progress"];
@@ -84,6 +88,20 @@ contextBridge.exposeInMainWorld("electron", {
   getLocalFilePath: (filename: string) =>
     ipcRenderer.invoke("get-local-file-path", filename),
   deleteSong: (filename: string) => ipcRenderer.invoke("delete-song", filename),
+
+  // オフライン機能 (Phase 2)
+  offline: {
+    // オフライン（ダウンロード済み）の曲を全て取得
+    getSongs: () => ipcRenderer.invoke("get-offline-songs"),
+    // 曲がダウンロード済みかチェック
+    checkStatus: (songId: string) =>
+      ipcRenderer.invoke("check-offline-status", songId),
+    // オフライン曲を削除（ファイル + DB）
+    deleteSong: (songId: string) =>
+      ipcRenderer.invoke("delete-offline-song", songId),
+    // 曲をダウンロード（メタデータ付き）
+    downloadSong: (song: any) => ipcRenderer.invoke("download-song", song),
+  },
 
   // IPC通信
   ipc: {

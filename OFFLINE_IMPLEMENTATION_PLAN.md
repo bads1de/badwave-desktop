@@ -122,25 +122,24 @@ export const songs = sqliteTable("songs", {
 - [x] `electron/db/client.ts` 作成
 - [x] マイグレーション設定
 
-### Phase 2: IPC ハンドラー実装
+### Phase 2: IPC ハンドラー実装 (完了済み ✅)
 
-- [ ] `download-song` IPC の実装
-- [ ] `get-offline-songs` IPC の実装
-- [ ] `delete-offline-song` IPC の実装
-- [ ] `check-offline-status` IPC の実装
+- [x] `download-song` IPC の実装
+- [x] `get-offline-songs` IPC の実装
+- [x] `delete-offline-song` IPC の実装
+- [x] `check-offline-status` IPC の実装
 
-### Phase 3: オフライン専用ページ
+### Phase 3: オフライン専用ページ (完了済み ✅)
 
-- [ ] `/offline` ページの作成
-- [ ] ダウンロード済み曲一覧の UI
-- [ ] オフライン時の自動リダイレクト (`useNetworkStatus` 活用)
-- [ ] オフライン用プレイヤー UI
+- [x] `/offline` ページの作成
+- [x] ダウンロード済み曲一覧の UI
+- [x] オフライン時の自動リダイレクト (`useNetworkStatus` 活用)
+- [x] オフライン用プレイヤー UI
 
-### Phase 4: ダウンロード機能の UI
+### Phase 4: ダウンロード機能の UI (完了済み ✅)
 
-- [ ] 既存の `useDownloadSong` を新 IPC に接続
-- [ ] ダウンロード進捗表示
-- [ ] ダウンロード済みアイコン表示
+- [x] 既存の `useDownloadSong` を新 IPC に接続
+- [x] ダウンロード済みアイコン表示
 
 ---
 
