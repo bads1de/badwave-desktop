@@ -7,9 +7,9 @@ import { HiHome, HiFolder } from "react-icons/hi";
 import { BiSearch } from "react-icons/bi";
 import Box from "../common/Box";
 import SidebarItem from "./SidebarItem";
-import Library from "./Library";
+import Studio from "./Studio";
 import usePlayer from "@/hooks/player/usePlayer";
-import { RiPlayListFill } from "react-icons/ri";
+import { RiPlayListFill, RiPulseLine } from "react-icons/ri";
 import { FaHeart } from "react-icons/fa6";
 import { useUser } from "@/hooks/auth/useUser";
 import { Button } from "../ui/button";
@@ -47,6 +47,12 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         active: pathname === "/local",
         href: "/local",
       },
+      {
+        icon: RiPulseLine,
+        label: "Pulse",
+        active: pathname === "/pulse",
+        href: "/pulse",
+      },
       ...(user
         ? [
             {
@@ -77,14 +83,13 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
       <div
         className={twMerge(
           "flex flex-col gap-y-2.5 bg-gradient-to-br from-black/95 via-neutral-900/90 to-neutral-900/85 h-full p-2.5 transition-all duration-500 backdrop-blur-2xl border-r border-white/[0.02] shadow-xl shadow-black/10",
-          isCollapsed ? "w-20" : "w-72",
-          "hidden md:flex"
+          isCollapsed ? "w-20" : "w-72"
         )}
       >
         <div className="flex items-center justify-between px-2.5 py-2">
           <div className="flex items-center gap-3">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-purple-900/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-br from-theme-500/20 to-theme-900/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
               <Image
                 src="/logo.svg"
                 alt="Logo"
@@ -123,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         </Box>
 
         <Box className="overflow-y-auto flex-1 custom-scrollbar bg-neutral-900/40 backdrop-blur-xl border border-white/[0.02] shadow-inner">
-          <Library isCollapsed={isCollapsed} />
+          <Studio isCollapsed={isCollapsed} />
         </Box>
 
         <div className=" mb-6">

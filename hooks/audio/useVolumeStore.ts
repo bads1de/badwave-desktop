@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { isMobile } from "react-device-detect";
 import { store } from "@/libs/electron-utils";
 import { ELECTRON_STORE_KEYS } from "@/constants";
 
@@ -34,14 +33,14 @@ const useVolumeStore = () => {
           setVolume(savedVolume);
           prevVolumeRef.current = savedVolume;
         } else {
-          const defaultVolume = isMobile ? 1 : 0.1;
+          const defaultVolume = 0.5;
 
           setVolume(defaultVolume);
           prevVolumeRef.current = defaultVolume;
         }
         setIsLoaded(true);
       } catch (error) {
-        const defaultVolume = isMobile ? 1 : 0.1;
+        const defaultVolume = 0.5;
 
         setVolume(defaultVolume);
         prevVolumeRef.current = defaultVolume;

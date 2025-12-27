@@ -43,7 +43,7 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
         },
         header: () => (
           <div className="flex items-center gap-2">
-            <Music className="h-4 w-4 text-purple-400" />
+            <Music className="h-4 w-4 text-theme-400" />
             <span>タイトル</span>
           </div>
         ),
@@ -55,11 +55,11 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
 
           return (
             <div className="flex items-center gap-2 group">
-              <div className="w-8 h-8 bg-[#202020] rounded-lg flex items-center justify-center mr-2 group-hover:bg-purple-900/30 transition-all duration-300">
+              <div className="w-8 h-8 bg-[#202020] rounded-lg flex items-center justify-center mr-2 group-hover:bg-theme-900/30 transition-all duration-300">
                 <Play className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
               <div className="flex flex-col">
-                <span className="font-medium text-white truncate max-w-[300px] group-hover:text-purple-300 transition-colors duration-300">
+                <span className="font-medium text-white truncate max-w-[300px] group-hover:text-theme-300 transition-colors duration-300">
                   {title}
                 </span>
                 {file.error && (
@@ -77,7 +77,7 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
         },
         header: () => (
           <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-purple-400" />
+            <User className="h-4 w-4 text-theme-400" />
             <span>アーティスト</span>
           </div>
         ),
@@ -100,7 +100,7 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
         },
         header: () => (
           <div className="flex items-center gap-2">
-            <Disc className="h-4 w-4 text-purple-400" />
+            <Disc className="h-4 w-4 text-theme-400" />
             <span>アルバム</span>
           </div>
         ),
@@ -123,7 +123,7 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
         },
         header: () => (
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-purple-400" />
+            <Clock className="h-4 w-4 text-theme-400" />
             <span>長さ</span>
           </div>
         ),
@@ -143,7 +143,7 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
         accessorFn: (row) => row.metadata?.common?.genre?.[0] || "",
         header: () => (
           <div className="flex items-center gap-2">
-            <span className="text-purple-400 text-xs">#</span>
+            <span className="text-theme-400 text-xs">#</span>
             <span>ジャンル</span>
           </div>
         ),
@@ -151,7 +151,7 @@ const LocalFileTable: React.FC<LocalFileTableProps> = ({
           const genre = row.original.metadata?.common?.genre?.[0] || "不明";
           return genre !== "不明" ? (
             <div className="flex items-center">
-              <span className="px-3 py-1 rounded-full text-xs bg-purple-900/20 text-purple-300 border border-purple-800/30 hover:bg-purple-800/30 transition-colors duration-300">
+              <span className="px-3 py-1 rounded-full text-xs bg-theme-900/20 text-theme-300 border border-theme-800/30 hover:bg-theme-800/30 transition-colors duration-300">
                 {genre}
               </span>
             </div>

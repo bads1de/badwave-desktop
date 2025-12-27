@@ -6,9 +6,7 @@ interface PlayButtonProps {
   size?: number;
 }
 
-const PlayButton: React.FC<PlayButtonProps> = ({
-  size = 35
-}) => {
+const PlayButton: React.FC<PlayButtonProps> = ({ size = 35 }) => {
   return (
     <button
       className="
@@ -19,22 +17,19 @@ const PlayButton: React.FC<PlayButtonProps> = ({
         items-center
         justify-center
         bg-gradient-to-br
-        from-purple-500
-        to-purple-600
+        from-theme-500
+        to-theme-600
         p-4
         drop-shadow-md
         hover:scale-110
         hover:shadow-lg
-        hover:shadow-purple-500/20
+        hover:shadow-theme-500/20
         group
         relative
       "
     >
       <div className="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md" />
-      <FaPlay
-        className="text-black relative ml-1"
-        size={size / 2}
-      />
+      <FaPlay className="text-black relative ml-1" size={size / 2} />
     </button>
   );
 };

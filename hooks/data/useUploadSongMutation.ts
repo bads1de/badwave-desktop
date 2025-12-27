@@ -5,7 +5,8 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/auth/useUser";
 import { createClient } from "@/libs/supabase/client";
-import uploadFileToR2 from "@/actions/uploadFileToR2";
+import { uploadFileToR2 } from "@/actions/r2";
+import { checkIsAdmin } from "@/actions/checkAdmin";
 import { sanitizeTitle } from "@/libs/helpers";
 import uniqid from "uniqid";
 import { CACHED_QUERIES } from "@/constants";
@@ -43,6 +44,14 @@ const useUploadSongMutation = (uploadModal: UploadModalHook) => {
       songFile,
       imageFile,
     }: UploadSongParams) => {
+      // 管理者権限チェック
+      const { isAdmin } = await checkIsAdmin();
+
+      if (!isAdmin) {
+        toast.error("管理者権限が必要です");
+        throw new Error("管理者権限が必要です");
+      }
+
       if (!songFile || !imageFile || !user) {
         toast.error("必須フィールドが未入力です");
         throw new Error("必須フィールドが未入力です");
@@ -53,25 +62,41 @@ const useUploadSongMutation = (uploadModal: UploadModalHook) => {
       const imageFileNamePrefix = `image-${sanitizeTitle(title)}-${uniqueID}`;
 
       // Upload song to R2
-      const songUrl = await uploadFileToR2({
-        file: songFile,
-        bucketName: "song",
-        fileType: "audio",
-        fileNamePrefix: songFileNamePrefix,
-      });
+      const songFormData = new FormData();
+      songFormData.append("file", songFile);
+      songFormData.append("bucketName", "song");
+      songFormData.append("fileNamePrefix", songFileNamePrefix);
+
+      const songResult = await uploadFileToR2(songFormData);
 
       // Upload image to R2
-      const imageUrl = await uploadFileToR2({
-        file: imageFile,
-        bucketName: "image",
-        fileType: "image",
-        fileNamePrefix: imageFileNamePrefix,
-      });
+      const imageFormData = new FormData();
+      imageFormData.append("file", imageFile);
+      imageFormData.append("bucketName", "image");
+      imageFormData.append("fileNamePrefix", imageFileNamePrefix);
 
-      if (!songUrl || !imageUrl) {
-        toast.error("ファイルのアップロードに失敗しました");
-        throw new Error("ファイルのアップロードに失敗しました");
+      const imageResult = await uploadFileToR2(imageFormData);
+
+      if (
+        !songResult.success ||
+        !imageResult.success ||
+        !songResult.url ||
+        !imageResult.url
+      ) {
+        toast.error(
+          songResult.error ||
+            imageResult.error ||
+            "ファイルのアップロードに失敗しました"
+        );
+        throw new Error(
+          songResult.error ||
+            imageResult.error ||
+            "ファイルのアップロードに失敗しました"
+        );
       }
+
+      const songUrl = songResult.url;
+      const imageUrl = imageResult.url;
 
       // Create record
       const { error: supabaseError } = await supabaseClient
@@ -108,7 +133,7 @@ const useUploadSongMutation = (uploadModal: UploadModalHook) => {
     },
     onError: (error: Error) => {
       console.error("Upload song error:", error);
-      // エラーメッセージはmutationFn内で表示しているため、ここでは何もしない
+      toast.error(error.message || "アップロードに失敗しました");
     },
   });
 };

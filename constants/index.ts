@@ -39,6 +39,7 @@ export const CACHED_QUERIES = {
   likedSongs: "likedSongs",
   userDetails: "userDetails",
   spotlight: "spotlight",
+  pulse: "pulse",
 } as const;
 
 /**

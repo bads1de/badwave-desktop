@@ -76,17 +76,17 @@ const SpotlightModal = () => {
                 <div className="space-y-6">
                   {/* Header Section */}
                   <div className="space-y-4">
-                    <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-200">
+                    <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-theme-300 to-theme-100">
                       {selectedItem.title}
                     </h2>
 
                     {/* Metadata */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-x-4 text-sm">
-                        <span className="text-purple-300/90 font-medium">
+                        <span className="text-theme-300/90 font-medium">
                           {selectedItem.author}
                         </span>
-                        <span className="text-pink-200/80 font-medium">
+                        <span className="text-theme-100/80 font-medium">
                           {selectedItem.genre}
                         </span>
                       </div>

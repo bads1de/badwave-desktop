@@ -7,6 +7,8 @@ import { HiTrash } from "react-icons/hi";
 import { twMerge } from "tailwind-merge";
 import { useUser } from "@/hooks/auth/useUser";
 import { createClient } from "@/libs/supabase/client";
+import { deleteFileFromR2 } from "@/actions/r2";
+import { checkIsAdmin } from "@/actions/checkAdmin";
 
 interface DeleteButtonProps {
   songId: string;
@@ -36,6 +38,13 @@ const DeleteButton: React.FC<DeleteButtonProps> = ({
         return;
       }
 
+      // 管理者権限チェック
+      const { isAdmin } = await checkIsAdmin();
+      if (!isAdmin) {
+        toast.error("管理者権限が必要です");
+        return;
+      }
+
       const { data, error: dbDeleteError } = await supabaseClient
         .from("songs")
         .delete()
@@ -61,6 +70,17 @@ const DeleteButton: React.FC<DeleteButtonProps> = ({
         throw new Error(
           "No record was deleted from database. Please check the songId."
         );
+      }
+
+      // R2ストレージからファイルを削除
+      const songFileName = songPath.split("/").pop();
+      const imageFileName = imagePath.split("/").pop();
+
+      if (songFileName) {
+        await deleteFileFromR2("song", songFileName);
+      }
+      if (imageFileName) {
+        await deleteFileFromR2("image", imageFileName);
       }
 
       toast.success("削除しました");

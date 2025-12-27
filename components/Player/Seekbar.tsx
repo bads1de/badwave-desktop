@@ -32,7 +32,7 @@ const SeekBar: React.FC<SeekBarProps> = ({
                  duration-200 focus:outline-none hover:opacity-100 
                  appearance-none range-slider ${className}`}
       style={{
-        background: `linear-gradient(to right, #4c1d95 0%, #4c1d95 ${
+        background: `linear-gradient(to right, var(--primary-color) 0%, var(--primary-color) ${
           normalizedValue + 0.5
         }%, #ddd ${normalizedValue + 0.5}%, #ddd 100%)`,
       }}

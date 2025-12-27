@@ -52,7 +52,7 @@ const HeaderNav: React.FC<HeaderNavProps> = ({ className = "" }) => {
         onClick={() => handleTabChange("songs")}
         className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
           activeTab === "songs"
-            ? "bg-purple-600/90 text-white shadow-md shadow-purple-900/20"
+            ? "bg-theme-600/90 text-white shadow-md shadow-theme-900/20"
             : "bg-neutral-800/80 text-neutral-300 hover:bg-neutral-700/80 hover:text-white"
         }`}
       >
@@ -63,7 +63,7 @@ const HeaderNav: React.FC<HeaderNavProps> = ({ className = "" }) => {
         onClick={() => handleTabChange("playlists")}
         className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
           activeTab === "playlists"
-            ? "bg-purple-600/90 text-white shadow-md shadow-purple-900/20"
+            ? "bg-theme-600/90 text-white shadow-md shadow-theme-900/20"
             : "bg-neutral-800/80 text-neutral-300 hover:bg-neutral-700/80 hover:text-white"
         }`}
       >

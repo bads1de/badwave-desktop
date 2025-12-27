@@ -8,6 +8,7 @@ import { useUser } from "@/hooks/auth/useUser";
 import Image from "next/image";
 import AccountModal from "./AccountModal";
 import TopPlayedSongs from "./TopPlayedSongs";
+import ColorSchemeSelector from "./ColorSchemeSelector";
 
 const AccountContent = () => {
   const router = useRouter();
@@ -33,14 +34,14 @@ const AccountContent = () => {
   return (
     <div className="space-y-8">
       {/* プロフィールセクション */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-neutral-900/80 via-purple-900/20 to-neutral-900/80 backdrop-blur-xl border border-white/[0.05] shadow-lg rounded-2xl p-8">
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <div className="relative overflow-hidden bg-gradient-to-br from-neutral-900/80 via-theme-900/20 to-neutral-900/80 backdrop-blur-xl border border-white/[0.05] shadow-lg rounded-2xl p-8">
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-theme-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-theme-900/10 rounded-full blur-3xl"></div>
 
         <div className="relative flex flex-col md:flex-row items-start md:items-center gap-8">
           <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/30 via-blue-500/20 to-pink-500/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
-            <div className="relative w-28 h-28 md:w-36 md:h-36 rounded-full p-1 bg-gradient-to-br from-purple-500 via-blue-500 to-pink-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-theme-500/30 via-theme-900/20 to-theme-500/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
+            <div className="relative w-28 h-28 md:w-36 md:h-36 rounded-full p-1 bg-gradient-to-br from-theme-500 via-theme-600 to-theme-700">
               <div className="absolute inset-1 rounded-full overflow-hidden">
                 <Image
                   src={user?.avatar_url || "/images/default-avatar.png"}
@@ -54,7 +55,7 @@ const AccountContent = () => {
 
           <div className="flex-1 space-y-4">
             <div>
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-theme-200 to-white bg-clip-text text-transparent">
                 {user?.full_name || "ユーザー"}
               </h2>
             </div>
@@ -62,10 +63,10 @@ const AccountContent = () => {
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => setIsEditModalOpen(true)}
-                className="relative overflow-hidden bg-gradient-to-r from-purple-600 to-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
+                className="relative overflow-hidden bg-gradient-to-r from-theme-600 to-theme-800 text-white px-5 py-2.5 rounded-xl font-medium hover:shadow-lg hover:shadow-theme-500/20 transition-all duration-300"
               >
                 <span className="relative z-10">プロフィール編集</span>
-                <span className="absolute inset-0 bg-gradient-to-r from-purple-700 to-blue-700 opacity-0 hover:opacity-100 transition-opacity duration-300"></span>
+                <span className="absolute inset-0 bg-gradient-to-r from-theme-700 to-theme-900 opacity-0 hover:opacity-100 transition-opacity duration-300"></span>
               </button>
               <button
                 onClick={handleLogout}
@@ -102,6 +103,9 @@ const AccountContent = () => {
           </div>
         </div>
       </div>
+
+      {/* カラースキーム選択 */}
+      <ColorSchemeSelector />
 
       {/* 再生ランキング */}
       <TopPlayedSongs user={user} />

@@ -51,12 +51,12 @@ const TopPlayedSongs: React.FC<TopPlayedSongsProps> = memo(({ user }) => {
                   px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm font-medium
                   transition-all duration-300
                   focus-visible:outline-none focus-visible:ring-2
-                  focus-visible:ring-purple-500/50 focus-visible:ring-offset-2
+                  focus-visible:ring-theme-500/50 focus-visible:ring-offset-2
                   disabled:pointer-events-none disabled:opacity-50
                   min-w-[60px] md:min-w-[80px]
                   ${
                     period === p.value
-                      ? "bg-gradient-to-br rounded-xl from-purple-500/20 to-purple-900/20 border border-purple-500/30 text-white shadow-lg shadow-purple-500/20"
+                      ? "bg-gradient-to-br rounded-xl from-theme-500/20 to-theme-900/20 border border-theme-500/30 text-white shadow-lg shadow-theme-500/20"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-800/50 rounded-xl"
                   }
                 `}
@@ -109,7 +109,7 @@ const TopPlayedSongs: React.FC<TopPlayedSongsProps> = memo(({ user }) => {
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <div className="absolute -top-2 -left-2 w-6 h-6 bg-purple-500/80 rounded-full flex items-center justify-center text-sm font-bold">
+                <div className="absolute -top-2 -left-2 w-6 h-6 bg-theme-500/80 rounded-full flex items-center justify-center text-sm font-bold">
                   {index + 1}
                 </div>
               </div>
@@ -122,7 +122,7 @@ const TopPlayedSongs: React.FC<TopPlayedSongsProps> = memo(({ user }) => {
                 </p>
               </div>
               <div className="flex-shrink-0">
-                <span className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm whitespace-nowrap">
+                <span className="bg-theme-500/20 text-theme-300 px-3 py-1 rounded-full text-sm whitespace-nowrap">
                   {song.play_count}回再生
                 </span>
               </div>

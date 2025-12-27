@@ -9,6 +9,7 @@ import Sidebar from "@/components/Sidebar/Sidebar";
 import WindowControls from "@/components/electron/WindowControls";
 
 import ModalProvider from "@/providers/ModalProvider";
+import ThemeProvider from "@/providers/ThemeProvider";
 
 import ToasterProvider from "@/providers/ToasterProvider";
 import UserProvider from "@/providers/UserProvider";
@@ -35,12 +36,14 @@ export default async function RootLayout({
         <ToasterProvider />
         <TanStackProvider>
           <UserProvider>
-            <ModalProvider />
-            <WindowControls />
-            <Sidebar>
-              <RightSidebar>{children}</RightSidebar>
-            </Sidebar>
-            <Player playlists={playlists} />
+            <ThemeProvider>
+              <ModalProvider />
+              <WindowControls />
+              <Sidebar>
+                <RightSidebar>{children}</RightSidebar>
+              </Sidebar>
+              <Player playlists={playlists} />
+            </ThemeProvider>
           </UserProvider>
         </TanStackProvider>
       </body>

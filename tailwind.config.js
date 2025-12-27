@@ -2,10 +2,10 @@
 module.exports = {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
@@ -43,6 +43,14 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // テーマカラー（CSS変数で動的に変更可能）
+        theme: {
+          300: "rgba(var(--theme-300), <alpha-value>)",
+          400: "rgba(var(--theme-400), <alpha-value>)",
+          500: "rgba(var(--theme-500), <alpha-value>)",
+          600: "rgba(var(--theme-600), <alpha-value>)",
+          900: "rgba(var(--theme-900), <alpha-value>)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -66,4 +74,4 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};

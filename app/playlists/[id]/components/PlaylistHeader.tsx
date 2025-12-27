@@ -47,7 +47,7 @@ const PlaylistHeader: React.FC<PlaylistHeaderProps> = memo(
           />
         </div>
         {/* グラデーションオーバーレイ */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/80 via-neutral-900/90 to-neutral-900/95" />
+        <div className="absolute inset-0 bg-gradient-to-br from-theme-900/80 via-neutral-900/90 to-neutral-900/95" />
         {/* グラスモーフィズム効果 */}
         <div className="absolute inset-0 backdrop-blur-sm bg-black/20">
           <div
@@ -68,8 +68,8 @@ const PlaylistHeader: React.FC<PlaylistHeaderProps> = memo(
               transition={{ duration: 0.5 }}
               className="relative h-32 w-32 md:h-52 md:w-52 group mx-auto md:mx-0"
             >
-              <div className="absolute -top-2 -left-2 w-full h-full bg-purple-900/50 transform rotate-3 rounded-xl hidden md:block" />
-              <div className="absolute -top-1 -left-1 w-full h-full bg-purple-800/50 transform rotate-2 rounded-xl hidden md:block" />
+              <div className="absolute -top-2 -left-2 w-full h-full bg-theme-900/50 transform rotate-3 rounded-xl hidden md:block" />
+              <div className="absolute -top-1 -left-1 w-full h-full bg-theme-800/50 transform rotate-2 rounded-xl hidden md:block" />
               <Image
                 src={imageUrl}
                 alt="Playlist"

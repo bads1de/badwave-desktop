@@ -5,7 +5,8 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/auth/useUser";
 import { createClient } from "@/libs/supabase/client";
-import uploadFileToR2 from "@/actions/uploadFileToR2";
+import { uploadFileToR2 } from "@/actions/r2";
+import { checkIsAdmin } from "@/actions/checkAdmin";
 import { CACHED_QUERIES } from "@/constants";
 
 interface SpotlightUploadParams {
@@ -42,23 +43,33 @@ const useSpotlightUploadMutation = (
       description,
       videoFile,
     }: SpotlightUploadParams) => {
+      // 管理者権限チェック
+      const { isAdmin } = await checkIsAdmin();
+
+      if (!isAdmin) {
+        toast.error("管理者権限が必要です");
+        throw new Error("管理者権限が必要です");
+      }
+
       if (!videoFile || !user) {
         toast.error("動画ファイルを選択してください");
         throw new Error("動画ファイルを選択してください");
       }
 
       // 動画をR2にアップロード
-      const videoUrl = await uploadFileToR2({
-        file: videoFile,
-        bucketName: "spotlight",
-        fileType: "video",
-        fileNamePrefix: "spotlight",
-      });
+      const formData = new FormData();
+      formData.append("file", videoFile);
+      formData.append("bucketName", "spotlight");
+      formData.append("fileNamePrefix", "spotlight");
 
-      if (!videoUrl) {
-        toast.error("動画のアップロードに失敗しました");
-        throw new Error("動画のアップロードに失敗しました");
+      const result = await uploadFileToR2(formData);
+
+      if (!result.success || !result.url) {
+        toast.error(result.error || "動画のアップロードに失敗しました");
+        throw new Error(result.error || "動画のアップロードに失敗しました");
       }
+
+      const videoUrl = result.url;
 
       // データベースにレコードを作成
       const { error } = await supabaseClient.from("spotlights").insert({
@@ -90,7 +101,7 @@ const useSpotlightUploadMutation = (
     },
     onError: (error: Error) => {
       console.error("Spotlight upload error:", error);
-      // エラーメッセージはmutationFn内で表示しているため、ここでは何もしない
+      toast.error(error.message || "投稿に失敗しました");
     },
   });
 };

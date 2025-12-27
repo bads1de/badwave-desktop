@@ -26,12 +26,12 @@ const GenreSelect: React.FC<GenreSelectProps> = ({
         className={twMerge(
           "flex items-center justify-between w-full rounded-xl px-4 py-3",
           "bg-neutral-900/60 backdrop-blur-sm border border-white/[0.02]",
-          "hover:border-purple-500/20 focus:border-purple-500/30",
+          "hover:border-theme-500/20 focus:border-theme-500/30",
           "transition-all duration-300 group relative",
           "text-sm font-medium focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
         )}
       >
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-900/10 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-theme-500/10 to-theme-900/10 opacity-0 group-hover:opacity-100 transition-all duration-300" />
         <RadixSelect.Value
           placeholder="ジャンルを選択"
           className="text-neutral-400 group-hover:text-neutral-300"
@@ -55,9 +55,9 @@ const GenreSelect: React.FC<GenreSelectProps> = ({
                   className={twMerge(
                     "relative flex items-center px-8 py-2 rounded-lg text-sm",
                     "text-neutral-300 hover:text-white",
-                    "focus:bg-purple-500/10 focus:text-purple-400 focus:outline-none",
+                    "focus:bg-theme-500/10 focus:text-theme-400 focus:outline-none",
                     "cursor-pointer transition-all duration-300",
-                    "data-[state=checked]:text-purple-400 data-[state=checked]:bg-purple-500/10"
+                    "data-[state=checked]:text-theme-400 data-[state=checked]:bg-theme-500/10"
                   )}
                 >
                   <RadixSelect.ItemText className="capitalize">

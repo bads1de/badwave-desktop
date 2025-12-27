@@ -12,6 +12,107 @@ body,
 
 :root {
   --electron-titlebar-height: 0px;
+
+  /* カラースキームのデフォルト値（violet） */
+  --accent-from: #7c3aed;
+  --accent-via: #3b82f6;
+  --accent-to: #ec4899;
+  --primary-color: #4c1d95;
+  --scrollbar-color: 139, 92, 246;
+  --active-tab-color: #4c1d95;
+  --glow-color: 139, 92, 246;
+
+  /* Tailwind用テーマカラー（RGB値）- デフォルトはpurple系 */
+  --theme-300: 196, 181, 253;
+  --theme-400: 167, 139, 250;
+  --theme-500: 139, 92, 246;
+  --theme-600: 124, 58, 237;
+  --theme-900: 88, 28, 135;
+}
+
+/* エメラルドテーマ */
+html[data-theme="emerald"],
+html[data-theme="emerald"] body {
+  --accent-from: #10b981;
+  --accent-via: #06b6d4;
+  --accent-to: #3b82f6;
+  --primary-color: #064e3b;
+  --scrollbar-color: 16, 185, 129;
+  --active-tab-color: #064e3b;
+  --glow-color: 16, 185, 129;
+  --theme-300: 110, 231, 183;
+  --theme-400: 52, 211, 153;
+  --theme-500: 16, 185, 129;
+  --theme-600: 5, 150, 105;
+  --theme-900: 6, 78, 59;
+}
+
+/* ローズテーマ */
+html[data-theme="rose"],
+html[data-theme="rose"] body {
+  --accent-from: #f43f5e;
+  --accent-via: #ec4899;
+  --accent-to: #a855f7;
+  --primary-color: #881337;
+  --scrollbar-color: 244, 63, 94;
+  --active-tab-color: #881337;
+  --glow-color: 244, 63, 94;
+  --theme-300: 253, 164, 175;
+  --theme-400: 251, 113, 133;
+  --theme-500: 244, 63, 94;
+  --theme-600: 225, 29, 72;
+  --theme-900: 136, 19, 55;
+}
+
+/* アンバーテーマ */
+html[data-theme="amber"],
+html[data-theme="amber"] body {
+  --accent-from: #f59e0b;
+  --accent-via: #ef4444;
+  --accent-to: #ec4899;
+  --primary-color: #78350f;
+  --scrollbar-color: 245, 158, 11;
+  --active-tab-color: #78350f;
+  --glow-color: 245, 158, 11;
+  --theme-300: 252, 211, 77;
+  --theme-400: 251, 191, 36;
+  --theme-500: 245, 158, 11;
+  --theme-600: 217, 119, 6;
+  --theme-900: 120, 53, 15;
+}
+
+/* スカイテーマ */
+html[data-theme="sky"],
+html[data-theme="sky"] body {
+  --accent-from: #0ea5e9;
+  --accent-via: #6366f1;
+  --accent-to: #8b5cf6;
+  --primary-color: #0c4a6e;
+  --scrollbar-color: 14, 165, 233;
+  --active-tab-color: #0c4a6e;
+  --glow-color: 14, 165, 233;
+  --theme-300: 125, 211, 252;
+  --theme-400: 56, 189, 248;
+  --theme-500: 14, 165, 233;
+  --theme-600: 2, 132, 199;
+  --theme-900: 12, 74, 110;
+}
+
+/* モノクロームテーマ */
+html[data-theme="monochrome"],
+html[data-theme="monochrome"] body {
+  --accent-from: #71717a;
+  --accent-via: #a1a1aa;
+  --accent-to: #d4d4d8;
+  --primary-color: #27272a;
+  --scrollbar-color: 113, 113, 122;
+  --active-tab-color: #27272a;
+  --glow-color: 113, 113, 122;
+  --theme-300: 212, 212, 216;
+  --theme-400: 161, 161, 170;
+  --theme-500: 113, 113, 122;
+  --theme-600: 82, 82, 91;
+  --theme-900: 24, 24, 27;
 }
 
 .electron-app {
@@ -28,7 +129,7 @@ body {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: #4c1d95; /* from-violet-950 */
+  background: var(--primary-color);
   cursor: pointer;
 }
 
@@ -36,12 +137,12 @@ body {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: #4c1d95; /* from-violet-950 */
+  background: var(--primary-color);
   cursor: pointer;
 }
 
 .active-tab {
-  color: #4c1d95;
+  color: var(--active-tab-color);
 }
 
 .song-title {
@@ -77,7 +178,7 @@ body {
 @layer utilities {
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(139, 92, 246, 0.3) rgba(0, 0, 0, 0);
+    scrollbar-color: rgba(var(--scrollbar-color), 0.3) rgba(0, 0, 0, 0);
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -91,14 +192,14 @@ body {
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(139, 92, 246, 0.2);
+    background: rgba(var(--scrollbar-color), 0.2);
     border-radius: 100vh;
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(139, 92, 246, 0.4);
+    background: rgba(var(--scrollbar-color), 0.4);
   }
 }
 

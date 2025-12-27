@@ -121,16 +121,16 @@ const AccountModal = ({ isOpen, onClose, user }: AccountModalProps) => {
         {/* アバターセクション */}
         <div className="flex justify-center">
           <div className="relative w-28 h-28 group">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500/20 to-purple-900/20 animate-pulse" />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-theme-500/20 to-theme-900/20 animate-pulse" />
             <Image
               src={currentAvatar || "/images/default-avatar.png"}
               alt="Profile"
               fill
-              className="rounded-full object-cover border-4 border-neutral-800/50 group-hover:border-purple-500/50 transition-all duration-300"
+              className="rounded-full object-cover border-4 border-neutral-800/50 group-hover:border-theme-500/50 transition-all duration-300"
             />
             <label className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-all duration-300 backdrop-blur-sm">
               <div className="flex flex-col items-center gap-2">
-                <Camera className="w-6 h-6 text-purple-400" />
+                <Camera className="w-6 h-6 text-theme-400" />
                 <span className="text-white text-sm font-medium">
                   画像を変更
                 </span>
@@ -157,14 +157,14 @@ const AccountModal = ({ isOpen, onClose, user }: AccountModalProps) => {
               type="text"
               value={newFullName}
               onChange={(e) => setNewFullName(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-900/60 border border-white/[0.02] rounded-xl text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/30 transition-all duration-300"
+              className="w-full px-4 py-3 bg-neutral-900/60 border border-white/[0.02] rounded-xl text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500/30 transition-all duration-300"
               placeholder="ユーザー名を入力"
             />
           </div>
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-4 bg-gradient-to-br from-purple-500/20 to-purple-900/20 hover:from-purple-500/30 hover:to-purple-900/30 border border-purple-500/30 hover:border-purple-500/50 rounded-xl text-white font-medium transition-all duration-300 disabled:opacity-50"
+            className="w-full py-3 px-4 bg-gradient-to-br from-theme-500/20 to-theme-900/20 hover:from-theme-500/30 hover:to-theme-900/30 border border-theme-500/30 hover:border-theme-500/50 rounded-xl text-white font-medium transition-all duration-300 disabled:opacity-50"
           >
             プロフィールを更新
           </button>
@@ -186,21 +186,21 @@ const AccountModal = ({ isOpen, onClose, user }: AccountModalProps) => {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-neutral-900/60 border border-white/[0.02] rounded-xl text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/30 transition-all duration-300"
+                className="w-full px-4 py-3 bg-neutral-900/60 border border-white/[0.02] rounded-xl text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500/30 transition-all duration-300"
                 placeholder="新しいパスワード"
               />
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-neutral-900/60 border border-white/[0.02] rounded-xl text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/30 transition-all duration-300"
+                className="w-full px-4 py-3 bg-neutral-900/60 border border-white/[0.02] rounded-xl text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500/30 transition-all duration-300"
                 placeholder="パスワードの確認"
               />
             </div>
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-neutral-900/60 border border-white/[0.02] hover:border-purple-500/30 rounded-xl text-white font-medium transition-all duration-300 disabled:opacity-50"
+              className="w-full py-3 px-4 bg-neutral-900/60 border border-white/[0.02] hover:border-theme-500/30 rounded-xl text-white font-medium transition-all duration-300 disabled:opacity-50"
             >
               パスワードを更新
             </button>

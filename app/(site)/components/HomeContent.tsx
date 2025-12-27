@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Song, Spotlight, Playlist } from "@/types";
-import useMobilePlayer from "@/hooks/player/useMobilePlayer";
 import dynamic from "next/dynamic";
 import SectionSkeleton from "./sections/SectionSkeleton";
 
@@ -91,21 +90,13 @@ const HomeContent: React.FC<HomeClientProps> = ({
   recommendations,
   trendSongs,
 }) => {
-  const { isMobilePlayer } = useMobilePlayer();
   const [isClient, setIsClient] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<
     "all" | "month" | "week" | "day"
   >("all");
 
   useEffect(() => {
     setIsClient(true);
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1280);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // メモ化されたコンテンツ - クライアントサイドレンダリング時のみ表示
@@ -115,7 +106,7 @@ const HomeContent: React.FC<HomeClientProps> = ({
     return (
       <div className="flex bg-[#0d0d0d] h-full overflow-hidden">
         <div className="w-full h-full overflow-y-auto custom-scrollbar">
-          <main className={`px-6 py-8 pb-[70px] md:pb-8 space-y-8`}>
+          <main className="px-6 py-8 pb-8 space-y-8">
             {/* トレンドボードセクション - コード分割 */}
             <TrendSection
               selectedPeriod={selectedPeriod}
@@ -143,7 +134,6 @@ const HomeContent: React.FC<HomeClientProps> = ({
     );
   }, [
     isClient,
-    isMobilePlayer,
     selectedPeriod,
     spotlightData,
     songs,

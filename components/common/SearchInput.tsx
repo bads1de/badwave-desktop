@@ -59,10 +59,10 @@ const SearchInput: React.FC<SearchInputProps> = ({
 
   return (
     <div className="relative w-full group">
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-900/20 opacity-0 group-focus-within:opacity-100 transition-all duration-300 -z-10" />
-      <div className="relative flex items-center gap-2 w-full rounded-xl bg-neutral-800/80 backdrop-blur-sm border border-white/[0.05] group-hover:border-purple-500/30 group-focus-within:border-purple-500/50 transition-all duration-300 px-4 py-3">
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-theme-500/20 to-theme-900/20 opacity-0 group-focus-within:opacity-100 transition-all duration-300 -z-10" />
+      <div className="relative flex items-center gap-2 w-full rounded-xl bg-neutral-800/80 backdrop-blur-sm border border-white/[0.05] group-hover:border-theme-500/30 group-focus-within:border-theme-500/50 transition-all duration-300 px-4 py-3">
         <BiSearch
-          className="text-neutral-400 group-hover:text-neutral-300 group-focus-within:text-purple-400 transition-colors"
+          className="text-neutral-400 group-hover:text-neutral-300 group-focus-within:text-theme-500 transition-colors"
           size={22}
         />
         <input

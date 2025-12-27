@@ -28,10 +28,10 @@ const TrendPeriodSelector: React.FC<TrendPeriodSelectorProps> = ({
           onClick={() => onPeriodChange(period.value)}
           className={cn(
             "inline-flex items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-300",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:ring-offset-2",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-500/50 focus-visible:ring-offset-2",
             "disabled:pointer-events-none disabled:opacity-50",
             selectedPeriod === period.value
-              ? "bg-gradient-to-br rounded-xl from-purple-500/20 to-purple-900/20 border border-purple-500/30 text-white shadow-lg shadow-purple-500/20"
+              ? "bg-gradient-to-br rounded-xl from-theme-500/20 to-theme-900/20 border border-theme-500/30 text-white shadow-lg shadow-theme-500/20"
               : "text-neutral-400 hover:text-white hover:bg-neutral-800/50 rounded-xl"
           )}
         >

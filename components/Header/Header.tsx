@@ -15,7 +15,7 @@ const Header: React.FC<HeaderProps> = ({ children, className }) => {
         relative
         h-fit
         bg-gradient-to-b
-        from-purple-900/10
+        from-theme-900/10
         via-neutral-900/95
         to-neutral-900/90
         backdrop-blur-xl

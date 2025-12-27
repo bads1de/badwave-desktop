@@ -297,7 +297,7 @@ const LocalPage = () => {
     <div className="bg-[#0d0d0d] rounded-lg h-full w-full overflow-hidden overflow-y-auto pb-[80px] custom-scrollbar">
       <Header className="bg-gradient-to-b from-[#0d0d0d] via-[#0d0d0d] to-transparent">
         <div className="mb-4">
-          <h1 className="text-white text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-purple-400">
+          <h1 className="text-white text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-theme-400">
             ローカルファイル
           </h1>
           <p className="text-neutral-400 text-sm mt-2">
@@ -312,8 +312,8 @@ const LocalPage = () => {
           savedLibraryInfo.directoryExists &&
           !selectedDirectory && (
             <div className="bg-[#121212] border border-[#303030] rounded-md p-4 mb-4">
-              <div className="text-purple-300 flex items-center gap-2 mb-2">
-                <span className="text-purple-400">💾</span>
+              <div className="text-theme-300 flex items-center gap-2 mb-2">
+                <span className="text-theme-400">💾</span>
                 <span className="font-semibold">保存されたライブラリ</span>
               </div>
               <div className="text-neutral-300 text-sm">
@@ -349,7 +349,7 @@ const LocalPage = () => {
                   onClick={() =>
                     setSelectedDirectory(savedLibraryInfo.directoryPath || null)
                   }
-                  className="bg-purple-800 hover:bg-purple-700 text-white text-sm rounded-xl"
+                  className="bg-theme-800 hover:bg-theme-700 text-white text-sm rounded-xl"
                 >
                   このライブラリを読み込む
                 </Button>
@@ -361,7 +361,7 @@ const LocalPage = () => {
           <Button
             onClick={handleSelectDirectory}
             disabled={isLoading || isLoadingMetadata}
-            className="bg-gradient-to-r from-purple-800 to-purple-600 hover:from-purple-700 hover:to-purple-500 text-white border-none shadow-md hover:shadow-lg transition-all duration-300 px-6 rounded-xl"
+            className="bg-gradient-to-r from-theme-800 to-theme-600 hover:from-theme-700 hover:to-theme-500 text-white border-none shadow-md hover:shadow-lg transition-all duration-300 px-6 rounded-xl"
           >
             {isLoading || isLoadingMetadata ? (
               <div className="flex items-center gap-2">
@@ -405,8 +405,8 @@ const LocalPage = () => {
 
         {(isLoading || isLoadingMetadata) && (
           <div className="bg-[#121212] border border-[#303030] rounded-md p-4 mb-4">
-            <div className="text-purple-300 flex items-center gap-2">
-              <span className="animate-pulse h-3 w-3 rounded-full bg-purple-500 inline-block"></span>
+            <div className="text-theme-300 flex items-center gap-2">
+              <span className="animate-pulse h-3 w-3 rounded-full bg-theme-500 inline-block"></span>
               ファイルをスキャン・メタデータ取得中...
             </div>
           </div>
@@ -419,7 +419,7 @@ const LocalPage = () => {
           mp3Files.length > 0 && (
             <div className="bg-[#121212] border border-[#303030] rounded-md p-3 mb-4 text-sm">
               <div className="text-neutral-300 flex flex-wrap gap-x-4 gap-y-1">
-                <span className="text-purple-400 font-semibold">
+                <span className="text-theme-400 font-semibold">
                   スキャン結果:
                 </span>
                 {lastScanInfo.isFullScan ? (

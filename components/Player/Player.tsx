@@ -4,9 +4,7 @@ import useGetSongById from "@/hooks/data/useGetSongById";
 import usePlayer from "@/hooks/player/usePlayer";
 import React, { memo, useMemo } from "react";
 import PlayerContent from "./PlayerContent";
-import MobileTabs from "../Mobile/MobileTabs";
 import { Playlist, Song } from "@/types";
-import useMobilePlayer from "@/hooks/player/useMobilePlayer";
 import { isLocalSong } from "@/libs/songUtils";
 
 interface PlayerProps {
@@ -15,7 +13,6 @@ interface PlayerProps {
 
 const Player = ({ playlists }: PlayerProps) => {
   const player = usePlayer();
-  const { isMobilePlayer, toggleMobilePlayer } = useMobilePlayer();
 
   // ローカル曲かどうかを判定
   const isLocalSongId = useMemo(() => {
@@ -40,34 +37,16 @@ const Player = ({ playlists }: PlayerProps) => {
   // 最終的な曲を決定
   const finalSong = localSong || onlineSong;
 
-  if (!finalSong || (!finalSong.song_path && !isMobilePlayer)) {
-    return (
-      <>
-        <div className="md:hidden ">
-          <MobileTabs />
-        </div>
-      </>
-    );
+  if (!finalSong || !finalSong.song_path) {
+    return null;
   }
 
   return (
-    <>
-      <div className="fixed bottom-0 left-0 w-full z-50 ">
-        <div className="bg-[#121212] border-t border-[#303030] rounded-t-xl w-full h-[100px] pb-[130px] md:pb-0 max-md:px-2">
-          <PlayerContent
-            song={finalSong}
-            isMobilePlayer={isMobilePlayer}
-            toggleMobilePlayer={toggleMobilePlayer}
-            playlists={playlists}
-          />
-        </div>
+    <div className="fixed bottom-0 left-0 w-full z-50 ">
+      <div className="bg-[#121212] border-t border-[#303030] rounded-t-xl w-full h-[100px]">
+        <PlayerContent song={finalSong} playlists={playlists} />
       </div>
-      {!isMobilePlayer && (
-        <div className="md:hidden">
-          <MobileTabs />
-        </div>
-      )}
-    </>
+    </div>
   );
 };
 

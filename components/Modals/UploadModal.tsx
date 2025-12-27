@@ -228,7 +228,7 @@ const UploadModal: React.FC = memo(() => {
               onDrop={handleFileDrop}
               className={`relative p-3 border-2 border-dashed rounded-lg transition-colors ${
                 isDragging
-                  ? "border-blue-500 bg-blue-500/10"
+                  ? "border-theme-500 bg-theme-500/10"
                   : "border-zinc-700/50 bg-zinc-800/50"
               }`}
             >

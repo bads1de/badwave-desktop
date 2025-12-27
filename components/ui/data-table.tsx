@@ -68,7 +68,7 @@ export function DataTable<TData, TValue>({
             onChange={(event) =>
               table.getColumn(searchKey)?.setFilterValue(event.target.value)
             }
-            className="max-w-sm bg-[#121212] text-white border-[#303030] focus-visible:ring-purple-900 focus-visible:border-purple-800 transition-all duration-300 shadow-inner rounded-lg"
+            className="max-w-sm bg-[#121212] text-white border-[#303030] focus-visible:ring-theme-900 focus-visible:border-theme-800 transition-all duration-300 shadow-inner rounded-lg"
           />
         </div>
       )}
@@ -86,7 +86,7 @@ export function DataTable<TData, TValue>({
                     return (
                       <TableHead
                         key={header.id}
-                        className="text-purple-300 font-semibold"
+                        className="text-theme-300 font-semibold"
                       >
                         {header.isPlaceholder
                           ? null
@@ -157,7 +157,7 @@ export function DataTable<TData, TValue>({
           size="sm"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
-          className="border-[#303030] bg-[#121212] text-white hover:bg-[#202020] hover:border-purple-800 transition-all duration-300"
+          className="border-[#303030] bg-[#121212] text-white hover:bg-[#202020] hover:border-theme-800 transition-all duration-300"
         >
           前へ
         </Button>
@@ -166,7 +166,7 @@ export function DataTable<TData, TValue>({
           size="sm"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
-          className="border-[#303030] bg-[#121212] text-white hover:bg-[#202020] hover:border-purple-800 transition-all duration-300"
+          className="border-[#303030] bg-[#121212] text-white hover:bg-[#202020] hover:border-theme-800 transition-all duration-300"
         >
           次へ
         </Button>

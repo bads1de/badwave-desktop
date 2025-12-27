@@ -22,7 +22,7 @@ const SidebarItem: React.FC<SidebarItemProps> = memo(
           href={href}
           className={twMerge(
             `w-full flex items-center justify-center`,
-            active ? "border-purple-500/30" : "border-white/5"
+            active ? "border-theme-500/30" : "border-white/5"
           )}
         >
           <Hover
@@ -34,7 +34,7 @@ const SidebarItem: React.FC<SidebarItemProps> = memo(
               <Icon
                 size={20}
                 className={twMerge(
-                  active ? "text-purple-400" : "text-neutral-400"
+                  active ? "text-theme-300" : "text-neutral-400"
                 )}
               />
             </div>
@@ -49,7 +49,7 @@ const SidebarItem: React.FC<SidebarItemProps> = memo(
         className={twMerge(
           `flex h-auto w-full items-center gap-x-4 py-3.5 px-4 rounded-xl`,
           active
-            ? "bg-purple-500/20 text-white border border-purple-500/30"
+            ? "bg-theme-500/20 text-white border border-theme-500/30"
             : "text-neutral-400 border border-transparent"
         )}
       >

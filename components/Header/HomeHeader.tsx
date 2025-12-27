@@ -7,12 +7,10 @@ import { useUser } from "@/hooks/auth/useUser";
 import useAuthModal from "@/hooks/auth/useAuthModal";
 import Button from "../common/Button";
 import Image from "next/image";
-import { User, LogOut, Menu, X, Home, Search, Settings } from "lucide-react";
+import { User } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { createClient } from "@/libs/supabase/client";
-import { RiPlayListFill } from "react-icons/ri";
-import { FaHeart } from "react-icons/fa";
 
 interface HeaderProps {
   className?: string;
@@ -23,7 +21,6 @@ const HomeHeader: React.FC<HeaderProps> = memo(({ className }) => {
   const authModal = useAuthModal();
   const { user, userDetails } = useUser();
   const supabaseClient = createClient();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   // Handle scroll effect
@@ -57,23 +54,23 @@ const HomeHeader: React.FC<HeaderProps> = memo(({ className }) => {
         w-full
         h-fit
         bg-gradient-to-b
-        from-purple-900/10
+        from-theme-900/10
         via-neutral-900/95
         to-neutral-900/90
         backdrop-blur-xl
         transition-all
         duration-300
         `,
-        scrolled ? "shadow-lg shadow-purple-900/10" : "",
+        scrolled ? "shadow-lg shadow-theme-900/10" : "",
         className
       )}
     >
-      <div className="w-full px-4 md:px-6 py-3 md:py-4">
+      <div className="w-full px-6 py-4">
         <div className="flex items-center justify-between w-full">
           {/* Logo and app name */}
-          <div className="flex items-center gap-x-2 md:gap-x-4">
+          <div className="flex items-center gap-x-4">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-purple-900/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-br from-theme-500/20 to-theme-900/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
               <Image
                 src="/logo.svg"
                 alt="Logo"
@@ -83,30 +80,18 @@ const HomeHeader: React.FC<HeaderProps> = memo(({ className }) => {
                 onClick={() => router.push("/")}
               />
             </div>
-            <h1 className="font-bold text-lg md:text-xl bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-neutral-400 md:inline">
+            <h1 className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-neutral-400">
               BadWave
             </h1>
           </div>
 
           {/* Right side controls */}
-          <div className="flex items-center gap-x-2 md:gap-x-4">
+          <div className="flex items-center gap-x-4">
             {user ? (
-              <div className="flex items-center gap-x-2 md:gap-x-4">
-                {/* Mobile menu toggle */}
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="md:hidden rounded-full p-2 hover:bg-neutral-800 transition"
-                >
-                  {mobileMenuOpen ? (
-                    <X className="w-5 h-5 text-white" />
-                  ) : (
-                    <Menu className="w-5 h-5 text-white" />
-                  )}
-                </button>
-
+              <div className="flex items-center gap-x-4">
                 {/* User profile */}
                 <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-purple-900/10 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-theme-500/10 to-theme-900/10 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-500" />
                   <Link href="/account">
                     <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/10 flex-shrink-0 shadow-inner group transition-transform duration-300 hover:scale-105">
                       {userDetails?.avatar_url ? (
@@ -125,18 +110,6 @@ const HomeHeader: React.FC<HeaderProps> = memo(({ className }) => {
                     </div>
                   </Link>
                 </div>
-
-                {/* Desktop logout button */}
-                {/* <div className="hidden md:block">
-                  <Button
-                    onClick={handleLogout}
-                    className="bg-transparent border border-white/10 text-neutral-300 font-medium hover:text-white hover:bg-neutral-800 transition-all duration-300"
-                    size="sm"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    ログアウト
-                  </Button>
-                </div> */}
               </div>
             ) : (
               <>
@@ -152,7 +125,7 @@ const HomeHeader: React.FC<HeaderProps> = memo(({ className }) => {
                 <div>
                   <Button
                     onClick={authModal.onOpen}
-                    className="px-4 md:px-6 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 transition-all duration-300"
+                    className="px-6 bg-gradient-to-r from-theme-600 to-theme-800 hover:from-theme-500 hover:to-theme-700 transition-all duration-300"
                     size="sm"
                   >
                     新規登録
@@ -162,61 +135,6 @@ const HomeHeader: React.FC<HeaderProps> = memo(({ className }) => {
             )}
           </div>
         </div>
-
-        {/* Mobile menu */}
-        {mobileMenuOpen && user && (
-          <div className="md:hidden pt-4 pb-2 mt-2 border-t border-white/5 animate-fadeDown">
-            <div className="flex flex-col space-y-3">
-              <Link
-                href="/"
-                className="flex items-center gap-x-3 text-neutral-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Home className="w-5 h-5" />
-                <span>ホーム</span>
-              </Link>
-              <Link
-                href="/search"
-                className="flex items-center gap-x-3 text-neutral-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Search className="w-5 h-5" />
-                <span>検索</span>
-              </Link>
-              <Link
-                href="/playlists"
-                className="flex items-center gap-x-3 text-neutral-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <RiPlayListFill className="w-5 h-5" />
-                <span>プレイリスト</span>
-              </Link>
-              <Link
-                href="/liked"
-                className="flex items-center gap-x-3 text-neutral-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <FaHeart className="w-5 h-5" />
-                <span>お気に入り</span>
-              </Link>
-              <Link
-                href="/account"
-                className="flex items-center gap-x-3 text-neutral-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Settings className="w-5 h-5" />
-                <span>アカウント設定</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-x-3 text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-900/10 transition text-left"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>ログアウト</span>
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

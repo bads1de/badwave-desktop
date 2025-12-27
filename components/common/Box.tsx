@@ -21,8 +21,8 @@ const Box: React.FC<BoxProps> = ({ children, className }) => {
         transition-all
         duration-500
         hover:shadow-lg
-        hover:shadow-purple-500/[0.03]
-        hover:border-purple-500/[0.05]
+        hover:shadow-theme-500/[0.03]
+        hover:border-theme-500/[0.05]
         `,
         className
       )}

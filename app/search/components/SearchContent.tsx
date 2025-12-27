@@ -83,9 +83,9 @@ const PlaylistSection = memo(({ playlists }: PlaylistSectionProps) => {
             )
           }
         >
-          <div className="absolute -top-2 -left-2 w-full h-full bg-purple-900/50 transform rotate-3 rounded-xl" />
-          <div className="absolute -top-1 -left-1 w-full h-full bg-purple-800/50 transform rotate-2 rounded-xl" />
-          <div className="relative bg-neutral-900 rounded-xl p-4 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:shadow-purple-900/20">
+          <div className="absolute -top-2 -left-2 w-full h-full bg-theme-900/50 transform rotate-3 rounded-xl" />
+          <div className="absolute -top-1 -left-1 w-full h-full bg-theme-800/50 transform rotate-2 rounded-xl" />
+          <div className="relative bg-neutral-900 rounded-xl p-4 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:shadow-theme-900/20">
             <div className="relative aspect-square w-full overflow-hidden rounded-lg mb-4">
               <Image
                 src={playlist.image_path || "/images/playlist.png"}

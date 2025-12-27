@@ -4,8 +4,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/libs/supabase/client";
-import uploadFileToR2 from "@/actions/uploadFileToR2";
-import deleteFileFromR2 from "@/actions/deleteFileFromR2";
+import { uploadFileToR2, deleteFileFromR2 } from "@/actions/r2";
+import { checkIsAdmin } from "@/actions/checkAdmin";
 import { CACHED_QUERIES } from "@/constants";
 
 interface UpdateProfileParams {
@@ -87,6 +87,14 @@ const useUpdateUserProfileMutation = (accountModal: AccountModalHook) => {
       avatarFile,
       currentAvatarUrl,
     }: UpdateAvatarParams) => {
+      // 管理者権限チェック (アバターのアップロードも管理者に限定)
+      const { isAdmin } = await checkIsAdmin();
+
+      if (!isAdmin) {
+        toast.error("管理者権限が必要です");
+        throw new Error("管理者権限が必要です");
+      }
+
       if (!userId || !avatarFile) {
         toast.error("ユーザーIDと画像が必要です");
         throw new Error("ユーザーIDと画像が必要です");
@@ -99,11 +107,10 @@ const useUpdateUserProfileMutation = (accountModal: AccountModalHook) => {
           const filePath = currentAvatarUrl.split("/").pop();
 
           // R2ストレージから既存画像を削除
-          await deleteFileFromR2({
-            bucketName: "image",
-            filePath: filePath!,
-            showToast: false,
-          });
+          const deleteResult = await deleteFileFromR2("image", filePath!);
+          if (!deleteResult.success) {
+            console.error("画像の削除に失敗しました", deleteResult.error);
+          }
         } catch (error) {
           console.error("画像の削除に失敗しました", error);
           // 削除に失敗しても続行
@@ -111,17 +118,19 @@ const useUpdateUserProfileMutation = (accountModal: AccountModalHook) => {
       }
 
       // 新しいアバター画像をアップロードする
-      const avatarUrl = await uploadFileToR2({
-        file: avatarFile,
-        bucketName: "image",
-        fileType: "image",
-        fileNamePrefix: `avatar-${userId}`,
-      });
+      const formData = new FormData();
+      formData.append("file", avatarFile);
+      formData.append("bucketName", "image");
+      formData.append("fileNamePrefix", `avatar-${userId}`);
 
-      if (!avatarUrl) {
-        toast.error("アップロードに失敗しました");
-        throw new Error("アップロードに失敗しました");
+      const result = await uploadFileToR2(formData);
+
+      if (!result.success || !result.url) {
+        toast.error(result.error || "アップロードに失敗しました");
+        throw new Error(result.error || "アップロードに失敗しました");
       }
+
+      const avatarUrl = result.url;
 
       // データベースのユーザー情報を更新する
       const { error } = await supabaseClient
@@ -146,7 +155,7 @@ const useUpdateUserProfileMutation = (accountModal: AccountModalHook) => {
     },
     onError: (error: Error) => {
       console.error("Update avatar error:", error);
-      toast.error("アバターの更新に失敗しました");
+      toast.error(error.message || "アバターの更新に失敗しました");
     },
   });
 

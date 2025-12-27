@@ -9,7 +9,6 @@ import MediaItem from "../Song/MediaItem";
 import Slider from "./Slider";
 import SeekBar from "./Seekbar";
 import AddPlaylist from "../Playlist/AddPlaylist";
-import MobilePlayerContent from "../Mobile/MobilePlayerContent";
 import useAudioPlayer from "@/hooks/audio/useAudioPlayer";
 import useLyricsStore from "@/hooks/stores/useLyricsStore";
 import { mediaControls } from "@/libs/electron-utils";
@@ -17,13 +16,11 @@ import { isLocalSong } from "@/libs/songUtils";
 
 interface PlayerContentProps {
   song: Song;
-  isMobilePlayer: boolean;
-  toggleMobilePlayer: () => void;
   playlists: Playlist[];
 }
 
 const PlayerContent: React.FC<PlayerContentProps> = React.memo(
-  ({ song, isMobilePlayer, toggleMobilePlayer, playlists }) => {
+  ({ song, playlists }) => {
     // ローカル曲かどうかを判定
     const isLocalFile = isLocalSong(song);
 
@@ -99,33 +96,21 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
       <>
         <audio ref={audioRef} src={song.song_path} loop={isRepeating} />
 
-        <div className="grid grid-cols-2 md:grid-cols-3 h-full bg-[#121212] border-t border-[#303030] rounded-t-xl">
+        <div className="grid grid-cols-3 h-full bg-[#121212] border-t border-[#303030] rounded-t-xl">
           <div className="flex w-full justify-start px-4">
             <div className="flex items-center gap-x-4">
-              <MediaItem data={song} onClick={toggleMobilePlayer} />
+              <MediaItem data={song} />
             </div>
           </div>
 
-          <div className="flex md:hidden col-auto w-full justify-end items-center">
-            <div
-              onClick={handlePlay}
-              className="h-10 w-10 flex items-center justify-center rounded-full bg-gradient-to-br from-[#08101f] to-[#0d0d0d] p-1 cursor-pointer group"
-            >
-              <Icon
-                size={30}
-                className="text-[#f0f0f0] group-hover:filter group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-              />
-            </div>
-          </div>
-
-          <div className="hidden md:flex flex-col w-full md:justify-center items-center max-w-[722px] gap-x-6">
+          <div className="flex flex-col w-full justify-center items-center max-w-[722px] gap-x-6">
             <div className="flex items-center gap-x-8">
               <FaRandom
                 onClick={toggleShuffle}
                 size={20}
                 className={`cursor-pointer transition-all duration-300 hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] ${
                   isShuffling
-                    ? "text-[#4c1d95] drop-shadow-[0_0_8px_rgba(76,29,149,0.6)] hover:drop-shadow-[0_0_12px_rgba(76,29,149,0.8)]"
+                    ? "text-theme-500 drop-shadow-[0_0_8px_var(--glow-color)] hover:drop-shadow-[0_0_12px_var(--glow-color)]"
                     : "text-neutral-400 hover:text-white"
                 }`}
               />
@@ -153,7 +138,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
                 size={25}
                 className={`cursor-pointer transition-all duration-300 hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] ${
                   isRepeating
-                    ? "text-[#4c1d95] drop-shadow-[0_0_8px_rgba(76,29,149,0.6)] hover:drop-shadow-[0_0_12px_rgba(76,29,149,0.8)]"
+                    ? "text-theme-500 drop-shadow-[0_0_8px_var(--glow-color)] hover:drop-shadow-[0_0_12px_var(--glow-color)]"
                     : "text-neutral-400 hover:text-white"
                 }`}
               />
@@ -175,7 +160,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
             </div>
           </div>
 
-          <div className="hidden md:flex w-full justify-end pr-6">
+          <div className="flex w-full justify-end pr-6">
             <div className="flex items-center gap-x-8 w-full md:w-[170px] lg:w-[200px]">
               {/* ローカル曲の場合はオンライン専用機能を非表示 */}
               {!isLocalFile && (
@@ -217,30 +202,6 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
               </div>
             </div>
           </div>
-
-          {isMobilePlayer && (
-            <MobilePlayerContent
-              song={song}
-              playlists={playlists}
-              songUrl={song.song_path}
-              imageUrl={song.image_path}
-              videoUrl={song.video_path}
-              currentTime={currentTime}
-              duration={duration}
-              formattedCurrentTime={formattedCurrentTime}
-              formattedDuration={formattedDuration}
-              isPlaying={isPlaying}
-              isShuffling={isShuffling}
-              isRepeating={isRepeating}
-              handlePlay={handlePlay}
-              handleSeek={handleSeek}
-              toggleMobilePlayer={toggleMobilePlayer}
-              toggleShuffle={toggleShuffle}
-              toggleRepeat={toggleRepeat}
-              onPlayNext={onPlayNext}
-              onPlayPrevious={onPlayPrevious}
-            />
-          )}
         </div>
       </>
     );

@@ -41,7 +41,7 @@ const PublicPlaylistBoard: React.FC<PublicPlaylistBoardProps> = ({
               }
             >
               {/* メインカード */}
-              <div className="relative overflow-hidden bg-neutral-900/40 backdrop-blur-sm rounded-xl transition-all duration-300 border border-white/5 group-hover:border-purple-500/30 group-hover:bg-neutral-800/40">
+              <div className="relative overflow-hidden bg-neutral-900/40 backdrop-blur-sm rounded-xl transition-all duration-300 border border-white/5 group-hover:border-theme-500/30 group-hover:bg-neutral-800/40">
                 {/* アートワーク */}
                 <div className="relative aspect-square w-full overflow-hidden">
                   <Image
@@ -56,7 +56,7 @@ const PublicPlaylistBoard: React.FC<PublicPlaylistBoardProps> = ({
 
                   {/* ホバー時のグロー効果 */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute inset-0 bg-purple-500/10 blur-xl" />
+                    <div className="absolute inset-0 bg-theme-500/10 blur-xl" />
                   </div>
                 </div>
 

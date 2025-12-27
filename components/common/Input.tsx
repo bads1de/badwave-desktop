@@ -10,7 +10,7 @@ const InputComponent = forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, disabled, ...props }, ref) => {
     return (
       <div className="relative w-full group">
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-900/10 opacity-0 group-focus-within:opacity-100 transition-all duration-300 -z-10" />
+        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-theme-500/10 to-theme-900/10 opacity-0 group-focus-within:opacity-100 transition-all duration-300 -z-10" />
         <input
           type={type}
           className={twMerge(
@@ -29,8 +29,8 @@ const InputComponent = forwardRef<HTMLInputElement, InputProps>(
           disabled:cursor-not-allowed
           disabled:opacity-50
           focus:outline-none
-          group-hover:border-purple-500/20
-          focus:border-purple-500/30
+          group-hover:border-theme-500/20
+          focus:border-theme-500/30
           transition-all
           duration-300
           `,

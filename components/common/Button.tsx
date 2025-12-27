@@ -26,9 +26,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={twMerge(
           `relative group flex items-center justify-center rounded-xl font-medium transition-all duration-300`,
           variant === "default" &&
-            "bg-gradient-to-br from-purple-500/20 to-purple-900/20 border border-purple-500/30 text-white hover:shadow-lg hover:shadow-purple-500/20 hover:border-purple-500/50",
+            "bg-gradient-to-br from-theme-500/20 to-theme-900/20 border border-theme-500/30 text-white hover:shadow-lg hover:shadow-theme-500/20 hover:border-theme-500/50",
           variant === "outline" &&
-            "border border-neutral-800 hover:border-purple-500/30 bg-transparent hover:bg-neutral-800/50 text-white",
+            "border border-neutral-800 hover:border-theme-500/30 bg-transparent hover:bg-neutral-800/50 text-white",
           variant === "ghost" &&
             "bg-transparent hover:bg-neutral-800/50 text-white border border-transparent",
           variant === "success" &&

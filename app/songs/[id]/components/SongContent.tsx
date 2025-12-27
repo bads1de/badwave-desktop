@@ -187,7 +187,7 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
 
               {/* Song Info */}
               <div className="flex-grow">
-                <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
+                <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-theme-400 to-theme-600">
                   {song.title}
                 </h1>
                 <p className="text-xl md:text-2xl text-gray-300 mb-4">
@@ -214,7 +214,7 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
                 <div className="flex flex-wrap gap-3">
                   <Button
                     onClick={handlePlayClick}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-theme-600 hover:bg-theme-700"
                   >
                     {isPlaying ? (
                       <Pause className="mr-2" size={16} />
@@ -227,14 +227,14 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
                     onClick={handleDownloadClick}
                     disabled={isLoading}
                     variant="outline"
-                    className="border-blue-600 text-blue-600 hover:bg-blue-600/10"
+                    className="border-theme-600 text-theme-600 hover:bg-theme-600/10"
                   >
                     <Download className="mr-2" size={16} />
                     {isLoading ? "Downloading..." : "Download"}
                   </Button>
                   <Button
                     variant="outline"
-                    className="border-purple-600 text-purple-600 hover:bg-purple-600/10"
+                    className="border-theme-700 text-theme-700 hover:bg-theme-700/10"
                   >
                     <Share2 className="mr-2" size={16} />
                     Share
@@ -243,7 +243,7 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
                     <Button
                       onClick={() => setIsEditModalOpen(true)}
                       variant="outline"
-                      className="border-pink-600 text-pink-600 hover:bg-pink-600/10"
+                      className="border-theme-400 text-theme-400 hover:bg-theme-400/10"
                     >
                       <Edit2 className="mr-2" size={16} />
                       Edit
@@ -276,7 +276,7 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
                 onClick={() => setActiveTab("lyrics")}
                 className={`pb-4 relative ${
                   activeTab === "lyrics"
-                    ? "text-blue-400"
+                    ? "text-theme-400"
                     : "text-gray-400 hover:text-gray-300"
                 }`}
               >
@@ -287,7 +287,7 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
                 {activeTab === "lyrics" && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-theme-400"
                   />
                 )}
               </button>
@@ -295,7 +295,7 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
                 onClick={() => setActiveTab("similar")}
                 className={`pb-4 relative ${
                   activeTab === "similar"
-                    ? "text-blue-400"
+                    ? "text-theme-400"
                     : "text-gray-400 hover:text-gray-300"
                 }`}
               >
@@ -306,7 +306,7 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
                 {activeTab === "similar" && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-theme-400"
                   />
                 )}
               </button>

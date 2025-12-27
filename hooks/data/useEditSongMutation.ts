@@ -4,8 +4,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/libs/supabase/client";
-import uploadFileToR2 from "@/actions/uploadFileToR2";
-import deleteFileFromR2 from "@/actions/deleteFileFromR2";
+import { uploadFileToR2, deleteFileFromR2 } from "@/actions/r2";
+import { checkIsAdmin } from "@/actions/checkAdmin";
 import { sanitizeTitle } from "@/libs/helpers";
 import { CACHED_QUERIES } from "@/constants";
 import { Song } from "@/types";
@@ -57,29 +57,38 @@ const useEditSongMutation = (editModal: EditModalHook) => {
     currentPath?: string;
   }) => {
     try {
-      const uploadedUrl = await uploadFileToR2({
-        file,
-        bucketName,
-        fileType,
-        fileNamePrefix,
-      });
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("bucketName", bucketName);
+      formData.append("fileNamePrefix", fileNamePrefix);
 
-      if (!uploadedUrl) {
+      const result = await uploadFileToR2(formData);
+
+      if (!result.success || !result.url) {
         toast.error(
-          `${
-            fileType === "video" ? "動画" : fileType === "audio" ? "曲" : "画像"
-          }のアップロードに失敗しました`
+          result.error ||
+            `${
+              fileType === "video"
+                ? "動画"
+                : fileType === "audio"
+                ? "曲"
+                : "画像"
+            }のアップロードに失敗しました`
         );
         return null;
       }
 
+      const uploadedUrl = result.url;
+
       // 古いファイルを削除
       if (currentPath) {
-        await deleteFileFromR2({
+        const deleteResult = await deleteFileFromR2(
           bucketName,
-          filePath: currentPath.split("/").pop()!,
-          showToast: false,
-        });
+          currentPath.split("/").pop()!
+        );
+        if (!deleteResult.success) {
+          console.error("ファイルの削除に失敗しました", deleteResult.error);
+        }
       }
 
       return uploadedUrl;
@@ -101,6 +110,14 @@ const useEditSongMutation = (editModal: EditModalHook) => {
       imageFile,
       currentSong,
     }: EditSongParams) => {
+      // 管理者権限チェック
+      const { isAdmin } = await checkIsAdmin();
+
+      if (!isAdmin) {
+        toast.error("管理者権限が必要です");
+        throw new Error("管理者権限が必要です");
+      }
+
       if (!id) {
         toast.error("曲のIDが必要です");
         throw new Error("曲のIDが必要です");
@@ -185,7 +202,7 @@ const useEditSongMutation = (editModal: EditModalHook) => {
     },
     onError: (error: Error) => {
       console.error("Edit song error:", error);
-      toast.error("編集に失敗しました");
+      toast.error(error.message || "編集に失敗しました");
     },
   });
 };

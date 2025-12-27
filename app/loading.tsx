@@ -6,11 +6,11 @@ import { motion } from "framer-motion";
 
 const Loading = () => {
   return (
-    <Box className="h-full flex items-center justify-center bg-gradient-to-br from-neutral-900/80 via-purple-900/20 to-neutral-900/80">
+    <Box className="h-full flex items-center justify-center bg-gradient-to-br from-neutral-900/80 via-theme-900/20 to-neutral-900/80">
       <div className="relative">
         {/* バックグラウンドのblur */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-theme-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-theme-900/10 rounded-full blur-3xl" />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -19,7 +19,7 @@ const Loading = () => {
         >
           {/* ローディングアニメーション */}
           <PulseLoader
-            color="rgba(139, 92, 246, 0.8)"
+            color="var(--primary-color)"
             size={15}
             speedMultiplier={0.8}
           />

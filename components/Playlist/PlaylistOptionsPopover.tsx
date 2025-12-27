@@ -159,7 +159,7 @@ const PlaylistOptionsPopover: React.FC<PlaylistOptionsPopoverProps> = ({
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-2 py-1 bg-neutral-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-2 py-1 bg-neutral-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-theme-500"
                   placeholder="プレイリスト名"
                   disabled={updatePlaylistMutation.isPending}
                 />
@@ -173,7 +173,7 @@ const PlaylistOptionsPopover: React.FC<PlaylistOptionsPopoverProps> = ({
                   </button>
                   <button
                     onClick={handleTitleUpdate}
-                    className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition"
+                    className="px-2 py-1 text-xs bg-theme-500 text-white rounded hover:bg-theme-600 transition"
                     disabled={updatePlaylistMutation.isPending}
                   >
                     保存
