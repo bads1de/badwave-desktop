@@ -1,6 +1,7 @@
 import React, { ReactNode } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import useGetLocalFiles from "@/hooks/data/useGetLocalFiles";
 
 // モックの設定（フック読み込み前に設定）
 const mockInvoke = jest.fn();
@@ -14,9 +15,6 @@ Object.defineProperty(window, "electron", {
   },
   writable: true,
 });
-
-// フックをインポート
-import useGetLocalFiles from "@/hooks/data/useGetLocalFiles";
 
 // wrapper を作成する関数
 const createWrapper = () => {

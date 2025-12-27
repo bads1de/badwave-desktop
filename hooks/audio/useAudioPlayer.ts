@@ -3,7 +3,7 @@ import usePlayer from "@/hooks/player/usePlayer";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
 import useVolumeStore from "./useVolumeStore";
-import { isLocalSong, toFileUrl } from "@/libs/songUtils";
+import { isLocalFilePath, toFileUrl } from "@/libs/songUtils";
 import { Song } from "@/types";
 
 /**
@@ -44,8 +44,8 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
   const isRepeating = usePlayer((state) => state.isRepeating);
   const isShuffling = usePlayer((state) => state.isShuffling);
 
-  // ローカルファイルかどうかを判定
-  const isLocalFile = useMemo(() => isLocalSong(song), [song]);
+  // song_pathがローカルファイルパスかどうかを判定（オーディオ再生時のURL変換に使用）
+  const isLocalFile = useMemo(() => isLocalFilePath(songUrl), [songUrl]);
 
   // ボリューム管理のカスタムフックを使用
   const { volume, setVolume, isLoaded: isVolumeLoaded } = useVolumeStore();

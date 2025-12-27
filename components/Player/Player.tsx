@@ -5,7 +5,6 @@ import usePlayer from "@/hooks/player/usePlayer";
 import React, { memo, useMemo } from "react";
 import PlayerContent from "./PlayerContent";
 import { Playlist, Song } from "@/types";
-import { isLocalSong } from "@/libs/songUtils";
 
 interface PlayerProps {
   playlists: Playlist[];

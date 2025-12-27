@@ -4,7 +4,7 @@ import { twMerge } from "tailwind-merge";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { HiHome, HiFolder } from "react-icons/hi";
-import { BiSearch } from "react-icons/bi";
+import { BiSearch, BiLibrary } from "react-icons/bi";
 import Box from "../common/Box";
 import SidebarItem from "./SidebarItem";
 import Studio from "./Studio";
@@ -13,6 +13,9 @@ import { RiPlayListFill, RiPulseLine } from "react-icons/ri";
 import { FaHeart } from "react-icons/fa6";
 import { useUser } from "@/hooks/auth/useUser";
 import { Button } from "../ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import Link from "next/link";
+import Hover from "../common/Hover";
 import Image from "next/image";
 import { GoSidebarCollapse } from "react-icons/go";
 import UserCard from "./UserCard";
@@ -53,25 +56,13 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         active: pathname === "/pulse",
         href: "/pulse",
       },
-      ...(user
-        ? [
-            {
-              icon: RiPlayListFill,
-              label: "プレイリスト",
-              active: pathname === "/playlists",
-              href: "/playlists",
-            },
-            {
-              icon: FaHeart,
-              label: "お気に入り",
-              active: pathname === "/liked",
-              href: "/liked",
-            },
-          ]
-        : []),
     ],
-    [pathname, user]
+    [pathname]
   );
+
+  const isLibraryActive = useMemo(() => {
+    return pathname === "/playlists" || pathname === "/liked";
+  }, [pathname]);
 
   return (
     <div
@@ -124,6 +115,87 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 isCollapsed={isCollapsed}
               />
             ))}
+            {user && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <div
+                    className={twMerge(
+                      "cursor-pointer transition",
+                      isCollapsed
+                        ? "w-full flex items-center justify-center border-b border-transparent"
+                        : "flex h-auto w-full items-center gap-x-4 py-3.5 px-4 rounded-xl",
+                      isLibraryActive
+                        ? isCollapsed
+                          ? "border-theme-500/30"
+                          : "bg-theme-500/20 text-white border border-theme-500/30"
+                        : `border-transparent ${
+                            isCollapsed
+                              ? "border-white/5"
+                              : "text-neutral-400 hover:text-white"
+                          }`
+                    )}
+                  >
+                    {isCollapsed ? (
+                      <Hover
+                        description="ライブラリ"
+                        contentSize="w-auto px-3 py-2"
+                        side="right"
+                      >
+                        <div className="p-3 rounded-xl">
+                          <BiLibrary
+                            size={20}
+                            className={twMerge(
+                              isLibraryActive
+                                ? "text-theme-400"
+                                : "text-neutral-400"
+                            )}
+                          />
+                        </div>
+                      </Hover>
+                    ) : (
+                      <>
+                        <BiLibrary size={24} />
+                        <p className="truncate text-sm font-medium">
+                          ライブラリ
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="right"
+                  align="start"
+                  className="w-52 p-2 bg-neutral-900/95 backdrop-blur-xl border border-white/10 shadow-xl"
+                >
+                  <div className="flex flex-col gap-y-1">
+                    <Link
+                      href="/playlists"
+                      className={twMerge(
+                        "flex items-center gap-x-3 px-3 py-2.5 rounded-lg transition-all duration-300",
+                        pathname === "/playlists"
+                          ? "bg-theme-500/20 text-white"
+                          : "text-neutral-400 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <RiPlayListFill size={20} />
+                      <p className="text-sm font-medium">プレイリスト</p>
+                    </Link>
+                    <Link
+                      href="/liked"
+                      className={twMerge(
+                        "flex items-center gap-x-3 px-3 py-2.5 rounded-lg transition-all duration-300",
+                        pathname === "/liked"
+                          ? "bg-theme-500/20 text-white"
+                          : "text-neutral-400 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <FaHeart size={20} />
+                      <p className="text-sm font-medium">お気に入り</p>
+                    </Link>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         </Box>
 

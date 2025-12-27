@@ -3,30 +3,48 @@ import { Song } from "@/types";
 /**
  * 曲がローカルファイルかどうかを判定する
  *
+ * 注意: この関数はsong.idが'local_'で始まるかどうかで判定します。
+ * これにより、キャッシュされたオンライン曲（song_pathがローカルパスに変更されている）と
+ * 本当のローカルファイル（/localページからスキャンしたMP3など）を正しく区別できます。
+ *
  * @param song - 判定する曲オブジェクト
  * @returns ローカルファイルの場合true
  */
 export function isLocalSong(song: Song | null | undefined): boolean {
-  if (!song || !song.song_path) {
+  if (!song) {
     return false;
   }
 
-  // HTTPまたはHTTPSで始まる場合はオンライン曲
-  if (
-    song.song_path.startsWith("http://") ||
-    song.song_path.startsWith("https://")
-  ) {
+  // IDが'local_'で始まる場合は本当のローカルファイル
+  // キャッシュされたオンライン曲はオリジナルのIDを保持しているため、falseを返す
+  return typeof song.id === "string" && song.id.startsWith("local_");
+}
+
+/**
+ * song_pathがローカルファイルパスかどうかを判定する
+ * （内部使用: オーディオ再生時のURL変換に使用）
+ *
+ * @param songPath - 曲のパス
+ * @returns ローカルファイルパスの場合true
+ */
+export function isLocalFilePath(songPath: string | null | undefined): boolean {
+  if (!songPath) {
     return false;
   }
 
-  // file://で始まる場合はローカルファイル
-  if (song.song_path.startsWith("file://")) {
+  // HTTPまたはHTTPSで始まる場合はオンラインパス
+  if (songPath.startsWith("http://") || songPath.startsWith("https://")) {
+    return false;
+  }
+
+  // file://で始まる場合はローカルファイルパス
+  if (songPath.startsWith("file://")) {
     return true;
   }
 
   // ローカルファイルパス（Windows: C:\, Unix: /）の場合
-  const isWindowsPath = /^[A-Za-z]:\\/.test(song.song_path);
-  const isUnixPath = song.song_path.startsWith("/");
+  const isWindowsPath = /^[A-Za-z]:\\/.test(songPath);
+  const isUnixPath = songPath.startsWith("/");
 
   return isWindowsPath || isUnixPath;
 }
