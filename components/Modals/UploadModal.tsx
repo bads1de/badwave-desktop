@@ -22,6 +22,7 @@ import Input from "../common/Input";
 import { Textarea } from "../ui/textarea";
 import GenreSelect from "../Genre/GenreSelect";
 import Button from "../common/Button";
+import { RiUploadCloud2Line, RiMusic2Line } from "react-icons/ri";
 
 const UploadModal: React.FC = memo(() => {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
@@ -64,9 +65,7 @@ const UploadModal: React.FC = memo(() => {
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
-      if (files) {
-        handleFiles(files);
-      }
+      if (files) handleFiles(files);
     },
     []
   );
@@ -112,6 +111,14 @@ const UploadModal: React.FC = memo(() => {
       setAudioPreview(URL.createObjectURL(file));
     }
   }, [song]);
+
+  useEffect(() => {
+    if (!uploadModal.isOpen) {
+      reset();
+      setImagePreview(null);
+      setAudioPreview(null);
+    }
+  }, [uploadModal.isOpen, reset]);
 
   const onChange = useCallback(
     (open: boolean) => {
@@ -167,12 +174,13 @@ const UploadModal: React.FC = memo(() => {
     >
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 gap-3"
+        aria-label="曲をアップロード"
       >
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label htmlFor="title" className="text-sm text-zinc-400">
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="title" className="text-xs text-zinc-400">
                 タイトル
               </label>
               <Input
@@ -180,11 +188,11 @@ const UploadModal: React.FC = memo(() => {
                 disabled={isLoading}
                 {...register("title", { required: true })}
                 placeholder="曲のタイトル"
-                className="h-9 bg-zinc-800/50 border-zinc-700/50 focus:border-white/30"
+                className="h-9 bg-zinc-800/50 border-zinc-700/50 focus:border-theme-500/50"
               />
             </div>
-            <div className="space-y-1">
-              <label htmlFor="author" className="text-sm text-zinc-400">
+            <div>
+              <label htmlFor="author" className="text-xs text-zinc-400">
                 アーティスト
               </label>
               <Input
@@ -192,13 +200,13 @@ const UploadModal: React.FC = memo(() => {
                 disabled={isLoading}
                 {...register("author", { required: true })}
                 placeholder="アーティスト名"
-                className="h-9 bg-zinc-800/50 border-zinc-700/50 focus:border-white/30"
+                className="h-9 bg-zinc-800/50 border-zinc-700/50 focus:border-theme-500/50"
               />
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="lyrics" className="text-sm text-zinc-400">
+          <div>
+            <label htmlFor="lyrics" className="text-xs text-zinc-400">
               歌詞
             </label>
             <Textarea
@@ -206,31 +214,36 @@ const UploadModal: React.FC = memo(() => {
               disabled={isLoading}
               {...register("lyrics")}
               placeholder="歌詞"
-              className="bg-zinc-800/50 border-zinc-700/50 focus:border-white/30 h-28 resize-none"
+              className="bg-zinc-800/50 border-zinc-700/50 focus:border-theme-500/50 h-20 resize-none"
             />
           </div>
 
-          <div className="space-y-1">
-            <label className="text-sm text-zinc-400">ジャンル</label>
+          <div>
+            <label className="text-xs text-zinc-400">ジャンル</label>
             <GenreSelect
               onGenreChange={(genres: string) => setSelectedGenres([genres])}
             />
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm text-zinc-400">ファイルを選択</label>
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="file" className="text-xs text-zinc-400">
+              ファイルを選択
+            </label>
             <div
               ref={dropRef}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleFileDrop}
-              className={`relative p-3 border-2 border-dashed rounded-lg transition-colors ${
-                isDragging
-                  ? "border-theme-500 bg-theme-500/10"
-                  : "border-zinc-700/50 bg-zinc-800/50"
-              }`}
+              className={`
+                relative p-3 border-2 border-dashed rounded-lg transition-all duration-300 cursor-pointer group
+                ${
+                  isDragging
+                    ? "border-theme-500 bg-theme-500/10"
+                    : "border-zinc-700/50 bg-zinc-800/30 hover:border-theme-500/50 hover:bg-zinc-800/50 hover:shadow-[0_0_15px_rgba(var(--theme-rgb),0.15)]"
+                }
+              `}
             >
               <Input
                 type="file"
@@ -241,16 +254,21 @@ const UploadModal: React.FC = memo(() => {
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 multiple
               />
-              <div className="text-center py-2">
-                <p className="text-sm text-zinc-400">
-                  クリックまたはドラッグ&ドロップ
-                </p>
-                <p className="text-xs text-zinc-500">MP3および画像ファイル</p>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-theme-500/10 group-hover:bg-theme-500/20 transition-colors">
+                  <RiUploadCloud2Line className="w-5 h-5 text-theme-400 group-hover:text-theme-300 transition-colors" />
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-400 group-hover:text-zinc-300 transition-colors">
+                    クリックまたはドラッグ&ドロップ
+                  </p>
+                  <p className="text-xs text-zinc-500">MP3および画像ファイル</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {imagePreview && (
               <div className="aspect-square relative overflow-hidden rounded-lg border border-zinc-700/50">
                 <Image
@@ -272,8 +290,41 @@ const UploadModal: React.FC = memo(() => {
           </div>
         </div>
 
-        <Button disabled={isLoading} type="submit" className="col-span-full ">
-          {isLoading ? "アップロード中..." : "アップロード"}
+        <Button
+          disabled={isLoading}
+          type="submit"
+          className="col-span-full bg-gradient-to-r from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-medium py-2.5 rounded-xl transition-all duration-300 shadow-lg shadow-theme-500/20 hover:shadow-theme-500/40"
+        >
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <svg
+                className="animate-spin h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              アップロード中...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <RiMusic2Line className="w-5 h-5" />
+              アップロード
+            </span>
+          )}
         </Button>
       </form>
     </Modal>

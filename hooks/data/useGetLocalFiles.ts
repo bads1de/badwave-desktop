@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { CACHED_QUERIES } from "@/constants";
 import { LocalFile } from "@/app/local/components/LocalFileTable";
 
 /**
@@ -102,8 +102,9 @@ const useGetLocalFiles = (
         scanInfo: scanResult.scanInfo || null,
       };
     },
-    staleTime: CACHE_CONFIG.staleTime,
-    gcTime: CACHE_CONFIG.gcTime,
+    // ローカルファイルは重いスキャン処理のため、ユーザーが明示的に再スキャンするまでキャッシュを永続化
+    staleTime: Infinity,
+    gcTime: Infinity,
     enabled: !!directoryPath,
   });
 

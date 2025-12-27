@@ -2,7 +2,7 @@ import React, { useState, useRef, memo } from "react";
 import { Spotlight } from "@/types";
 import useSpotlightModal from "@/hooks/modal/useSpotlightModal";
 import ScrollableContainer from "./common/ScrollableContainer";
-import useVolumeStore from "@/hooks/audio/useVolumeStore";
+import useVolumeStore from "@/hooks/stores/useVolumeStore";
 
 interface SpotlightBoardProps {
   spotlightData: Spotlight[];
@@ -42,12 +42,7 @@ const SpotlightBoardComponent: React.FC<SpotlightBoardProps> = ({
       // ミュートが解除された場合
       videoRefs.current.forEach((video) => {
         if (video) {
-          // Electronのストアから取得した音量を使用（50%に調整）
-          if (volume !== null) {
-            video.volume = volume;
-          } else {
-            video.volume = 0.5;
-          }
+          video.volume = volume;
         }
       });
     }
@@ -73,9 +68,7 @@ const SpotlightBoardComponent: React.FC<SpotlightBoardProps> = ({
                 ref={(el) => {
                   if (el) {
                     videoRefs.current[index] = el;
-                    if (volume !== null) {
-                      el.volume = volume;
-                    }
+                    el.volume = volume;
                   }
                 }}
                 src={item.video_path}

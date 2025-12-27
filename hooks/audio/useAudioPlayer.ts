@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import usePlayer from "@/hooks/player/usePlayer";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
-import useVolumeStore from "./useVolumeStore";
+import useVolumeStore from "@/hooks/stores/useVolumeStore";
 import { isLocalFilePath, toFileUrl } from "@/libs/songUtils";
 import { Song } from "@/types";
 
@@ -48,16 +48,10 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
   const isLocalFile = useMemo(() => isLocalFilePath(songUrl), [songUrl]);
 
   // ボリューム管理のカスタムフックを使用
-  const { volume, setVolume, isLoaded: isVolumeLoaded } = useVolumeStore();
+  const { volume, setVolume } = useVolumeStore();
 
   const Icon = isPlaying ? BsPauseFill : BsPlayFill;
-  // ボリュームがnullの場合はデフォルトアイコンを表示
-  const VolumeIcon =
-    volume === null
-      ? HiSpeakerWave
-      : volume === 0
-      ? HiSpeakerXMark
-      : HiSpeakerWave;
+  const VolumeIcon = volume === 0 ? HiSpeakerXMark : HiSpeakerWave;
 
   const handlePlay = useCallback(() => {
     setIsPlaying((prev) => !prev);
@@ -178,7 +172,7 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || volume === null) return;
+    if (!audio) return;
 
     audio.volume = volume;
   }, [volume]);
