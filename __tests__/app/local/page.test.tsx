@@ -1,15 +1,39 @@
-import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import LocalPage from '@/app/local/page';
+import React, { ReactNode } from "react";
+import { render, screen, waitFor, act } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from "@jest/globals";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import LocalPage from "@/app/local/page";
 
 // モックの設定
-jest.mock('next/navigation', () => ({
+jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: jest.fn(),
   }),
 }));
+
+// Header コンポーネントのモック
+jest.mock("@/components/Header/Header", () => {
+  return function MockHeader({ children }: { children?: React.ReactNode }) {
+    return <div data-testid="mock-header">{children}</div>;
+  };
+});
+
+// usePlayer のモック
+jest.mock("@/hooks/player/usePlayer", () => {
+  return () => ({
+    setLocalSong: jest.fn(),
+    setIds: jest.fn(),
+    setId: jest.fn(),
+  });
+});
 
 // Electronのモック
 const mockInvoke = jest.fn();
@@ -20,12 +44,28 @@ const mockElectron = {
 };
 
 // グローバルオブジェクトにElectronを追加
-Object.defineProperty(window, 'electron', {
+Object.defineProperty(window, "electron", {
   value: mockElectron,
   writable: true,
 });
 
-describe('LocalPage', () => {
+// QueryClient wrapper を作成
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: 0,
+      },
+    },
+  });
+
+  return ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+};
+
+describe("LocalPage", () => {
   beforeEach(() => {
     // モックをリセット
     jest.clearAllMocks();
@@ -35,13 +75,13 @@ describe('LocalPage', () => {
     jest.resetAllMocks();
   });
 
-  it('保存されたライブラリ情報を取得する', async () => {
+  it("保存されたライブラリ情報を取得する", async () => {
     // 保存されたライブラリ情報のモック
-    mockInvoke.mockImplementation((channel, ...args) => {
-      if (channel === 'handle-get-saved-music-library') {
+    mockInvoke.mockImplementation((channel) => {
+      if (channel === "handle-get-saved-music-library") {
         return Promise.resolve({
           exists: true,
-          directoryPath: 'test-dir',
+          directoryPath: "test-dir",
           fileCount: 10,
           lastScan: new Date().toISOString(),
           directoryExists: true,
@@ -50,29 +90,35 @@ describe('LocalPage', () => {
       return Promise.resolve({});
     });
 
+    const Wrapper = createWrapper();
+
     // コンポーネントをレンダリング
     await act(async () => {
-      render(<LocalPage />);
+      render(
+        <Wrapper>
+          <LocalPage />
+        </Wrapper>
+      );
     });
 
     // 保存されたライブラリ情報が表示されることを確認
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('handle-get-saved-music-library');
+      expect(mockInvoke).toHaveBeenCalledWith("handle-get-saved-music-library");
     });
   });
 
-  it('ディレクトリ選択時にMP3ファイルをスキャンする', async () => {
+  it("ディレクトリ選択時にMP3ファイルをスキャンする", async () => {
     // モックの設定
-    mockInvoke.mockImplementation((channel, ...args) => {
-      if (channel === 'handle-get-saved-music-library') {
+    mockInvoke.mockImplementation((channel) => {
+      if (channel === "handle-get-saved-music-library") {
         return Promise.resolve({ exists: false });
-      } else if (channel === 'handle-select-directory') {
-        return Promise.resolve({ filePath: 'test-dir' });
-      } else if (channel === 'handle-scan-mp3-files') {
+      } else if (channel === "handle-select-directory") {
+        return Promise.resolve({ filePath: "test-dir" });
+      } else if (channel === "handle-scan-mp3-files") {
         return Promise.resolve({
-          files: ['test-dir/song1.mp3', 'test-dir/song2.mp3'],
+          files: ["test-dir/song1.mp3", "test-dir/song2.mp3"],
           scanInfo: {
-            newFiles: ['test-dir/song1.mp3', 'test-dir/song2.mp3'],
+            newFiles: ["test-dir/song1.mp3", "test-dir/song2.mp3"],
             modifiedFiles: [],
             unchangedFiles: [],
             deletedFiles: [],
@@ -80,14 +126,14 @@ describe('LocalPage', () => {
             isFullScan: true,
           },
         });
-      } else if (channel === 'handle-get-mp3-metadata') {
+      } else if (channel === "handle-get-mp3-metadata") {
         return Promise.resolve({
           metadata: {
             common: {
-              title: 'Test Song',
-              artist: 'Test Artist',
-              album: 'Test Album',
-              genre: ['Test Genre'],
+              title: "Test Song",
+              artist: "Test Artist",
+              album: "Test Album",
+              genre: ["Test Genre"],
             },
             format: {
               duration: 180,
@@ -99,12 +145,18 @@ describe('LocalPage', () => {
       return Promise.resolve({});
     });
 
+    const Wrapper = createWrapper();
+
     // コンポーネントをレンダリング
     await act(async () => {
-      render(<LocalPage />);
+      render(
+        <Wrapper>
+          <LocalPage />
+        </Wrapper>
+      );
     });
 
     // フォルダ選択ボタンが表示されることを確認
-    expect(screen.getByText('フォルダを選択')).toBeInTheDocument();
+    expect(screen.getByText("フォルダを選択")).toBeInTheDocument();
   });
 });

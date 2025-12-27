@@ -84,10 +84,6 @@ const useGetSongById = (id?: string | number) => {
   // ローカルファイルの確認とパスの差し替え
   const [finalSong, setFinalSong] = useState<Song | undefined>(song);
 
-  // 必要なインポートを追加する必要があります
-  // import { useState, useEffect } from "react";
-  // import { getDownloadFilename, toFileUrl } from "@/libs/songUtils";
-
   useEffect(() => {
     let isMounted = true;
 

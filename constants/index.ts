@@ -40,6 +40,8 @@ export const CACHED_QUERIES = {
   userDetails: "userDetails",
   spotlight: "spotlight",
   pulse: "pulse",
+  localFiles: "localFiles",
+  savedLibraryInfo: "savedLibraryInfo",
 } as const;
 
 /**
