@@ -4,23 +4,38 @@ import { Pulse } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
+import { useEffect } from "react";
 
 /**
- * Pulseデータを取得するカスタムフック
+ * Pulseデータを取得するカスタムフック (オフライン対応)
  *
  * @param initialData - サーバーから取得した初期データ（オプション）
  * @returns Pulseのリストとローディング状態
  */
-const useGetPulses = (initialData: Pulse[] = []) => {
+const useGetPulses = (initialData?: Pulse[]) => {
   const supabaseClient = createClient();
+  const { isOnline } = useNetworkStatus();
+  const { saveToCache, loadFromCache } = useOfflineCache();
+
+  const queryKey = [CACHED_QUERIES.pulse];
 
   const {
     data: pulses = [],
     isLoading,
     error,
+    refetch,
   } = useQuery({
-    queryKey: [CACHED_QUERIES.pulse],
+    queryKey,
     queryFn: async () => {
+      // オフラインの場合はキャッシュから取得を試みる
+      if (!isOnline) {
+        const cachedData = await loadFromCache<Pulse[]>(queryKey.join(":"));
+        if (cachedData) return cachedData;
+        return [];
+      }
+
       const { data, error } = await supabaseClient
         .from("pulses")
         .select("*")
@@ -31,14 +46,25 @@ const useGetPulses = (initialData: Pulse[] = []) => {
         throw new Error("Pulseの取得に失敗しました");
       }
 
-      return (data as Pulse[]) || [];
+      const result = (data as Pulse[]) || [];
+
+      // バックグラウンドでキャッシュに保存
+      saveToCache(queryKey.join(":"), result).catch(console.error);
+
+      return result;
     },
-    initialData: initialData.length > 0 ? initialData : undefined,
+    initialData: initialData,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    // 初期データがある場合は再取得しない
-    enabled: initialData.length === 0,
+    retry: isOnline ? 1 : false,
   });
+
+  // オンラインに戻ったときに再取得
+  useEffect(() => {
+    if (isOnline) {
+      refetch();
+    }
+  }, [isOnline, refetch]);
 
   return {
     pulses,

@@ -6,12 +6,15 @@ import { Song } from "@/types";
 import React, { memo, useCallback } from "react";
 import SongList from "@/components/Song/SongList";
 import SongOptionsPopover from "@/components/Song/SongOptionsPopover";
+import useGetSongsByGenre from "@/hooks/data/useGetSongsByGenre";
 
 interface Props {
-  songs: Song[];
+  genre: string;
 }
 
-const GenreContent: React.FC<Props> = memo(({ songs }) => {
+const GenreContent: React.FC<Props> = memo(({ genre }) => {
+  // クライアントサイドでデータを取得（オフライン対応付き）
+  const { songs, isLoading } = useGetSongsByGenre(genre);
   const onPlay = useOnPlay(songs);
   const { user } = useUser();
 
@@ -23,6 +26,15 @@ const GenreContent: React.FC<Props> = memo(({ songs }) => {
     [onPlay]
   );
 
+  // ローディング中
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-theme-500"></div>
+      </div>
+    );
+  }
+
   if (songs.length === 0) {
     return (
       <div className="flex flex-col gap-y-2 w-full px-6 text-neutral-400">
@@ -33,7 +45,7 @@ const GenreContent: React.FC<Props> = memo(({ songs }) => {
 
   return (
     <div className="flex flex-col gap-y-2 w-full p-6">
-      {songs.map((song) => (
+      {songs.map((song: Song) => (
         <div key={song.id} className="flex items-center gap-x-4 w-full">
           <div className="flex-1 min-w-0">
             <SongList data={song} onClick={handlePlay} />

@@ -1,60 +1,62 @@
+import { Song } from "@/types";
 import { useQuery } from "@tanstack/react-query";
-import { createClient } from "@/libs/supabase/client";
-import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
+import { createClient } from "@/libs/supabase/client";
 import { useEffect } from "react";
 
 /**
- * ユーザーのプレイリスト一覧を取得するカスタムフック (オフライン対応)
- * @returns プレイリストの配列とローディング状態
+ * タイトルで曲を検索するカスタムフック (オフライン対応)
+ * @param title 検索するタイトル
+ * @returns 曲の配列とローディング状態
  */
-const useGetPlaylists = () => {
+const useGetSongsByTitle = (title: string) => {
   const supabase = createClient();
-  const { user } = useUser();
   const { isOnline } = useNetworkStatus();
   const { saveToCache, loadFromCache } = useOfflineCache();
 
-  const queryKey = [CACHED_QUERIES.playlists, "user", user?.id];
+  const queryKey = [CACHED_QUERIES.songs, "search", title];
 
   const {
-    data: playlists = [],
+    data: songs = [],
     isLoading,
     error,
     refetch,
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      if (!user?.id) return [];
-
       // オフラインの場合はキャッシュから取得を試みる
       if (!isOnline) {
-        const cachedData = await loadFromCache<Playlist[]>(queryKey.join(":"));
+        const cachedData = await loadFromCache<Song[]>(queryKey.join(":"));
         if (cachedData) return cachedData;
         return [];
       }
 
-      const { data, error } = await supabase
-        .from("playlists")
+      const query = supabase
+        .from("songs")
         .select("*")
-        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
+      // タイトルが指定されている場合のみフィルタを追加
+      if (title) {
+        query.ilike("title", `%${title}%`);
+      }
+
+      const { data, error } = await query.limit(20);
+
       if (error) {
-        console.error("Error fetching playlists:", error.message);
+        console.error("Error fetching songs by title:", error.message);
         throw error;
       }
 
-      const result = (data as Playlist[]) || [];
+      const result = (data as Song[]) || [];
 
       // バックグラウンドでキャッシュに保存
       saveToCache(queryKey.join(":"), result).catch(console.error);
 
       return result;
     },
-    enabled: !!user?.id,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: isOnline ? 1 : false,
@@ -62,12 +64,12 @@ const useGetPlaylists = () => {
 
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline && user?.id) {
+    if (isOnline && title) {
       refetch();
     }
-  }, [isOnline, user?.id, refetch]);
+  }, [isOnline, title, refetch]);
 
-  return { playlists, isLoading, error };
+  return { songs, isLoading, error };
 };
 
-export default useGetPlaylists;
+export default useGetSongsByTitle;

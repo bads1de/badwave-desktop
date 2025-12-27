@@ -5,15 +5,25 @@ import useOnPlay from "@/hooks/player/useOnPlay";
 import SongOptionsPopover from "@/components/Song/SongOptionsPopover";
 import SongList from "@/components/Song/SongList";
 import { memo, useCallback } from "react";
+import useGetLikedSongs from "@/hooks/data/useGetLikedSongs";
+import { useUser } from "@/hooks/auth/useUser";
 
 interface LikedContentProps {
-  songs: Song[];
+  songs?: Song[];
   playlistId?: string;
   playlistUserId?: string;
 }
 
 const LikedContent: React.FC<LikedContentProps> = memo(
-  ({ songs, playlistId, playlistUserId }) => {
+  ({ songs: propSongs, playlistId, playlistUserId }) => {
+    const { user } = useUser();
+    // クライアントサイドでデータを取得（オフライン対応付き）
+    // propsでsongsが渡された場合はそれを使用（プレイリストページからの利用）
+    const { likedSongs, isLoading } = useGetLikedSongs(
+      propSongs ? undefined : user?.id
+    );
+
+    const songs = propSongs ?? likedSongs;
     const onPlay = useOnPlay(songs);
     const displayedSongs = playlistId ? [...songs].reverse() : songs;
 
@@ -24,6 +34,15 @@ const LikedContent: React.FC<LikedContentProps> = memo(
       },
       [onPlay]
     );
+
+    // ローディング中（propsでsongsが渡された場合はスキップ）
+    if (!propSongs && isLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-theme-500"></div>
+        </div>
+      );
+    }
 
     if (songs.length === 0) {
       return (

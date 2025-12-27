@@ -3,17 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import VaporwaveTheme from "./VaporwaveTheme";
 import CityPopTheme from "./CityPopTheme";
-import { Pulse } from "@/types";
 import useGetPulses from "@/hooks/data/useGetPulses";
 
-interface PulseClientProps {
-  pulses: Pulse[];
-}
-
-export default function PulseClient({
-  pulses: initialPulses,
-}: PulseClientProps) {
-  const { pulses, isLoading, error } = useGetPulses(initialPulses);
+export default function PulseClient() {
+  const { pulses, isLoading, error } = useGetPulses();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);

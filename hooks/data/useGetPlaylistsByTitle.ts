@@ -2,22 +2,21 @@ import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/libs/supabase/client";
 import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { useEffect } from "react";
 
 /**
- * ユーザーのプレイリスト一覧を取得するカスタムフック (オフライン対応)
+ * タイトルでパブリックプレイリストを検索するカスタムフック (オフライン対応)
+ * @param title 検索するタイトル
  * @returns プレイリストの配列とローディング状態
  */
-const useGetPlaylists = () => {
+const useGetPlaylistsByTitle = (title: string) => {
   const supabase = createClient();
-  const { user } = useUser();
   const { isOnline } = useNetworkStatus();
   const { saveToCache, loadFromCache } = useOfflineCache();
 
-  const queryKey = [CACHED_QUERIES.playlists, "user", user?.id];
+  const queryKey = [CACHED_QUERIES.playlists, "search", title];
 
   const {
     data: playlists = [],
@@ -27,7 +26,10 @@ const useGetPlaylists = () => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      if (!user?.id) return [];
+      // タイトルが空の場合は空の配列を返す
+      if (!title) {
+        return [];
+      }
 
       // オフラインの場合はキャッシュから取得を試みる
       if (!isOnline) {
@@ -39,11 +41,12 @@ const useGetPlaylists = () => {
       const { data, error } = await supabase
         .from("playlists")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("is_public", true)
+        .ilike("title", `%${title}%`)
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching playlists:", error.message);
+        console.error("Error fetching playlists by title:", error.message);
         throw error;
       }
 
@@ -54,7 +57,7 @@ const useGetPlaylists = () => {
 
       return result;
     },
-    enabled: !!user?.id,
+    enabled: !!title,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: isOnline ? 1 : false,
@@ -62,12 +65,12 @@ const useGetPlaylists = () => {
 
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline && user?.id) {
+    if (isOnline && title) {
       refetch();
     }
-  }, [isOnline, user?.id, refetch]);
+  }, [isOnline, title, refetch]);
 
   return { playlists, isLoading, error };
 };
 
-export default useGetPlaylists;
+export default useGetPlaylistsByTitle;

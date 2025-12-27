@@ -3,13 +3,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import useGetTrendSongs from "@/hooks/data/useGetTrendSongs";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import getTrendSongs from "@/actions/getTrendSongs";
+import { createClient } from "@/libs/supabase/client";
 import React from "react";
 
 // モックの設定
 jest.mock("@/hooks/utils/useOfflineCache");
 jest.mock("@/hooks/utils/useNetworkStatus");
-jest.mock("@/actions/getTrendSongs");
+jest.mock("@/libs/supabase/client");
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -27,10 +27,10 @@ const createWrapper = () => {
 describe("useGetTrendSongs (Offline Support)", () => {
   const mockSaveToCache = jest.fn().mockResolvedValue(undefined);
   const mockLoadFromCache = jest.fn();
-  const mockGetTrendSongs = getTrendSongs as jest.Mock;
   const mockUseNetworkStatus = useNetworkStatus as jest.Mock;
+  const mockCreateClient = createClient as jest.Mock;
 
-  const mockSongs = [{ id: "1", title: "Offline Song" }];
+  const mockSongs = [{ id: "1", title: "Trend Song", count: 100 }];
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -42,9 +42,20 @@ describe("useGetTrendSongs (Offline Support)", () => {
     });
   });
 
-  it("オンライン時はAPIからデータを取得し、キャッシュに保存する", async () => {
+  it("オンライン時はSupabaseからデータを取得し、キャッシュに保存する", async () => {
     mockUseNetworkStatus.mockReturnValue({ isOnline: true });
-    mockGetTrendSongs.mockResolvedValue(mockSongs);
+    mockCreateClient.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          filter: jest.fn().mockReturnThis(),
+          order: jest.fn().mockReturnValue({
+            limit: jest
+              .fn()
+              .mockResolvedValue({ data: mockSongs, error: null }),
+          }),
+        }),
+      }),
+    });
 
     const { result } = renderHook(() => useGetTrendSongs("all"), {
       wrapper: createWrapper(),
@@ -73,7 +84,6 @@ describe("useGetTrendSongs (Offline Support)", () => {
   it("オフライン時はキャッシュからデータを取得する", async () => {
     mockUseNetworkStatus.mockReturnValue({ isOnline: false });
     mockLoadFromCache.mockResolvedValue(mockSongs);
-    mockGetTrendSongs.mockRejectedValue(new Error("Network Error"));
 
     const { result } = renderHook(() => useGetTrendSongs("all"), {
       wrapper: createWrapper(),
@@ -86,6 +96,7 @@ describe("useGetTrendSongs (Offline Support)", () => {
       { timeout: 5000 }
     );
 
-    expect(mockGetTrendSongs).not.toHaveBeenCalled();
+    // Supabase clientが呼ばれていないことを確認（オフラインなので）
+    expect(mockCreateClient().from).not.toHaveBeenCalled?.();
   });
 });

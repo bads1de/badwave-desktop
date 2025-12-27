@@ -2,16 +2,37 @@
 
 import PlaylistHeader from "./PlaylistHeader";
 import LikedContent from "@/app/liked/components/LikedContent";
-import { Playlist, Song } from "@/types";
+import useGetPlaylist from "@/hooks/data/useGetPlaylist";
+import useGetPlaylistSongs from "@/hooks/data/useGetPlaylistSongs";
 import { memo } from "react";
+import { notFound } from "next/navigation";
 
 interface PlaylistPageContentProps {
-  playlist: Playlist;
-  songs: Song[];
+  playlistId: string;
 }
 
 const PlaylistPageContent: React.FC<PlaylistPageContentProps> = memo(
-  ({ playlist, songs }) => {
+  ({ playlistId }) => {
+    // クライアントサイドでデータを取得（オフライン対応付き）
+    const { playlist, isLoading: playlistLoading } = useGetPlaylist(playlistId);
+    const { songs, isLoading: songsLoading } = useGetPlaylistSongs(playlistId);
+
+    // ローディング中
+    if (playlistLoading || songsLoading) {
+      return (
+        <div className="bg-neutral-900 h-full w-full overflow-hidden overflow-y-auto custom-scrollbar">
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-theme-500"></div>
+          </div>
+        </div>
+      );
+    }
+
+    // プレイリストが見つからない場合
+    if (!playlist) {
+      return notFound();
+    }
+
     return (
       <div className="bg-neutral-900 h-full w-full overflow-hidden overflow-y-auto custom-scrollbar">
         <PlaylistHeader

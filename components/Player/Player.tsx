@@ -2,16 +2,14 @@
 
 import useGetSongById from "@/hooks/data/useGetSongById";
 import usePlayer from "@/hooks/player/usePlayer";
+import useGetPlaylists from "@/hooks/data/useGetPlaylists";
 import React, { memo, useMemo } from "react";
 import PlayerContent from "./PlayerContent";
-import { Playlist, Song } from "@/types";
 
-interface PlayerProps {
-  playlists: Playlist[];
-}
-
-const Player = ({ playlists }: PlayerProps) => {
+const Player = () => {
   const player = usePlayer();
+  // クライアントサイドでプレイリストを取得（オフライン対応付き）
+  const { playlists } = useGetPlaylists();
 
   // ローカル曲かどうかを判定
   const isLocalSongId = useMemo(() => {

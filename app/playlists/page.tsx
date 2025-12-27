@@ -1,10 +1,7 @@
 import Header from "@/components/Header/Header";
-import getPlaylists from "@/actions/getPlaylists";
 import PlaylistContent from "./components/PlaylistContent";
 
-const Playlist = async () => {
-  const playlists = await getPlaylists();
-
+const Playlist = () => {
   return (
     <div className="bg-[#0d0d0d] rounded-lg w-full h-full overflow-hidden overflow-y-auto custom-scrollbar">
       <Header>
@@ -18,7 +15,7 @@ const Playlist = async () => {
           </div>
         </div>
       </Header>
-      <PlaylistContent playlists={playlists} />
+      <PlaylistContent />
     </div>
   );
 };

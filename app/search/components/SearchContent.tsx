@@ -11,23 +11,35 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useCallback, memo } from "react";
+import useGetSongsByTitle from "@/hooks/data/useGetSongsByTitle";
+import useGetPlaylistsByTitle from "@/hooks/data/useGetPlaylistsByTitle";
 
 // 曲リストコンポーネントのプロップス型定義
 interface SongListSectionProps {
   songs: Song[];
   playlistId?: string;
   onPlay: (id: string) => void;
+  isLoading: boolean;
 }
 
 // プレイリストリストコンポーネントのプロップス型定義
 interface PlaylistSectionProps {
   playlists: Playlist[];
+  isLoading: boolean;
 }
 
 // 曲リストセクションコンポーネント（メモ化）
 const SongListSection = memo(
-  ({ songs, playlistId, onPlay }: SongListSectionProps) => {
+  ({ songs, playlistId, onPlay, isLoading }: SongListSectionProps) => {
     const { user } = useUser();
+
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-theme-500"></div>
+        </div>
+      );
+    }
 
     if (songs.length === 0) {
       return (
@@ -55,76 +67,90 @@ const SongListSection = memo(
 );
 
 // プレイリストセクションコンポーネント（メモ化）
-const PlaylistSection = memo(({ playlists }: PlaylistSectionProps) => {
-  const router = useRouter();
+const PlaylistSection = memo(
+  ({ playlists, isLoading }: PlaylistSectionProps) => {
+    const router = useRouter();
 
-  if (playlists.length === 0) {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-theme-500"></div>
+        </div>
+      );
+    }
+
+    if (playlists.length === 0) {
+      return (
+        <div className="flex flex-col gap-y-2 w-full px-6 text-neutral-400">
+          <h1>Playlistが見つかりませんでした</h1>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex flex-col gap-y-2 w-full px-6 text-neutral-400">
-        <h1>Playlistが見つかりませんでした</h1>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 p-6">
+        {playlists.map((playlist, i) => (
+          <motion.div
+            key={playlist.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: i * 0.1 }}
+            className="group relative cursor-pointer"
+            onClick={() =>
+              router.push(
+                `/playlists/${playlist.id}?title=${encodeURIComponent(
+                  playlist.title
+                )}`
+              )
+            }
+          >
+            <div className="absolute -top-2 -left-2 w-full h-full bg-theme-900/50 transform rotate-3 rounded-xl" />
+            <div className="absolute -top-1 -left-1 w-full h-full bg-theme-800/50 transform rotate-2 rounded-xl" />
+            <div className="relative bg-neutral-900 rounded-xl p-4 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:shadow-theme-900/20">
+              <div className="relative aspect-square w-full overflow-hidden rounded-lg mb-4">
+                <Image
+                  src={playlist.image_path || "/images/playlist.png"}
+                  alt={playlist.title}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width:1280px) 25vw, 20vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-white truncate">
+                  {playlist.title}
+                </h3>
+              </div>
+            </div>
+          </motion.div>
+        ))}
       </div>
     );
   }
-
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 p-6">
-      {playlists.map((playlist, i) => (
-        <motion.div
-          key={playlist.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: i * 0.1 }}
-          className="group relative cursor-pointer"
-          onClick={() =>
-            router.push(
-              `/playlists/${playlist.id}?title=${encodeURIComponent(
-                playlist.title
-              )}`
-            )
-          }
-        >
-          <div className="absolute -top-2 -left-2 w-full h-full bg-theme-900/50 transform rotate-3 rounded-xl" />
-          <div className="absolute -top-1 -left-1 w-full h-full bg-theme-800/50 transform rotate-2 rounded-xl" />
-          <div className="relative bg-neutral-900 rounded-xl p-4 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:shadow-theme-900/20">
-            <div className="relative aspect-square w-full overflow-hidden rounded-lg mb-4">
-              <Image
-                src={playlist.image_path || "/images/playlist.png"}
-                alt={playlist.title}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
-                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width:1280px) 25vw, 20vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white truncate">
-                {playlist.title}
-              </h3>
-            </div>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
-});
+);
 
 // コンポーネントにdisplayNameを設定
 SongListSection.displayName = "SongListSection";
 PlaylistSection.displayName = "PlaylistSection";
 
 interface SearchContentProps {
-  songs: Song[];
-  playlists: Playlist[];
+  searchTitle: string;
   playlistId?: string;
 }
 
 const SearchContent: React.FC<SearchContentProps> = ({
-  songs,
-  playlists,
+  searchTitle,
   playlistId,
 }) => {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get("tab") || "songs";
+
+  // クライアントサイドでデータを取得（オフライン対応付き）
+  const { songs, isLoading: songsLoading } = useGetSongsByTitle(searchTitle);
+  const { playlists, isLoading: playlistsLoading } =
+    useGetPlaylistsByTitle(searchTitle);
+
   const onPlay = useOnPlay(songs);
   const player = usePlayer();
 
@@ -144,9 +170,12 @@ const SearchContent: React.FC<SearchContentProps> = ({
           songs={songs}
           playlistId={playlistId}
           onPlay={handlePlay}
+          isLoading={songsLoading}
         />
       )}
-      {activeTab === "playlists" && <PlaylistSection playlists={playlists} />}
+      {activeTab === "playlists" && (
+        <PlaylistSection playlists={playlists} isLoading={playlistsLoading} />
+      )}
     </div>
   );
 };

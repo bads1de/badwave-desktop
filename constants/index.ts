@@ -42,6 +42,9 @@ export const CACHED_QUERIES = {
   pulse: "pulse",
   localFiles: "localFiles",
   savedLibraryInfo: "savedLibraryInfo",
+  songs: "songs",
+  recommendations: "recommendations",
+  publicPlaylists: "publicPlaylists",
 } as const;
 
 /**
