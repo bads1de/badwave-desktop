@@ -7,6 +7,7 @@ import Player from "@/components/Player/Player";
 import RightSidebar from "@/components/RightSidebar/RightSidebar";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import WindowControls from "@/components/electron/WindowControls";
+import OfflineIndicator from "@/components/common/OfflineIndicator";
 
 import ModalProvider from "@/providers/ModalProvider";
 import ThemeProvider from "@/providers/ThemeProvider";
@@ -43,6 +44,7 @@ export default async function RootLayout({
                 <RightSidebar>{children}</RightSidebar>
               </Sidebar>
               <Player playlists={playlists} />
+              <OfflineIndicator />
             </ThemeProvider>
           </UserProvider>
         </TanStackProvider>

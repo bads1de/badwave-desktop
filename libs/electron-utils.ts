@@ -195,4 +195,30 @@ export const electronAPI = {
   store,
   mediaControls,
   ipc,
+  downloader: {
+    downloadSong: async (url: string, filename: string): Promise<string> => {
+      if (isElectron()) {
+        return (window as any).electron.downloadSong(url, filename);
+      }
+      throw new Error("Not in Electron environment");
+    },
+    checkFileExists: async (filename: string): Promise<boolean> => {
+      if (isElectron()) {
+        return (window as any).electron.checkFileExists(filename);
+      }
+      return false;
+    },
+    getLocalFilePath: async (filename: string): Promise<string> => {
+      if (isElectron()) {
+        return (window as any).electron.getLocalFilePath(filename);
+      }
+      return "";
+    },
+    deleteSong: async (filename: string): Promise<boolean> => {
+      if (isElectron()) {
+        return (window as any).electron.deleteSong(filename);
+      }
+      return false;
+    },
+  },
 };

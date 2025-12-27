@@ -2,6 +2,9 @@ import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
+import { useEffect } from "react";
 
 /**
  * 指定されたジャンルに一致する曲を取得するカスタムフック
@@ -12,15 +15,29 @@ import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
  */
 const useGetSongsByGenres = (genres: string[], excludeId?: string) => {
   const supabaseClient = createClient();
+  const { isOnline } = useNetworkStatus();
+  const { saveToCache, loadFromCache } = useOfflineCache();
+
+  const queryKey = [CACHED_QUERIES.songsByGenres, genres, excludeId];
 
   const {
     data: songGenres = [],
     isLoading,
     error,
+    refetch,
   } = useQuery({
-    queryKey: [CACHED_QUERIES.songsByGenres, genres, excludeId],
+    queryKey,
     queryFn: async () => {
       if (genres.length === 0) {
+        return [];
+      }
+
+      // オフラインの場合はキャッシュから取得を試みる
+      if (!isOnline) {
+        // excludeIdが含まれるキーのキャッシュを探す
+        // Note: 単純化のため、キーそのもので検索します
+        const cachedData = await loadFromCache<Song[]>(queryKey.join(":"));
+        if (cachedData) return cachedData;
         return [];
       }
 
@@ -44,14 +61,27 @@ const useGetSongsByGenres = (genres: string[], excludeId?: string) => {
         );
       }
 
-      return (data as Song[]) || [];
+      const result = (data as Song[]) || [];
+
+      // バックグラウンドでキャッシュに保存
+      saveToCache(queryKey.join(":"), result).catch(console.error);
+
+      return result;
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     enabled: genres.length > 0,
+    retry: isOnline ? 1 : false,
   });
 
-  if (error) {
+  // オンラインに戻ったときに再取得
+  useEffect(() => {
+    if (isOnline && genres.length > 0) {
+      refetch();
+    }
+  }, [isOnline, genres, refetch]);
+
+  if (error && isOnline) {
     console.error(error);
   }
 

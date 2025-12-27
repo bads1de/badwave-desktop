@@ -64,6 +64,13 @@ interface ElectronAPI {
     onUpdateDownloaded: (callback: (info: any) => void) => () => void;
   };
 
+  // ファイルダウンローダー (Phase 2追加)
+  downloadSong: (url: string, filename: string) => Promise<string>;
+  onDownloadProgress: (callback: (progress: number) => void) => () => void;
+  checkFileExists: (filename: string) => Promise<boolean>;
+  getLocalFilePath: (filename: string) => Promise<string>;
+  deleteSong: (filename: string) => Promise<boolean>;
+
   // IPC通信
   ipc: {
     // メインプロセスにメッセージを送信し、応答を待つ

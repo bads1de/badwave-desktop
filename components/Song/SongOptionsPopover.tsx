@@ -15,6 +15,8 @@ import useDownload from "@/hooks/data/useDownload";
 import { Download } from "lucide-react";
 import { downloadFile } from "@/libs/helpers";
 import { useUser } from "@/hooks/auth/useUser";
+import useDownloadSong from "@/hooks/utils/useDownloadSong";
+import { IoCloudDownloadOutline, IoTrashOutline } from "react-icons/io5";
 
 interface SongOptionsPopoverProps {
   song: Song;
@@ -28,6 +30,10 @@ const SongOptionsPopover: React.FC<SongOptionsPopoverProps> = memo(
     const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
     const { fileUrl: audioUrl } = useDownload(song.song_path);
     const [isLoading, setIsLoading] = useState(false);
+
+    // オフラインダウンロードフック
+    const { download, remove, isDownloaded, isDownloading } =
+      useDownloadSong(song);
 
     // ダウンロードハンドラーをメモ化
     const handleDownloadClick = useCallback(
@@ -101,8 +107,31 @@ const SongOptionsPopover: React.FC<SongOptionsPopoverProps> = memo(
                   onClick={() => setIsDownloadModalOpen(true)}
                 >
                   <Download size={28} className="mr-2" />
-                  ダウンロード
+                  ファイルを保存
                 </button>
+              </div>
+
+              {/* オフライン機能 (Phase 2追加) */}
+              <div className="px-4 py-3 border-t border-neutral-700">
+                {isDownloaded ? (
+                  <button
+                    className="w-full flex items-center text-red-400 cursor-pointer hover:text-red-300 transition-all duration-300"
+                    onClick={() => remove()}
+                    disabled={isDownloading}
+                  >
+                    <IoTrashOutline size={24} className="mr-2" />
+                    キャッシュ削除
+                  </button>
+                ) : (
+                  <button
+                    className="w-full flex items-center text-neutral-400 cursor-pointer hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
+                    onClick={() => download()}
+                    disabled={isDownloading}
+                  >
+                    <IoCloudDownloadOutline size={24} className="mr-2" />
+                    {isDownloading ? "保存中..." : "オフライン保存"}
+                  </button>
+                )}
               </div>
             </div>
           </PopoverContent>

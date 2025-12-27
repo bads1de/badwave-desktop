@@ -22,9 +22,13 @@ const ALLOWED_INVOKE_CHANNELS = [
   "handle-scan-mp3-files",
   "handle-get-mp3-metadata",
   "handle-get-saved-music-library",
+  "download-song",
+  "check-file-exists",
+  "get-local-file-path",
+  "delete-song",
 ];
 
-const ALLOWED_ON_CHANNELS = ["media-control"];
+const ALLOWED_ON_CHANNELS = ["media-control", "download-progress"];
 
 const ALLOWED_SEND_CHANNELS = ["log", "player-state-change"];
 
@@ -64,6 +68,22 @@ contextBridge.exposeInMainWorld("electron", {
       };
     },
   },
+
+  // ダウンロード機能 (Phase 2)
+  downloadSong: (url: string, filename: string) =>
+    ipcRenderer.invoke("download-song", url, filename),
+  onDownloadProgress: (callback: (progress: number) => void) => {
+    const subscription = (_: any, progress: number) => callback(progress);
+    ipcRenderer.on("download-progress", subscription);
+    return () => {
+      ipcRenderer.removeListener("download-progress", subscription);
+    };
+  },
+  checkFileExists: (filename: string) =>
+    ipcRenderer.invoke("check-file-exists", filename),
+  getLocalFilePath: (filename: string) =>
+    ipcRenderer.invoke("get-local-file-path", filename),
+  deleteSong: (filename: string) => ipcRenderer.invoke("delete-song", filename),
 
   // IPC通信
   ipc: {
