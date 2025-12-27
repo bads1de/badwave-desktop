@@ -5,7 +5,7 @@ import * as dotenv from "dotenv";
 
 /**
  * .env.localファイルから環境変数を読み込む
- * 
+ *
  * @returns {boolean} 環境変数の読み込みに成功したかどうか
  */
 export function loadEnvVariables(): boolean {
@@ -36,7 +36,7 @@ export const isDev = process.env.NODE_ENV !== "production" || !app.isPackaged;
 /**
  * 条件付きでログを出力する
  * 開発モードの場合のみログを出力
- * 
+ *
  * @param {string} message - ログメッセージ
  * @param {any[]} args - 追加の引数
  */

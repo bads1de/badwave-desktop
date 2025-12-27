@@ -32,31 +32,20 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDb = void 0;
-var better_sqlite3_1 = __importDefault(require("better-sqlite3"));
-var better_sqlite3_2 = require("drizzle-orm/better-sqlite3");
+exports.registerProtocolHandlers = registerProtocolHandlers;
 var electron_1 = require("electron");
-var path_1 = __importDefault(require("path"));
-var schema = __importStar(require("./schema"));
-var dbInstance = null;
-var getDb = function () {
-    if (dbInstance)
-        return dbInstance;
-    // メインプロセス内であることを確認
-    if (!electron_1.app) {
-        throw new Error("Local Database can only be initialized in the Electron Main process.");
-    }
-    var dbPath = path_1.default.join(electron_1.app.getPath("userData"), "badwave_offline.db");
-    // SQLiteインスタンスの初期化
-    // verboseを有効にすると、デバッグ用にクエリログが出力されます
-    var sqlite = new better_sqlite3_1.default(dbPath, { verbose: console.log });
-    // Drizzleの初期化
-    dbInstance = (0, better_sqlite3_2.drizzle)(sqlite, { schema: schema });
-    return dbInstance;
-};
-exports.getDb = getDb;
-//# sourceMappingURL=client.js.map
+var url = __importStar(require("url"));
+// プロトコルハンドラーの登録
+function registerProtocolHandlers() {
+    // appプロトコルのハンドラー
+    registerAppProtocol();
+}
+// appプロトコルのハンドラーを登録
+function registerAppProtocol() {
+    electron_1.protocol.registerFileProtocol("app", function (request, callback) {
+        var filePath = url.fileURLToPath("file://" + request.url.slice("app://".length));
+        callback(filePath);
+    });
+}
+//# sourceMappingURL=protocol.js.map

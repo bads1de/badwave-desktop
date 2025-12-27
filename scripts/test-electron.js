@@ -23,7 +23,7 @@ function logWarning(message) {
 function checkRequiredFiles() {
   logInfo("必要なファイルの存在チェックを行っています...");
 
-  const requiredFiles = ["electron/main.js", "electron/preload.js"];
+  const requiredFiles = ["electron/main.js", "electron/preload/index.js"];
 
   let allFilesExist = true;
 
