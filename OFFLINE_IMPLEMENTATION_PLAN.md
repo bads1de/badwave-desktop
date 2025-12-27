@@ -1,219 +1,151 @@
 # Badwave Windows: Offline Implementation Plan
 
-このドキュメントでは、Spotify のような「オフラインファースト」のアーキテクチャを `badwave-windows` に実装するための計画を定義します。
+このドキュメントでは、`badwave-windows` のオフライン機能の実装計画を定義します。
 
-## 1. Architecture Overview (アーキテクチャ概要)
+## 1. 方針: シンプルなオフライン専用ページ方式
 
-現在の「Supabase から常にデータを取得する」方式から、「**ローカルデータベース (SQLite) を正 (Source of Truth) として扱い、必要に応じてクラウドと同期する**」方式へ移行します。
+Spotify と同様のシンプルなモデルを採用します。複雑な同期ロジックを避け、**オフライン時は専用ページにリダイレクト**し、ダウンロード済みの曲のみを表示・再生可能にします。
 
-### Current Flow (As-Is)
+### 設計原則
 
-- **Fetch**: UI -> TanStack Query -> Supabase (Remote)
-- **Play**: UI -> Audio Player -> URL Streaming
-- **Offline**: 未対応 (キャッシュがある場合のみ表示されるが再生は不可)
-
-### Target Flow (To-Be)
-
-- **Data Management**:
-  - メタデータは `SQLite` で管理。
-  - 音楽ファイル (MP3) と画像はローカルファイルシステム (`AppData`) に保存。
-- **Fetch Strategy (Hybrid)**:
-  1. まず **ローカル DB** を確認 (`SELECT * FROM songs WHERE ...`).
-  2. データがあればそれを即座に返す (高速・オフライン対応).
-  3. なければ (かつオンラインなら) Supabase へフェッチしに行く.
-- **Download**:
-  - ユーザーが「ダウンロード」を押すと、ファイルを保存し、DB にメタデータを登録する。
+1. **ローカル DB には最小限のデータのみ保存**: ダウンロード済みの曲だけ
+2. **いいね/プレイリストの同期は行わない**: オンライン時のみ利用可能
+3. **オフライン時は専用ページへ**: 通常の UI は使用せず、シンプルなオフライン UI を表示
 
 ---
 
-### 2. Database Design (Drizzle ORM & Monorepo Strategy)
+## 2. オフライン時の動作
 
-**保存方針 (Data Scope Strategy)**:
-「マイライブラリ」の完全なオフライン体験を提供するため、単なるダウンロード済み楽曲だけでなく、**プレイリストや「いいね」情報も保存します**。
+```
+[ネットワーク切断検知]
+   ↓
+useNetworkStatus が isOnline = false を返す
+   ↓
+/offline ページにリダイレクト
+   ↓
+ダウンロード済みの曲一覧を表示 (ローカルDB から)
+   ↓
+曲を選択 → file:// プロトコルで再生
+```
 
-- **Metadata Cache**: ライブラリにある曲（いいねした曲、プレイリストの曲）は、**MP3 がなくてもメタデータだけ保存**します。これにより、オフライン時でもリストの閲覧が可能になります。
-- **File Storage**: ユーザーが明示的に「ダウンロード」したものだけ、ファイルパス (`song_path`) を持ちます。
+### オフライン時の UI
 
-**Monorepo Architecture**:
-スキーマ定義 (`common/db/schema.ts`) はプラットフォーム共通で利用します。
+| 画面                              | 動作                                   |
+| :-------------------------------- | :------------------------------------- |
+| **ホーム/検索/トレンド**          | アクセス不可 → /offline にリダイレクト |
+| **マイライブラリ (オンライン版)** | アクセス不可 → /offline にリダイレクト |
+| **/offline ページ**               | ダウンロード済みの曲一覧を表示         |
+| **プレイヤー**                    | ダウンロード済みの曲のみ再生可能       |
+
+### オンライン時の UI
+
+| 画面                   | 動作                             |
+| :--------------------- | :------------------------------- |
+| **すべてのページ**     | 通常通り Supabase からデータ取得 |
+| **ダウンロードボタン** | 曲をローカルに保存 + DB に登録   |
+| **/offline ページ**    | アクセス可能（事前確認用）       |
+
+---
+
+## 3. Database Design (Drizzle ORM)
+
+ローカル DB には**ダウンロード済みの曲のみ**保存します。いいねやプレイリストは保存しません。
 
 ```typescript
-import {
-  sqliteTable,
-  text,
-  real,
-  integer,
-  primaryKey,
-} from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, real, integer } from "drizzle-orm/sqlite-core";
 
-// 1. Songs: 楽曲のメタデータ + ローカルファイルパス
+// ダウンロード済みの曲のみを管理
 export const songs = sqliteTable("songs", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey(), // Supabase UUID
   userId: text("user_id").notNull(),
   title: text("title").notNull(),
   author: text("author").notNull(),
-  // pathが null なら「未ダウンロード（メタデータのみ）」
-  songPath: text("song_path"),
-  imagePath: text("image_path"),
-  originalSongPath: text("original_song_path"), // Supabase URL (再DL用)
+
+  // ローカルファイルパス (必須 - ダウンロード済みのみ保存するため)
+  songPath: text("song_path").notNull(), // file://...
+  imagePath: text("image_path"), // file://...
+
+  // 元のリモートURL (再ダウンロード用)
+  originalSongPath: text("original_song_path"),
   originalImagePath: text("original_image_path"),
+
   duration: real("duration"),
   genre: text("genre"),
   lyrics: text("lyrics"),
+
   createdAt: text("created_at"),
-  // 最後に再生した日時など（履歴用）
-  lastPlayedAt: integer("last_played_at", { mode: "timestamp" }),
+  downloadedAt: integer("downloaded_at", { mode: "timestamp" }),
 });
-
-// 2. Playlists: プレイリスト情報
-export const playlists = sqliteTable("playlists", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull(), // 所有者
-  title: text("title").notNull(),
-  imagePath: text("image_path"), // ローカルサムネイル
-  isPublic: integer("is_public", { mode: "boolean" }).default(false),
-  createdAt: text("created_at"),
-});
-
-// 3. Playlist Songs: プレイリストと曲の紐付け
-export const playlistSongs = sqliteTable("playlist_songs", {
-  id: text("id").primaryKey(), // Usually specific ID or composite
-  playlistId: text("playlist_id")
-    .notNull()
-    .references(() => playlists.id, { onDelete: "cascade" }),
-  songId: text("song_id")
-    .notNull()
-    .references(() => songs.id, { onDelete: "cascade" }),
-  addedAt: text("added_at"),
-});
-
-// 4. Liked Songs: いいねした曲 (Supabaseの liked_songs と同期)
-export const likedSongs = sqliteTable(
-  "liked_songs",
-  {
-    userId: text("user_id").notNull(),
-    songId: text("song_id")
-      .notNull()
-      .references(() => songs.id, { onDelete: "cascade" }),
-    likedAt: text("liked_at").default("now"),
-  },
-  (table) => ({
-    pk: primaryKey({ columns: [table.userId, table.songId] }),
-  })
-);
 ```
+
+**Note**: いいね/プレイリスト用のテーブルは不要になりました。
 
 ---
 
-## 3. Electron IPC Channels (通信設計)
+## 4. Electron IPC Channels
 
-レンダラープロセス (React) とメインプロセス (Node.js) の間の通信チャネルを定義します。
-
-### `download-song` (Renderer -> Main)
+### `download-song` (Renderer → Main)
 
 - **引数**: `song: Song` (Supabase から取得した曲オブジェクト)
 - **処理**:
-  1. `song.song_path` (URL) から MP3 をダウンロード -> `AppData/offline_storage/songs/{id}.mp3` に保存。
-  2. `song.image_path` (URL) から画像をダウンロード -> `AppData/offline_storage/images/{id}.jpg` に保存。
-  3. SQLite の `songs` テーブルにメタデータを `INSERT` (パスは `file://` に書き換え)。
-- **戻り値**: `success: boolean`, `localSong: Song`
+  1. MP3 をダウンロード → `AppData/offline_storage/songs/{id}.mp3`
+  2. 画像をダウンロード → `AppData/offline_storage/images/{id}.jpg`
+  3. SQLite の `songs` テーブルに INSERT
+- **戻り値**: `{ success: boolean, localPath: string }`
 
-### `get-offline-songs` (Renderer -> Main)
+### `get-offline-songs` (Renderer → Main)
 
-- **引数**: `{ filter?: { artist?: string, genre?: string } }`
-- **処理**: SQLite から条件に合う曲を `SELECT` して返す。
-- **戻り値**: `Song[]` (ローカルパスを含む)
+- **引数**: なし (または検索フィルタ)
+- **処理**: SQLite から全曲を SELECT
+- **戻り値**: `Song[]`
 
-### `delete-offline-song` (Renderer -> Main)
-
-- **引数**: `songId: string`
-- **処理**:
-  1. ファイルシステムから MP3 と画像を削除。
-  2. SQLite からレコードを `DELETE`。
-- **戻り値**: `success: boolean`
-
-### `check-offline-status` (Renderer -> Main)
+### `delete-offline-song` (Renderer → Main)
 
 - **引数**: `songId: string`
-- **処理**: 指定された曲が DB (およびファイル) に存在するかチェック。
-- **戻り値**: `isDownloaded: boolean`
+- **処理**: ファイル削除 + DB DELETE
+- **戻り値**: `{ success: boolean }`
 
----
+### `check-offline-status` (Renderer → Main)
 
-## 4. Refactoring Hooks & Actions
-
-### 4.1. `hooks/useDownloadSong.ts` (New/Refactor)
-
-Supabase Storage からの URL 取得ではなく、本格的なダウンロード処理へ移行します。
-
-```typescript
-// 擬似コード
-const useDownloadSong = () => {
-  return useMutation({
-    mutationFn: async (song: Song) => {
-      // IPC経由でメインプロセスにダウンロード指示
-      return await window.electron.downloadSong(song);
-    },
-    onSuccess: () => {
-      // キャッシュ無効化 (ライブラリ更新のため)
-      queryClient.invalidateQueries(["offline-songs"]);
-    },
-  });
-};
-```
-
-### 4.2. `hooks/data/useGetSongs.ts` & `actions/getSongs.ts` (Hybrid Fetch)
-
-「ローカル優先」のロジックを組み込みます。
-
-```typescript
-// actions/getSongs.ts の改修イメージ
-const getSongs = async (isOfflineMode: boolean) => {
-  // 1. まずローカルDBを確認
-  const localSongs = await window.electron.getOfflineSongs();
-
-  // 2. オフラインモード または 特定のフィルタならローカルのみ返す
-  if (isOfflineMode) return localSongs;
-
-  // 3. オンラインなら Supabase もフェッチしてマージ (あるいはUIで分ける)
-  // ...
-};
-```
+- **引数**: `songId: string`
+- **処理**: DB に存在するかチェック
+- **戻り値**: `boolean`
 
 ---
 
 ## 5. Implementation Roadmap
 
-### Phase 1: Foundation (足場固め - Drizzle Setup)
+### Phase 1: Foundation (完了済み ✅)
 
-1. **Package Installation**:
-   - `npm install drizzle-orm better-sqlite3`
-   - `npm install -D drizzle-kit @types/better-sqlite3`
-2. **Setup Drizzle**:
-   - `drizzle.config.ts` の作成。
-   - `electron/db/schema.ts` の作成 (上記のスキーマ定義)。
-   - `electron/db/client.ts` の作成 (DB 接続初期化)。
-3. **Migration**:
-   - `npx drizzle-kit generate` でマイグレーション生成。
-   - アプリ起動時にマイグレーション適用ロジックを実装。
+- [x] Drizzle ORM セットアップ
+- [x] `electron/db/schema.ts` 作成
+- [x] `electron/db/client.ts` 作成
+- [x] マイグレーション設定
 
-### Phase 2: Core Features (保存と再生)
+### Phase 2: IPC ハンドラー実装
 
-1. IPC `download-song` の実装 (ファイル保存 + DB Insert)。
-2. UI に「ダウンロードボタン」を設置し、`useDownloadSong` フックと連携。
-3. IPC `get-offline-songs` の実装。
-4. 「ライブラリ」画面でローカル DB の曲を表示できるようにする。
+- [ ] `download-song` IPC の実装
+- [ ] `get-offline-songs` IPC の実装
+- [ ] `delete-offline-song` IPC の実装
+- [ ] `check-offline-status` IPC の実装
 
-### Phase 3: Integration (統合)
+### Phase 3: オフライン専用ページ
 
-1. プレイヤー (`useAudioPlayer`) が `file://` プロトコルの URL を再生できるように調整。
-2. オフライン時の UI ハンドリング (ネット切断時に自動でローカルライブラリ表示に切り替えなど)。
-3. キャッシュ削除 (`delete-offline-song`) の実装。
+- [ ] `/offline` ページの作成
+- [ ] ダウンロード済み曲一覧の UI
+- [ ] オフライン時の自動リダイレクト (`useNetworkStatus` 活用)
+- [ ] オフライン用プレイヤー UI
+
+### Phase 4: ダウンロード機能の UI
+
+- [ ] 既存の `useDownloadSong` を新 IPC に接続
+- [ ] ダウンロード進捗表示
+- [ ] ダウンロード済みアイコン表示
 
 ---
 
-## Technical Notes
+## 6. Technical Notes
 
-- **DRM**: 今回は考慮しない（DRM フリー）。MP3 ファイルはそのまま保存される。
-- **Security**: ユーザー自身のライブラリ管理であるため、暗号化は行わないが、ファイルパスは `app.getPath('userData')` 内の隠しフォルダに限定する。
-- **Type Safety**: `Song` 型を `ipcRenderer` 経由でも維持できるよう、共有の型定義を活用する。
+- **DRM**: 考慮しない (DRM フリー)
+- **Security**: ファイルは `app.getPath('userData')` 内に保存
+- **Monorepo**: スキーマは `drizzle-orm/sqlite-core` のみ依存し、モバイル版でも再利用可能

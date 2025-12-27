@@ -6,6 +6,7 @@ import RightSidebar from "@/components/RightSidebar/RightSidebar";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import WindowControls from "@/components/electron/WindowControls";
 import OfflineIndicator from "@/components/common/OfflineIndicator";
+import OfflineRedirector from "@/components/common/OfflineRedirector";
 
 import ModalProvider from "@/providers/ModalProvider";
 import ThemeProvider from "@/providers/ThemeProvider";
@@ -41,6 +42,7 @@ export default function RootLayout({
               </Sidebar>
               <Player />
               <OfflineIndicator />
+              <OfflineRedirector />
             </ThemeProvider>
           </UserProvider>
         </TanStackProvider>
