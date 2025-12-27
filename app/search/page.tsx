@@ -11,7 +11,6 @@ const Search = async (props: SearchProps) => {
   const searchParams = await props.searchParams;
   const title = searchParams.title || "";
 
-  // SSRでのデータフェッチを廃止し、クライアントサイドで取得
   return (
     <div className="bg-[#0d0d0d] rounded-lg w-full h-full overflow-hidden overflow-y-auto custom-scrollbar">
       <Header className="sticky top-0 z-10">

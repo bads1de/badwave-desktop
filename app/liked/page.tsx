@@ -2,7 +2,6 @@ import Header from "@/components/Header/Header";
 import LikedContent from "./components/LikedContent";
 
 const Liked = () => {
-  // SSRでのデータフェッチを廃止し、クライアントサイドで取得
   return (
     <div className="bg-[#0d0d0d] rounded-lg h-full w-full overflow-hidden overflow-y-auto custom-scrollbar">
       <Header>

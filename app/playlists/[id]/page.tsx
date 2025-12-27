@@ -7,7 +7,6 @@ const PlaylistPage = async (props: {
   const params = await props.params;
   const { id: playlistId } = params;
 
-  // SSRでのデータフェッチを廃止し、クライアントサイドで取得
   return <PlaylistPageContent playlistId={playlistId} />;
 };
 

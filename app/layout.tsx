@@ -27,7 +27,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // SSRでのデータフェッチを廃止し、クライアントサイドで取得
   return (
     <html lang="en">
       <body className={font.className}>

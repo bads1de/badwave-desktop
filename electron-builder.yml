@@ -14,9 +14,15 @@ files:
   - electron/main.js
   - electron/preload.js
   - electron/utils.js
+  - electron/db/**/*
   - package.json
   - node_modules
   - public/**/*
+
+# リソース設定
+extraResources:
+  - from: drizzle
+    to: drizzle
 
 # 公開設定
 publish:

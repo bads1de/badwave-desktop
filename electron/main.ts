@@ -15,6 +15,8 @@ import * as fs from "fs";
 import * as https from "https";
 import * as mm from "music-metadata";
 import { loadEnvVariables, isDev, debugLog } from "./utils";
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { getDb } from "./db/client";
 
 // 環境変数を読み込む
 loadEnvVariables();
@@ -781,6 +783,20 @@ function setupIPC() {
 app.whenReady().then(() => {
   // プロトコルハンドラーの登録
   registerProtocolHandlers();
+
+  // Run Database Migrations
+  try {
+    const db = getDb();
+    const migrationsFolder = app.isPackaged
+      ? path.join(process.resourcesPath, "drizzle")
+      : path.join(__dirname, "../drizzle");
+
+    debugLog(`Running migrations from: ${migrationsFolder}`);
+    migrate(db, { migrationsFolder });
+    debugLog("Migrations completed successfully.");
+  } catch (error) {
+    console.error("Database migration failed:", error);
+  }
 
   // IPC通信のセットアップ（ウィンドウ作成前に行う必要がある）
   setupIPC();

@@ -1,4 +1,3 @@
-import React from "react";
 import SongContent from "./components/SongContent";
 
 interface songProps {

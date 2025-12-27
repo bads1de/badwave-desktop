@@ -26,32 +26,82 @@
 
 ---
 
-## 2. Database Design (SQLite Schema)
+### 2. Database Design (Drizzle ORM & Monorepo Strategy)
 
-Electron のメインプロセスで `better-sqlite3` を使用して管理します。
-`types/index.ts` の `Song` 型に基づき、以下のテーブルを作成します。
+**保存方針 (Data Scope Strategy)**:
+「マイライブラリ」の完全なオフライン体験を提供するため、単なるダウンロード済み楽曲だけでなく、**プレイリストや「いいね」情報も保存します**。
 
-### Table: `songs`
+- **Metadata Cache**: ライブラリにある曲（いいねした曲、プレイリストの曲）は、**MP3 がなくてもメタデータだけ保存**します。これにより、オフライン時でもリストの閲覧が可能になります。
+- **File Storage**: ユーザーが明示的に「ダウンロード」したものだけ、ファイルパス (`song_path`) を持ちます。
 
-ダウンロード済みの楽曲を管理します。
+**Monorepo Architecture**:
+スキーマ定義 (`common/db/schema.ts`) はプラットフォーム共通で利用します。
 
-| Column Name           | Type      | Description                               |
-| :-------------------- | :-------- | :---------------------------------------- |
-| `id`                  | TEXT (PK) | Supabase の uuid と一致                   |
-| `user_id`             | TEXT      | 所有者の ID                               |
-| `title`               | TEXT      | 曲名                                      |
-| `author`              | TEXT      | アーティスト名                            |
-| `song_path`           | TEXT      | **ローカルのファイルパス** (`file://...`) |
-| `image_path`          | TEXT      | **ローカルの画像パス** (`file://...`)     |
-| `original_song_path`  | TEXT      | 元の Supabase URL (再ダウンロード用)      |
-| `original_image_path` | TEXT      | 元の Supabase URL                         |
-| `duration`            | REAL      | 曲の長さ                                  |
-| `genre`               | TEXT      | ジャンル                                  |
-| `lyrics`              | TEXT      | 歌詞データ                                |
-| `created_at`          | TEXT      | 作成日                                    |
-| `downloaded_at`       | INTEGER   | ダウンロード日時 (ソート用)               |
+```typescript
+import {
+  sqliteTable,
+  text,
+  real,
+  integer,
+  primaryKey,
+} from "drizzle-orm/sqlite-core";
 
-※ 将来的には `artists`, `albums`, `playlists` テーブルに正規化することも可能ですが、まずは `songs` テーブル単独で「マイライブラリ」を実現します。
+// 1. Songs: 楽曲のメタデータ + ローカルファイルパス
+export const songs = sqliteTable("songs", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  title: text("title").notNull(),
+  author: text("author").notNull(),
+  // pathが null なら「未ダウンロード（メタデータのみ）」
+  songPath: text("song_path"),
+  imagePath: text("image_path"),
+  originalSongPath: text("original_song_path"), // Supabase URL (再DL用)
+  originalImagePath: text("original_image_path"),
+  duration: real("duration"),
+  genre: text("genre"),
+  lyrics: text("lyrics"),
+  createdAt: text("created_at"),
+  // 最後に再生した日時など（履歴用）
+  lastPlayedAt: integer("last_played_at", { mode: "timestamp" }),
+});
+
+// 2. Playlists: プレイリスト情報
+export const playlists = sqliteTable("playlists", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(), // 所有者
+  title: text("title").notNull(),
+  imagePath: text("image_path"), // ローカルサムネイル
+  isPublic: integer("is_public", { mode: "boolean" }).default(false),
+  createdAt: text("created_at"),
+});
+
+// 3. Playlist Songs: プレイリストと曲の紐付け
+export const playlistSongs = sqliteTable("playlist_songs", {
+  id: text("id").primaryKey(), // Usually specific ID or composite
+  playlistId: text("playlist_id")
+    .notNull()
+    .references(() => playlists.id, { onDelete: "cascade" }),
+  songId: text("song_id")
+    .notNull()
+    .references(() => songs.id, { onDelete: "cascade" }),
+  addedAt: text("added_at"),
+});
+
+// 4. Liked Songs: いいねした曲 (Supabaseの liked_songs と同期)
+export const likedSongs = sqliteTable(
+  "liked_songs",
+  {
+    userId: text("user_id").notNull(),
+    songId: text("song_id")
+      .notNull()
+      .references(() => songs.id, { onDelete: "cascade" }),
+    likedAt: text("liked_at").default("now"),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.songId] }),
+  })
+);
+```
 
 ---
 
@@ -134,11 +184,18 @@ const getSongs = async (isOfflineMode: boolean) => {
 
 ## 5. Implementation Roadmap
 
-### Phase 1: Foundation (足場固め)
+### Phase 1: Foundation (足場固め - Drizzle Setup)
 
-1. `better-sqlite3` のインストールと Electron ビルド設定の調整。
-2. メインプロセスでの DB 初期化 (`CREATE TABLE`) 実装。
-3. `DatabaseService` クラスの作成。
+1. **Package Installation**:
+   - `npm install drizzle-orm better-sqlite3`
+   - `npm install -D drizzle-kit @types/better-sqlite3`
+2. **Setup Drizzle**:
+   - `drizzle.config.ts` の作成。
+   - `electron/db/schema.ts` の作成 (上記のスキーマ定義)。
+   - `electron/db/client.ts` の作成 (DB 接続初期化)。
+3. **Migration**:
+   - `npx drizzle-kit generate` でマイグレーション生成。
+   - アプリ起動時にマイグレーション適用ロジックを実装。
 
 ### Phase 2: Core Features (保存と再生)
 
