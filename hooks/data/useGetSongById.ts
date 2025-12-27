@@ -11,15 +11,18 @@ import { useEffect, useState } from "react";
 /**
  * 指定されたIDに基づいて曲を取得するカスタムフック
  *
- * @param {string|undefined} id - 取得する曲のID
+ * @param {string|number|undefined} id - 取得する曲のID
  * @returns {Object} 曲の取得状態と結果
  */
-const useGetSongById = (id?: string) => {
+const useGetSongById = (id?: string | number) => {
   const supabaseClient = createClient();
   const { isOnline } = useNetworkStatus();
   const { saveToCache, loadFromCache } = useOfflineCache();
 
-  const queryKey = [CACHED_QUERIES.songById, id];
+  // IDを文字列に正規化
+  const normalizedId = id != null ? String(id) : undefined;
+
+  const queryKey = [CACHED_QUERIES.songById, normalizedId];
 
   const {
     isLoading,
@@ -29,12 +32,12 @@ const useGetSongById = (id?: string) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      if (!id) {
+      if (!normalizedId) {
         return undefined;
       }
 
       // ローカル曲のIDの場合は処理をスキップ
-      if (typeof id === "string" && id.startsWith("local_")) {
+      if (normalizedId.startsWith("local_")) {
         return undefined;
       }
 
@@ -48,7 +51,7 @@ const useGetSongById = (id?: string) => {
       const { data, error } = await supabaseClient
         .from("songs")
         .select("*")
-        .eq("id", id)
+        .eq("id", normalizedId)
         .maybeSingle();
 
       if (error) {
@@ -66,17 +69,17 @@ const useGetSongById = (id?: string) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!id && !(typeof id === "string" && id.startsWith("local_")), // ローカル曲の場合は無効化
+    enabled: !!normalizedId && !normalizedId.startsWith("local_"), // ローカル曲の場合は無効化
     placeholderData: keepPreviousData,
     retry: isOnline ? 1 : false,
   });
 
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline && id && !id.startsWith("local_")) {
+    if (isOnline && normalizedId && !normalizedId.startsWith("local_")) {
       refetch();
     }
-  }, [isOnline, id, refetch]);
+  }, [isOnline, normalizedId, refetch]);
 
   // ローカルファイルの確認とパスの差し替え
   const [finalSong, setFinalSong] = useState<Song | undefined>(song);

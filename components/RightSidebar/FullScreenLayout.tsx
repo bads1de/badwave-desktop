@@ -8,7 +8,7 @@ interface FullScreenLayoutProps {
   song: Song;
   videoPath?: string;
   imagePath?: string;
-  nextSong: Song;
+  nextSong: Song | undefined;
   nextImagePath?: string;
 }
 
@@ -19,12 +19,13 @@ const FullScreenLayout: React.FC<FullScreenLayoutProps> = React.memo(
 
     if (showLyrics) {
       return (
-        <div className="relative w-full h-full bg-black custom-scrollbar">
-          <div className="flex items-center justify-center h-full pb-6">
-            <div className="w-full max-h-full overflow-auto">
+        <div className="relative w-full h-full bg-black/20 backdrop-blur-sm custom-scrollbar rounded-xl border border-white/5">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40 pointer-events-none" />
+          <div className="flex items-center justify-center h-full py-8 px-6">
+            <div className="w-full max-h-full overflow-y-auto custom-scrollbar pr-2">
               <p
-                className="whitespace-pre-wrap text-white text-xl font-medium text-center"
-                style={{ textShadow: "0 0 10px #fff" }}
+                className="whitespace-pre-wrap text-neutral-200 text-lg font-medium leading-relaxed tracking-wide text-center"
+                style={{ textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}
               >
                 {lyrics}
               </p>
@@ -35,15 +36,13 @@ const FullScreenLayout: React.FC<FullScreenLayoutProps> = React.memo(
     }
 
     return (
-      <div className="relative w-full h-full overflow-hidden rounded-xl">
+      <div className="relative w-full h-full overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/5 bg-neutral-900 group">
         <CurrentSongDisplay
           song={song}
           videoPath={videoPath}
           imagePath={imagePath}
         />
-        <div className="absolute bottom-0 left-0 right-0 flex flex-col">
-          <NextSongPreview nextSong={nextSong} nextImagePath={nextImagePath} />
-        </div>
+        <NextSongPreview nextSong={nextSong} nextImagePath={nextImagePath} />
       </div>
     );
   }

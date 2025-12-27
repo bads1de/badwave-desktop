@@ -12,6 +12,8 @@ import {
   Music2,
   Pause,
   ClipboardCopy,
+  Cloud,
+  CloudOff,
 } from "lucide-react";
 import { MdLyrics } from "react-icons/md";
 import Image from "next/image";
@@ -27,6 +29,8 @@ import toast from "react-hot-toast";
 import AudioWaveform from "@/components/AudioWaveform";
 import { getRandomColor } from "@/libs/utils";
 import useAudioWaveStore from "@/hooks/audio/useAudioWave";
+import useDownloadSong from "@/hooks/utils/useDownloadSong";
+import { electronAPI } from "@/libs/electron-utils";
 
 interface SongContentProps {
   songId: string;
@@ -52,6 +56,16 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
 
   const { isPlaying, play, pause, currentSongId, initializeAudio } =
     useAudioWaveStore();
+
+  // オフラインキャッシュ用のフック
+  const {
+    download: cacheLocally,
+    remove: removeCache,
+    isDownloading: isCaching,
+    isDownloaded: isCached,
+  } = useDownloadSong(song ?? null);
+
+  const isElectron = electronAPI.isElectron();
 
   useEffect(() => {
     setPrimaryColor(getRandomColor());
@@ -232,6 +246,31 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
                     <Download className="mr-2" size={16} />
                     {isLoading ? "Downloading..." : "Download"}
                   </Button>
+                  {/* オフラインキャッシュボタン（Electron環境のみ） */}
+                  {isElectron && (
+                    <Button
+                      onClick={isCached ? removeCache : cacheLocally}
+                      disabled={isCaching}
+                      variant="outline"
+                      className={
+                        isCached
+                          ? "border-green-500 text-green-500 hover:bg-green-500/10"
+                          : "border-theme-500 text-theme-500 hover:bg-theme-500/10"
+                      }
+                    >
+                      {isCached ? (
+                        <>
+                          <CloudOff className="mr-2" size={16} />
+                          {isCaching ? "削除中..." : "キャッシュ削除"}
+                        </>
+                      ) : (
+                        <>
+                          <Cloud className="mr-2" size={16} />
+                          {isCaching ? "保存中..." : "オフライン保存"}
+                        </>
+                      )}
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     className="border-theme-700 text-theme-700 hover:bg-theme-700/10"

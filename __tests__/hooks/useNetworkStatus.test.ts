@@ -1,5 +1,5 @@
-import { renderHook, act } from "@testing-library/react";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { renderHook, act } from "@testing-library/react";
 
 describe("useNetworkStatus", () => {
   // オリジナルの navigator.onLine を保存

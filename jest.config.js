@@ -17,6 +17,10 @@ module.exports = {
           module: "commonjs",
           moduleResolution: "node",
           allowSyntheticDefaultImports: true,
+          baseUrl: ".",
+          paths: {
+            "@/*": ["./*"],
+          },
         },
       },
     ],

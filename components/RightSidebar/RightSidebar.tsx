@@ -94,11 +94,11 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ children }) => {
     <div className={twMerge(`flex h-full`, player.activeId && "h-full")}>
       <main className="h-full flex-1 overflow-y-auto pr-2">{children}</main>
       {showRightSidebar && (
-        <div className="relative hidden xl:flex h-full bg-black">
+        <div className="relative hidden xl:flex h-full">
           {/* リサイズハンドル - 左端ではなく右サイドバーの左側に配置 */}
           <div
             {...bind()}
-            className="absolute left-0 top-0 bottom-0 w-6 cursor-ew-resize flex items-center justify-center z-10"
+            className="absolute left-0 top-0 bottom-0 w-6 cursor-ew-resize flex items-center justify-center z-50"
           >
             <BsGripVertical className="text-neutral-400" />
           </div>
@@ -106,7 +106,12 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ children }) => {
           {/* リサイズ可能なサイドバー - 左側にパディングを追加してリサイズハンドルのスペースを確保 */}
           <animated.div
             style={{ width }}
-            className="h-full pl-6 pr-2 pt-2 pb-2 overflow-hidden"
+            className={twMerge(
+              "h-full pl-6 pr-2 pt-2 pb-2 overflow-hidden",
+              "bg-gradient-to-br from-black/95 via-neutral-900/90 to-neutral-900/85",
+              "backdrop-blur-2xl border-l border-white/[0.02] shadow-2xl shadow-black/20",
+              "transition-all duration-500 z-40"
+            )}
           >
             <FullScreenLayout
               song={currentSong!}
