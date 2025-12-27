@@ -52,6 +52,10 @@ const useLikeMutation = (songId: string, userId?: string) => {
 
   return useMutation({
     mutationFn: async (isCurrentlyLiked: boolean) => {
+      if (typeof songId === "string" && songId.startsWith("local_")) {
+        throw new Error("ローカル曲にはいいねできません");
+      }
+
       if (!userId) {
         throw new Error("ユーザーIDが必要です");
       }

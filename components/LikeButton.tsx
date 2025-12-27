@@ -10,10 +10,11 @@ interface LikeButtonProps {
   songType: "regular";
   size?: number;
   showText?: boolean;
+  disabled?: boolean;
 }
 
 const LikeButton: React.FC<LikeButtonProps> = memo(
-  ({ songId, songType, size, showText = false }) => {
+  ({ songId, songType, size, showText = false, disabled = false }) => {
     const { user } = useUser();
     const authModal = useAuthModal();
 
@@ -27,19 +28,25 @@ const LikeButton: React.FC<LikeButtonProps> = memo(
 
     // いいねボタンのクリックハンドラーをメモ化
     const handleLike = useCallback(() => {
+      if (disabled) return;
+
       if (!user) {
         return authModal.onOpen();
       }
 
       likeMutation.mutate(isLiked);
-    }, [authModal, likeMutation, user]);
+    }, [authModal, likeMutation, user, isLiked, disabled]);
 
     return (
       <button
         onClick={handleLike}
-        className="text-neutral-400 cursor-pointer hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
+        className={`text-neutral-400 transition-all duration-300 ${
+          disabled
+            ? "cursor-not-allowed opacity-50"
+            : "cursor-pointer hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+        }`}
         aria-label={isLiked ? "Remove like" : "Add like"}
-        disabled={likeMutation.isPending}
+        disabled={likeMutation.isPending || disabled}
       >
         <div className="flex items-center">
           <Icon color={isLiked ? "#FF69B4" : "white"} size={size || 25} />

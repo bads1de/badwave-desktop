@@ -27,6 +27,10 @@ const useMutatePlaylistSong = () => {
       songId: string;
       playlistId: string;
     }) => {
+      if (typeof songId === "string" && songId.startsWith("local_")) {
+        throw new Error("ローカル曲はプレイリストから削除できません");
+      }
+
       if (!user?.id) {
         throw new Error("ユーザーが認証されていません");
       }
@@ -73,6 +77,10 @@ const useMutatePlaylistSong = () => {
       songType?: "regular";
       updateImagePath?: string;
     }) => {
+      if (typeof songId === "string" && songId.startsWith("local_")) {
+        throw new Error("ローカル曲はプレイリストに追加できません");
+      }
+
       if (!user?.id) {
         throw new Error("ユーザーが認証されていません");
       }

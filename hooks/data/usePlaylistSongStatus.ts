@@ -53,7 +53,11 @@ const usePlaylistSongStatus = (songId: string, playlists: { id: string }[]) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!user?.id && !!songId && playlistIds.length > 0,
+    enabled:
+      !!user?.id &&
+      !!songId &&
+      playlistIds.length > 0 &&
+      !(typeof songId === "string" && songId.startsWith("local_")),
   });
 
   return {

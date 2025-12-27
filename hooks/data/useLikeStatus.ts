@@ -39,7 +39,8 @@ const useLikeStatus = (songId: string, userId?: string) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!userId,
+    enabled:
+      !!userId && !(typeof songId === "string" && songId.startsWith("local_")),
   });
 
   return {

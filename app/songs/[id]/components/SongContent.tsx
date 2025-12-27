@@ -31,6 +31,7 @@ import { getRandomColor } from "@/libs/utils";
 import useAudioWaveStore from "@/hooks/audio/useAudioWave";
 import useDownloadSong from "@/hooks/utils/useDownloadSong";
 import { electronAPI } from "@/libs/electron-utils";
+import { isLocalSong } from "@/libs/songUtils";
 
 interface SongContentProps {
   songId: string;
@@ -246,8 +247,8 @@ const SongContent: React.FC<SongContentProps> = memo(({ songId }) => {
                     <Download className="mr-2" size={16} />
                     {isLoading ? "Downloading..." : "Download"}
                   </Button>
-                  {/* オフラインキャッシュボタン（Electron環境のみ） */}
-                  {isElectron && (
+                  {/* オフラインキャッシュボタン（Electron環境かつ非ローカル曲のみ） */}
+                  {isElectron && !isLocalSong(song) && (
                     <Button
                       onClick={isCached ? removeCache : cacheLocally}
                       disabled={isCaching}

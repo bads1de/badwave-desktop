@@ -13,6 +13,7 @@ import useAudioPlayer from "@/hooks/audio/useAudioPlayer";
 import useLyricsStore from "@/hooks/stores/useLyricsStore";
 import { mediaControls } from "@/libs/electron-utils";
 import { isLocalSong } from "@/libs/songUtils";
+import DisabledOverlay from "../common/DisabledOverlay";
 
 interface PlayerContentProps {
   song: Song;
@@ -162,23 +163,37 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
 
           <div className="flex w-full justify-end pr-6">
             <div className="flex items-center gap-x-8 w-full md:w-[170px] lg:w-[200px]">
-              {/* ローカル曲の場合はオンライン専用機能を非表示 */}
-              {!isLocalFile && (
-                <>
-                  <AddPlaylist
-                    playlists={playlists}
-                    songId={song.id}
-                    songType="regular"
-                  />
-                  <LikeButton songId={song.id} songType="regular" />
-                  <button
-                    onClick={toggleLyrics}
-                    className="cursor-pointer text-neutral-400 hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
-                  >
-                    <MdLyrics size={22} />
-                  </button>
-                </>
-              )}
+              <DisabledOverlay disabled={isLocalFile}>
+                <AddPlaylist
+                  playlists={playlists}
+                  songId={song.id}
+                  songType="regular"
+                  disabled={isLocalFile}
+                />
+              </DisabledOverlay>
+
+              <DisabledOverlay disabled={isLocalFile}>
+                <LikeButton
+                  songId={song.id}
+                  songType="regular"
+                  disabled={isLocalFile}
+                />
+              </DisabledOverlay>
+
+              <DisabledOverlay disabled={isLocalFile}>
+                <button
+                  onClick={!isLocalFile ? toggleLyrics : undefined}
+                  className={`transition-all duration-300 ${
+                    isLocalFile
+                      ? "text-neutral-600 cursor-not-allowed"
+                      : "cursor-pointer text-neutral-400 hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                  }`}
+                  disabled={isLocalFile}
+                >
+                  <MdLyrics size={22} />
+                </button>
+              </DisabledOverlay>
+
               <div className="relative">
                 <VolumeIcon
                   onClick={handleVolumeClick}

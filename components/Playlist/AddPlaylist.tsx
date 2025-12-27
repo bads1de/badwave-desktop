@@ -19,6 +19,7 @@ interface PlaylistMenuProps {
   songId: string;
   songType: "regular";
   children?: React.ReactNode;
+  disabled?: boolean;
 }
 
 /**
@@ -34,6 +35,7 @@ const AddPlaylist: React.FC<PlaylistMenuProps> = ({
   songId,
   songType = "regular",
   children,
+  disabled = false,
 }) => {
   const { user } = useUser();
   const authModal = useAuthModal();
@@ -75,7 +77,14 @@ const AddPlaylist: React.FC<PlaylistMenuProps> = ({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="text-neutral-400 cursor-pointer hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300">
+      <DropdownMenuTrigger
+        disabled={disabled}
+        className={`text-neutral-400 transition-all duration-300 ${
+          disabled
+            ? "cursor-not-allowed opacity-50"
+            : "cursor-pointer hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+        }`}
+      >
         {children || <RiPlayListAddFill size={20} />}
       </DropdownMenuTrigger>
       <DropdownMenuContent>

@@ -17,6 +17,8 @@ import { downloadFile } from "@/libs/helpers";
 import { useUser } from "@/hooks/auth/useUser";
 import useDownloadSong from "@/hooks/utils/useDownloadSong";
 import { IoCloudDownloadOutline, IoTrashOutline } from "react-icons/io5";
+import { isLocalSong } from "@/libs/songUtils";
+import DisabledOverlay from "../common/DisabledOverlay";
 
 interface SongOptionsPopoverProps {
   song: Song;
@@ -34,6 +36,8 @@ const SongOptionsPopover: React.FC<SongOptionsPopoverProps> = memo(
     // オフラインダウンロードフック
     const { download, remove, isDownloaded, isDownloading } =
       useDownloadSong(song);
+
+    const isLocal = isLocalSong(song);
 
     // ダウンロードハンドラーをメモ化
     const handleDownloadClick = useCallback(
@@ -78,23 +82,27 @@ const SongOptionsPopover: React.FC<SongOptionsPopoverProps> = memo(
             className="w-48 p-0 bg-neutral-800 border-neutral-700"
           >
             <div className="flex flex-col text-sm">
-              {user && (
-                <div className="px-4 py-3">
+              <div className="px-4 py-3">
+                <DisabledOverlay disabled={isLocal}>
                   <LikeButton
                     songId={song.id}
                     songType={"regular"}
                     showText={true}
+                    disabled={isLocal}
                   />
-                </div>
-              )}
+                </DisabledOverlay>
+              </div>
 
               {isPlaylistCreator && (
                 <div className="px-4 py-3 border-t border-neutral-700">
-                  <DeletePlaylistSongsBtn
-                    songId={song.id}
-                    playlistId={playlistId}
-                    showText={true}
-                  />
+                  <DisabledOverlay disabled={isLocal}>
+                    <DeletePlaylistSongsBtn
+                      songId={song.id}
+                      playlistId={playlistId}
+                      showText={true}
+                      disabled={isLocal}
+                    />
+                  </DisabledOverlay>
                 </div>
               )}
               <div
@@ -111,28 +119,30 @@ const SongOptionsPopover: React.FC<SongOptionsPopoverProps> = memo(
                 </button>
               </div>
 
-              {/* オフライン機能 (Phase 2追加) */}
-              <div className="px-4 py-3 border-t border-neutral-700">
-                {isDownloaded ? (
-                  <button
-                    className="w-full flex items-center text-red-400 cursor-pointer hover:text-red-300 transition-all duration-300"
-                    onClick={() => remove()}
-                    disabled={isDownloading}
-                  >
-                    <IoTrashOutline size={24} className="mr-2" />
-                    キャッシュ削除
-                  </button>
-                ) : (
-                  <button
-                    className="w-full flex items-center text-neutral-400 cursor-pointer hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
-                    onClick={() => download()}
-                    disabled={isDownloading}
-                  >
-                    <IoCloudDownloadOutline size={24} className="mr-2" />
-                    {isDownloading ? "保存中..." : "オフライン保存"}
-                  </button>
-                )}
-              </div>
+              {/* オフライン機能 (Phase 2追加 - ローカル曲以外のみ) */}
+              {!isLocal && (
+                <div className="px-4 py-3 border-t border-neutral-700">
+                  {isDownloaded ? (
+                    <button
+                      className="w-full flex items-center text-red-400 cursor-pointer hover:text-red-300 transition-all duration-300"
+                      onClick={() => remove()}
+                      disabled={isDownloading}
+                    >
+                      <IoTrashOutline size={24} className="mr-2" />
+                      キャッシュ削除
+                    </button>
+                  ) : (
+                    <button
+                      className="w-full flex items-center text-neutral-400 cursor-pointer hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
+                      onClick={() => download()}
+                      disabled={isDownloading}
+                    >
+                      <IoCloudDownloadOutline size={24} className="mr-2" />
+                      {isDownloading ? "保存中..." : "オフライン保存"}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </PopoverContent>
         </Popover>
