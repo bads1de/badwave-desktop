@@ -19,7 +19,7 @@ const useGetPlaylists = () => {
   const { isOnline, isInitialized } = useNetworkStatus();
   const { checkOffline } = useOfflineCheck();
 
-  const queryKey = [CACHED_QUERIES.playlists, "user", user?.id, isOnline];
+  const queryKey = [CACHED_QUERIES.playlists, "user", user?.id];
 
   const {
     data: playlists = [],
@@ -31,7 +31,6 @@ const useGetPlaylists = () => {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
       // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
       const isCurrentlyOffline = await checkOffline();
 

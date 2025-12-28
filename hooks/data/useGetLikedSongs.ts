@@ -15,7 +15,7 @@ const useGetLikedSongs = (userId?: string) => {
   const supabaseClient = createClient();
   const { isOnline, isInitialized, checkOffline } = useOfflineCheck();
 
-  const queryKey = [CACHED_QUERIES.likedSongs, userId, isOnline];
+  const queryKey = [CACHED_QUERIES.likedSongs, userId];
 
   const {
     data: likedSongs = [],

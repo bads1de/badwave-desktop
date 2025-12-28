@@ -51,12 +51,6 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
     const { toggleLyrics } = useLyricsStore();
 
     useEffect(() => {
-      if (audioRef.current && song?.song_path) {
-        audioRef.current.src = song.song_path;
-      }
-    }, [song?.song_path, audioRef]);
-
-    useEffect(() => {
       if (!showVolumeSlider) return;
 
       const timeout = setTimeout(() => {
@@ -95,7 +89,8 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
 
     return (
       <>
-        <audio ref={audioRef} src={song.song_path} loop={isRepeating} />
+        {/* NOTE: srcはuseAudioPlayer内で設定されるため、ここでは指定しない */}
+        <audio ref={audioRef} loop={isRepeating} />
 
         <div className="grid grid-cols-3 h-full bg-[#121212] border-t border-[#303030] rounded-t-xl">
           <div className="flex w-full justify-start px-4">

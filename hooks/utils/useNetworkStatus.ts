@@ -32,6 +32,8 @@ export function useNetworkStatus(): NetworkStatus {
   }, []);
 
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
@@ -54,7 +56,7 @@ export function useNetworkStatus(): NetworkStatus {
         });
 
       // IPC イベントをリッスン
-      const unsubscribe = (window as any).electron?.ipc?.on(
+      unsubscribe = (window as any).electron?.ipc?.on(
         "offline-simulation-changed",
         (isSimulatingOffline: boolean) => {
           if (isSimulatingOffline) {
@@ -64,20 +66,16 @@ export function useNetworkStatus(): NetworkStatus {
           }
         }
       );
-
-      return () => {
-        window.removeEventListener("online", handleOnline);
-        window.removeEventListener("offline", handleOffline);
-        if (unsubscribe) unsubscribe();
-      };
     } else {
       // Electron 以外: 即座に初期化完了
       setIsInitialized(true);
     }
 
+    // クリーンアップ（共通）
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      if (unsubscribe) unsubscribe();
     };
   }, [handleOnline, handleOffline]);
 

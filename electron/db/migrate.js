@@ -43,7 +43,6 @@ exports.runMigrations = runMigrations;
 var path_1 = __importDefault(require("path"));
 var migrator_1 = require("drizzle-orm/better-sqlite3/migrator");
 var client_1 = require("./client");
-var utils_1 = require("../utils");
 /**
  * データベースのマイグレーションを実行する
  * electron/main.ts から呼び出される
@@ -54,12 +53,10 @@ function runMigrations() {
         return __generator(this, function (_a) {
             try {
                 migrationsFolder = path_1.default.join(__dirname, "../../drizzle");
-                (0, utils_1.debugLog)("Running migrations from: ".concat(migrationsFolder));
                 db = (0, client_1.getDb)();
                 (0, migrator_1.migrate)(db, {
                     migrationsFolder: migrationsFolder,
                 });
-                (0, utils_1.debugLog)("Migrations completed successfully.");
             }
             catch (error) {
                 console.error("Error during migration:", error);

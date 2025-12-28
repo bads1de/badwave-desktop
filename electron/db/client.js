@@ -53,7 +53,7 @@ var getDb = function () {
     var dbPath = path_1.default.join(electron_1.app.getPath("userData"), "badwave_offline.db");
     // SQLiteインスタンスの初期化
     // verboseを有効にすると、デバッグ用にクエリログが出力されます
-    var sqlite = new better_sqlite3_1.default(dbPath, { verbose: console.log });
+    var sqlite = new better_sqlite3_1.default(dbPath);
     // Drizzleの初期化
     dbInstance = (0, better_sqlite3_2.drizzle)(sqlite, { schema: schema });
     return dbInstance;

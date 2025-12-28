@@ -58,7 +58,6 @@ var setupDownloadHandlers = function () {
             switch (_a.label) {
                 case 0:
                     songId = song.id;
-                    (0, utils_1.debugLog)("[IPC] download-song request for: ".concat(song.title, " (").concat(songId, ")"));
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 6, , 7]);
@@ -141,7 +140,6 @@ var setupDownloadHandlers = function () {
                     return [4 /*yield*/, Promise.all(downloadTasks)];
                 case 4:
                     _a.sent();
-                    (0, utils_1.debugLog)("[IPC] Files downloaded for: ".concat(songId));
                     songRecord = {
                         id: song.id,
                         userId: song.userId,
@@ -165,11 +163,9 @@ var setupDownloadHandlers = function () {
                         })];
                 case 5:
                     _a.sent();
-                    (0, utils_1.debugLog)("[IPC] Database updated for: ".concat(songId));
                     return [2 /*return*/, { success: true, localPath: songRecord.songPath }];
                 case 6:
                     error_1 = _a.sent();
-                    (0, utils_1.debugLog)("[IPC] Download failed for ".concat(songId, ":"), error_1);
                     return [2 /*return*/, { success: false, error: error_1.message }];
                 case 7: return [2 /*return*/];
             }
@@ -209,16 +205,12 @@ var setupDownloadHandlers = function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    (0, utils_1.debugLog)("[IPC] get-offline-songs request");
-                    _a.label = 1;
-                case 1:
-                    _a.trys.push([1, 3, , 4]);
+                    _a.trys.push([0, 2, , 3]);
                     return [4 /*yield*/, db.query.songs.findMany({
                             where: (0, drizzle_orm_1.isNotNull)(schema_1.songs.songPath),
                         })];
-                case 2:
+                case 1:
                     offlineSongs = _a.sent();
-                    (0, utils_1.debugLog)("[IPC] Found ".concat(offlineSongs.length, " offline songs"));
                     // レンダラープロセスが期待する Song 型に変換して返す
                     return [2 /*return*/, offlineSongs.map(function (song) { return ({
                             id: song.id,
@@ -235,11 +227,11 @@ var setupDownloadHandlers = function () {
                             created_at: song.createdAt,
                             downloaded_at: song.downloadedAt,
                         }); })];
-                case 3:
+                case 2:
                     error_3 = _a.sent();
                     console.error("[IPC] Failed to get offline songs:", error_3);
                     return [2 /*return*/, []];
-                case 4: return [2 /*return*/];
+                case 3: return [2 /*return*/];
             }
         });
     }); });
@@ -249,17 +241,13 @@ var setupDownloadHandlers = function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    (0, utils_1.debugLog)("[IPC] delete-offline-song request for: ".concat(songId));
-                    _a.label = 1;
-                case 1:
-                    _a.trys.push([1, 11, , 12]);
+                    _a.trys.push([0, 10, , 11]);
                     return [4 /*yield*/, db.query.songs.findFirst({
                             where: (0, drizzle_orm_1.eq)(schema_1.songs.id, songId),
                         })];
-                case 2:
+                case 1:
                     songRecord = _a.sent();
                     if (!songRecord) {
-                        (0, utils_1.debugLog)("[IPC] Song not found in DB: ".concat(songId));
                         return [2 /*return*/, { success: false, error: "Song not found" }];
                     }
                     filesToDelete = [];
@@ -270,42 +258,40 @@ var setupDownloadHandlers = function () {
                         filesToDelete.push((0, utils_1.toLocalPath)(songRecord.imagePath));
                     }
                     _i = 0, filesToDelete_1 = filesToDelete;
+                    _a.label = 2;
+                case 2:
+                    if (!(_i < filesToDelete_1.length)) return [3 /*break*/, 8];
+                    filePath = filesToDelete_1[_i];
                     _a.label = 3;
                 case 3:
-                    if (!(_i < filesToDelete_1.length)) return [3 /*break*/, 9];
-                    filePath = filesToDelete_1[_i];
-                    _a.label = 4;
-                case 4:
-                    _a.trys.push([4, 7, , 8]);
-                    if (!fs_1.default.existsSync(filePath)) return [3 /*break*/, 6];
+                    _a.trys.push([3, 6, , 7]);
+                    if (!fs_1.default.existsSync(filePath)) return [3 /*break*/, 5];
                     return [4 /*yield*/, fs_1.default.promises.unlink(filePath)];
-                case 5:
+                case 4:
                     _a.sent();
-                    (0, utils_1.debugLog)("[IPC] Deleted file: ".concat(filePath));
-                    _a.label = 6;
-                case 6: return [3 /*break*/, 8];
-                case 7:
+                    _a.label = 5;
+                case 5: return [3 /*break*/, 7];
+                case 6:
                     err_1 = _a.sent();
                     if (err_1.code !== "ENOENT") {
-                        (0, utils_1.debugLog)("[IPC] Warning: Could not delete file: ".concat(filePath), err_1);
+                        // ignore
                     }
-                    return [3 /*break*/, 8];
-                case 8:
+                    return [3 /*break*/, 7];
+                case 7:
                     _i++;
-                    return [3 /*break*/, 3];
-                case 9: 
+                    return [3 /*break*/, 2];
+                case 8: 
                 // 3. データベースからレコードを削除
                 return [4 /*yield*/, db.delete(schema_1.songs).where((0, drizzle_orm_1.eq)(schema_1.songs.id, songId))];
-                case 10:
+                case 9:
                     // 3. データベースからレコードを削除
                     _a.sent();
-                    (0, utils_1.debugLog)("[IPC] Deleted song from DB: ".concat(songId));
                     return [2 /*return*/, { success: true }];
-                case 11:
+                case 10:
                     error_4 = _a.sent();
                     console.error("[IPC] Failed to delete offline song ".concat(songId, ":"), error_4);
                     return [2 /*return*/, { success: false, error: error_4.message }];
-                case 12: return [2 /*return*/];
+                case 11: return [2 /*return*/];
             }
         });
     }); });
