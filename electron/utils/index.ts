@@ -2,6 +2,27 @@ import { app } from "electron";
 import * as path from "path";
 import * as fs from "fs";
 import * as dotenv from "dotenv";
+import { fileURLToPath } from "url";
+
+/**
+ * file:// URLをローカルパスに変換するヘルパー
+ * Node.jsの標準機能を使用してクロスプラットフォーム対応
+ *
+ * @param {string} fileUrl - 変換するファイルURL
+ * @returns {string} ローカルファイルパス
+ */
+export const toLocalPath = (fileUrl: string): string => {
+  try {
+    // file:// プロトコルでない場合はそのまま返す
+    if (!fileUrl.startsWith("file:")) {
+      return fileUrl;
+    }
+    return fileURLToPath(fileUrl);
+  } catch (e) {
+    console.error(`Error converting file URL to path: ${fileUrl}`, e);
+    return fileUrl;
+  }
+};
 
 /**
  * .env.localファイルから環境変数を読み込む

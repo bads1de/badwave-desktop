@@ -3,7 +3,8 @@ import fs from "fs";
 import path from "path";
 import https from "https";
 import http from "http";
-import { debugLog } from "../utils";
+import { fileURLToPath } from "url";
+import { debugLog, toLocalPath } from "../utils";
 import { getDb } from "../db/client";
 import { songs } from "../db/schema";
 import { eq, isNotNull } from "drizzle-orm";
@@ -243,30 +244,6 @@ export const setupDownloadHandlers = () => {
 
       // 2. ファイルを削除
       const filesToDelete: string[] = [];
-
-      /**
-       * file:// または file:/// 形式のURLをローカルパスに変換し、デコードするヘルパー
-       */
-      const toLocalPath = (fileUrl: string) => {
-        let filePath = fileUrl;
-        if (filePath.startsWith("file:///")) {
-          filePath = filePath.slice(8);
-        } else if (filePath.startsWith("file://")) {
-          filePath = filePath.slice(7);
-        }
-
-        // Windowsの場合、パスの先頭に / が残ることがある (例: /C:/Users/...)
-        if (process.platform === "win32" && filePath.startsWith("/")) {
-          filePath = filePath.slice(1);
-        }
-
-        try {
-          // パスに含まれるエンコードされた文字（%20など）を復元
-          return decodeURIComponent(filePath);
-        } catch (e) {
-          return filePath;
-        }
-      };
 
       if (songRecord.songPath) {
         filesToDelete.push(toLocalPath(songRecord.songPath));
