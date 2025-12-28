@@ -15,7 +15,7 @@ const useGetPlaylistSongs = (playlistId?: string) => {
   const supabaseClient = createClient();
   const { isOnline } = useNetworkStatus();
 
-  const queryKey = [CACHED_QUERIES.playlists, playlistId, "songs"];
+  const queryKey = [CACHED_QUERIES.playlists, playlistId, "songs", isOnline];
 
   const {
     data: songs = [],
@@ -62,29 +62,14 @@ const useGetPlaylistSongs = (playlistId?: string) => {
       })) as Song[];
 
       // キャッシュ同期（バックグラウンド）
-      const songsForCache = mappedSongs.map((song) => ({
-        id: song.id,
-        user_id: song.user_id,
-        title: song.title,
-        author: song.author,
-        song_path: song.song_path,
-        image_path: song.image_path,
-        duration: song.duration,
-        genre: song.genre,
-        lyrics: song.lyrics,
-        created_at: song.created_at,
-      }));
-      electronAPI.cache.syncSongsMetadata(songsForCache).catch(console.error);
-
-      const playlistSongsForCache = data.map((item) => ({
-        id: item.id,
-        playlist_id: item.playlist_id,
-        song_id: item.song_id,
-        created_at: item.created_at,
-      }));
-      electronAPI.cache
-        .syncPlaylistSongs(playlistSongsForCache)
-        .catch(console.error);
+      // 改良版: 曲のメタデータも含めて同期
+      if (electronAPI.isElectron()) {
+        electronAPI.cache
+          .syncPlaylistSongs(playlistId, mappedSongs)
+          .catch((e) => {
+            console.error("Failed to sync playlist songs with metadata:", e);
+          });
+      }
 
       return mappedSongs;
     },

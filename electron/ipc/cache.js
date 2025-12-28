@@ -1,4 +1,8 @@
 "use strict";
+var __makeTemplateObject = (this && this.__makeTemplateObject) || function (cooked, raw) {
+    if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
+    return cooked;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -38,360 +42,364 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setupCacheHandlers = setupCacheHandlers;
 var electron_1 = require("electron");
-var utils_1 = require("../utils");
 var client_1 = require("../db/client");
 var schema_1 = require("../db/schema");
 var drizzle_orm_1 = require("drizzle-orm");
+/**
+ * IDを文字列に強制変換し、".0" などの浮動小数点表記を除去する
+ */
+var normalizeId = function (id) {
+    if (id === null || id === undefined)
+        return "";
+    var s = String(id);
+    return s.includes(".") ? s.split(".")[0] : s;
+};
 function setupCacheHandlers() {
     var _this = this;
     var db = (0, client_1.getDb)();
     /**
-     * 曲のメタデータをローカルDBにキャッシュ
-     * ダウンロード状態（songPath）は上書きしない
+     * 楽曲メタデータを内部でupsertする
      */
-    electron_1.ipcMain.handle("sync-songs-metadata", function (_, songsData) { return __awaiter(_this, void 0, void 0, function () {
-        var count, _i, songsData_1, song, existing, record, error_1;
-        var _a, _b, _c;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+    function internalSyncSongs(songsData) {
+        return __awaiter(this, void 0, void 0, function () {
+            var count, _i, songsData_1, song, songId, existing, record;
+            var _a, _b, _c;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0:
+                        count = 0;
+                        _i = 0, songsData_1 = songsData;
+                        _d.label = 1;
+                    case 1:
+                        if (!(_i < songsData_1.length)) return [3 /*break*/, 5];
+                        song = songsData_1[_i];
+                        songId = normalizeId(song.id);
+                        return [4 /*yield*/, db.query.songs.findFirst({
+                                where: (0, drizzle_orm_1.eq)(schema_1.songs.id, songId),
+                                columns: { songPath: true, imagePath: true, downloadedAt: true },
+                            })];
+                    case 2:
+                        existing = _d.sent();
+                        record = {
+                            id: songId,
+                            userId: String(song.user_id || ""),
+                            title: String(song.title || "Unknown Title"),
+                            author: String(song.author || "Unknown Author"),
+                            songPath: (_a = existing === null || existing === void 0 ? void 0 : existing.songPath) !== null && _a !== void 0 ? _a : null,
+                            imagePath: (_b = existing === null || existing === void 0 ? void 0 : existing.imagePath) !== null && _b !== void 0 ? _b : null,
+                            originalSongPath: song.song_path,
+                            originalImagePath: song.image_path,
+                            duration: song.duration ? Number(song.duration) : null,
+                            genre: song.genre,
+                            lyrics: song.lyrics,
+                            createdAt: song.created_at,
+                            downloadedAt: (_c = existing === null || existing === void 0 ? void 0 : existing.downloadedAt) !== null && _c !== void 0 ? _c : null,
+                        };
+                        return [4 /*yield*/, db
+                                .insert(schema_1.songs)
+                                .values(record)
+                                .onConflictDoUpdate({
+                                target: schema_1.songs.id,
+                                set: {
+                                    title: record.title,
+                                    author: record.author,
+                                    originalSongPath: record.originalSongPath,
+                                    originalImagePath: record.originalImagePath,
+                                    duration: record.duration,
+                                    genre: record.genre,
+                                    lyrics: record.lyrics,
+                                    createdAt: record.createdAt,
+                                },
+                            })];
+                    case 3:
+                        _d.sent();
+                        count++;
+                        _d.label = 4;
+                    case 4:
+                        _i++;
+                        return [3 /*break*/, 1];
+                    case 5: return [2 /*return*/, count];
+                }
+            });
+        });
+    }
+    // --- Handlers ---
+    electron_1.ipcMain.handle("sync-songs-metadata", function (_, data) { return __awaiter(_this, void 0, void 0, function () {
+        var count, error_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
                 case 0:
-                    (0, utils_1.debugLog)("[IPC] sync-songs-metadata: ".concat(songsData.length, " \u4EF6\u306E\u66F2\u3092\u30AD\u30E3\u30C3\u30B7\u30E5"));
-                    _d.label = 1;
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, internalSyncSongs(data)];
                 case 1:
-                    _d.trys.push([1, 7, , 8]);
-                    count = 0;
-                    _i = 0, songsData_1 = songsData;
-                    _d.label = 2;
+                    count = _a.sent();
+                    return [2 /*return*/, { success: true, count: count }];
                 case 2:
-                    if (!(_i < songsData_1.length)) return [3 /*break*/, 6];
-                    song = songsData_1[_i];
-                    return [4 /*yield*/, db.query.songs.findFirst({
-                            where: (0, drizzle_orm_1.eq)(schema_1.songs.id, song.id),
-                            columns: { songPath: true, imagePath: true, downloadedAt: true },
-                        })];
-                case 3:
-                    existing = _d.sent();
-                    record = {
-                        id: song.id,
-                        userId: song.user_id,
-                        title: song.title,
-                        author: song.author,
-                        // ダウンロード状態は既存の値を維持、なければnull
-                        songPath: (_a = existing === null || existing === void 0 ? void 0 : existing.songPath) !== null && _a !== void 0 ? _a : null,
-                        imagePath: (_b = existing === null || existing === void 0 ? void 0 : existing.imagePath) !== null && _b !== void 0 ? _b : null,
-                        // リモートURLを保存
-                        originalSongPath: song.song_path,
-                        originalImagePath: song.image_path,
-                        duration: song.duration,
-                        genre: song.genre,
-                        lyrics: song.lyrics,
-                        createdAt: song.created_at,
-                        downloadedAt: (_c = existing === null || existing === void 0 ? void 0 : existing.downloadedAt) !== null && _c !== void 0 ? _c : null,
-                    };
+                    error_1 = _a.sent();
+                    return [2 /*return*/, { success: false, error: error_1.message }];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
+    electron_1.ipcMain.handle("sync-playlists", function (_, data) { return __awaiter(_this, void 0, void 0, function () {
+        var _i, data_1, item, error_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 5, , 6]);
+                    _i = 0, data_1 = data;
+                    _a.label = 1;
+                case 1:
+                    if (!(_i < data_1.length)) return [3 /*break*/, 4];
+                    item = data_1[_i];
                     return [4 /*yield*/, db
-                            .insert(schema_1.songs)
-                            .values(record)
+                            .insert(schema_1.playlists)
+                            .values({
+                            id: normalizeId(item.id),
+                            userId: String(item.user_id),
+                            title: String(item.title),
+                            imagePath: item.image_path,
+                            isPublic: Boolean(item.is_public),
+                            createdAt: item.createdAt || item.created_at,
+                        })
                             .onConflictDoUpdate({
-                            target: schema_1.songs.id,
+                            target: schema_1.playlists.id,
                             set: {
-                                // ダウンロード関連以外を更新
-                                title: record.title,
-                                author: record.author,
-                                originalSongPath: record.originalSongPath,
-                                originalImagePath: record.originalImagePath,
-                                duration: record.duration,
-                                genre: record.genre,
-                                lyrics: record.lyrics,
-                                createdAt: record.createdAt,
+                                title: String(item.title),
+                                imagePath: item.image_path,
+                                isPublic: Boolean(item.is_public),
                             },
                         })];
-                case 4:
-                    _d.sent();
-                    count++;
-                    _d.label = 5;
-                case 5:
-                    _i++;
-                    return [3 /*break*/, 2];
-                case 6:
-                    (0, utils_1.debugLog)("[IPC] sync-songs-metadata: ".concat(count, " \u4EF6\u3092\u30AD\u30E3\u30C3\u30B7\u30E5\u3057\u307E\u3057\u305F"));
-                    return [2 /*return*/, { success: true, count: count }];
-                case 7:
-                    error_1 = _d.sent();
-                    console.error("[IPC] Failed to sync songs metadata:", error_1);
-                    return [2 /*return*/, { success: false, error: error_1.message }];
-                case 8: return [2 /*return*/];
-            }
-        });
-    }); });
-    /**
-     * プレイリストをローカルDBにキャッシュ
-     */
-    electron_1.ipcMain.handle("sync-playlists", function (_, playlistsData) { return __awaiter(_this, void 0, void 0, function () {
-        var count, _i, playlistsData_1, playlist, record, error_2;
-        var _a;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    (0, utils_1.debugLog)("[IPC] sync-playlists: ".concat(playlistsData.length, " \u4EF6\u306E\u30D7\u30EC\u30A4\u30EA\u30B9\u30C8\u3092\u30AD\u30E3\u30C3\u30B7\u30E5"));
-                    _b.label = 1;
-                case 1:
-                    _b.trys.push([1, 6, , 7]);
-                    count = 0;
-                    _i = 0, playlistsData_1 = playlistsData;
-                    _b.label = 2;
                 case 2:
-                    if (!(_i < playlistsData_1.length)) return [3 /*break*/, 5];
-                    playlist = playlistsData_1[_i];
-                    record = {
-                        id: playlist.id,
-                        userId: playlist.user_id,
-                        title: playlist.title,
-                        imagePath: (_a = playlist.image_path) !== null && _a !== void 0 ? _a : null,
-                        isPublic: playlist.is_public,
-                        createdAt: playlist.created_at,
-                    };
-                    return [4 /*yield*/, db.insert(schema_1.playlists).values(record).onConflictDoUpdate({
-                            target: schema_1.playlists.id,
-                            set: record,
-                        })];
+                    _a.sent();
+                    _a.label = 3;
                 case 3:
-                    _b.sent();
-                    count++;
-                    _b.label = 4;
-                case 4:
                     _i++;
-                    return [3 /*break*/, 2];
+                    return [3 /*break*/, 1];
+                case 4: return [2 /*return*/, { success: true, count: data.length }];
                 case 5:
-                    (0, utils_1.debugLog)("[IPC] sync-playlists: ".concat(count, " \u4EF6\u3092\u30AD\u30E3\u30C3\u30B7\u30E5\u3057\u307E\u3057\u305F"));
-                    return [2 /*return*/, { success: true, count: count }];
-                case 6:
-                    error_2 = _b.sent();
-                    console.error("[IPC] Failed to sync playlists:", error_2);
+                    error_2 = _a.sent();
                     return [2 /*return*/, { success: false, error: error_2.message }];
-                case 7: return [2 /*return*/];
+                case 6: return [2 /*return*/];
             }
         });
     }); });
-    /**
-     * プレイリスト内の曲をローカルDBにキャッシュ
-     */
-    electron_1.ipcMain.handle("sync-playlist-songs", function (_, playlistSongsData) { return __awaiter(_this, void 0, void 0, function () {
-        var count, _i, playlistSongsData_1, ps, record, error_3;
-        var _a;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+    electron_1.ipcMain.handle("sync-playlist-songs", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
+        var _i, fullSongsData_1, songData, songId, psId, error_3;
+        var playlistId = _b.playlistId, fullSongsData = _b.songs;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
-                    (0, utils_1.debugLog)("[IPC] sync-playlist-songs: ".concat(playlistSongsData.length, " \u4EF6\u3092\u30AD\u30E3\u30C3\u30B7\u30E5"));
-                    _b.label = 1;
+                    _c.trys.push([0, 6, , 7]);
+                    return [4 /*yield*/, internalSyncSongs(fullSongsData)];
                 case 1:
-                    _b.trys.push([1, 6, , 7]);
-                    count = 0;
-                    _i = 0, playlistSongsData_1 = playlistSongsData;
-                    _b.label = 2;
+                    _c.sent();
+                    _i = 0, fullSongsData_1 = fullSongsData;
+                    _c.label = 2;
                 case 2:
-                    if (!(_i < playlistSongsData_1.length)) return [3 /*break*/, 5];
-                    ps = playlistSongsData_1[_i];
-                    record = {
-                        id: ps.id,
-                        playlistId: ps.playlist_id,
-                        songId: ps.song_id,
-                        addedAt: (_a = ps.created_at) !== null && _a !== void 0 ? _a : null,
-                    };
-                    return [4 /*yield*/, db.insert(schema_1.playlistSongs).values(record).onConflictDoNothing()];
+                    if (!(_i < fullSongsData_1.length)) return [3 /*break*/, 5];
+                    songData = fullSongsData_1[_i];
+                    songId = normalizeId(songData.id);
+                    psId = "".concat(playlistId, "_").concat(songId);
+                    return [4 /*yield*/, db
+                            .insert(schema_1.playlistSongs)
+                            .values({
+                            id: psId,
+                            playlistId: normalizeId(playlistId),
+                            songId: songId,
+                            addedAt: songData.created_at,
+                        })
+                            .onConflictDoNothing()];
                 case 3:
-                    _b.sent();
-                    count++;
-                    _b.label = 4;
+                    _c.sent();
+                    _c.label = 4;
                 case 4:
                     _i++;
                     return [3 /*break*/, 2];
-                case 5:
-                    (0, utils_1.debugLog)("[IPC] sync-playlist-songs: ".concat(count, " \u4EF6\u3092\u30AD\u30E3\u30C3\u30B7\u30E5\u3057\u307E\u3057\u305F"));
-                    return [2 /*return*/, { success: true, count: count }];
+                case 5: return [2 /*return*/, { success: true }];
                 case 6:
-                    error_3 = _b.sent();
-                    console.error("[IPC] Failed to sync playlist songs:", error_3);
+                    error_3 = _c.sent();
                     return [2 /*return*/, { success: false, error: error_3.message }];
                 case 7: return [2 /*return*/];
             }
         });
     }); });
-    /**
-     * いいねした曲をローカルDBにキャッシュ
-     */
-    electron_1.ipcMain.handle("sync-liked-songs", function (_, likedSongsData) { return __awaiter(_this, void 0, void 0, function () {
-        var count, _i, likedSongsData_1, liked, record, error_4;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
+    electron_1.ipcMain.handle("sync-liked-songs", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
+        var error_4;
+        var _this = this;
+        var userId = _b.userId, fullSongsData = _b.songs;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
-                    (0, utils_1.debugLog)("[IPC] sync-liked-songs: ".concat(likedSongsData.length, " \u4EF6\u306E\u3044\u3044\u306D\u3092\u30AD\u30E3\u30C3\u30B7\u30E5"));
-                    _a.label = 1;
+                    _c.trys.push([0, 3, , 4]);
+                    return [4 /*yield*/, internalSyncSongs(fullSongsData)];
                 case 1:
-                    _a.trys.push([1, 6, , 7]);
-                    count = 0;
-                    _i = 0, likedSongsData_1 = likedSongsData;
-                    _a.label = 2;
-                case 2:
-                    if (!(_i < likedSongsData_1.length)) return [3 /*break*/, 5];
-                    liked = likedSongsData_1[_i];
-                    record = {
-                        userId: liked.user_id,
-                        songId: liked.song_id,
-                        likedAt: liked.created_at,
-                    };
-                    return [4 /*yield*/, db.insert(schema_1.likedSongs).values(record).onConflictDoNothing()];
-                case 3:
-                    _a.sent();
-                    count++;
-                    _a.label = 4;
-                case 4:
-                    _i++;
-                    return [3 /*break*/, 2];
-                case 5:
-                    (0, utils_1.debugLog)("[IPC] sync-liked-songs: ".concat(count, " \u4EF6\u3092\u30AD\u30E3\u30C3\u30B7\u30E5\u3057\u307E\u3057\u305F"));
-                    return [2 /*return*/, { success: true, count: count }];
-                case 6:
-                    error_4 = _a.sent();
-                    console.error("[IPC] Failed to sync liked songs:", error_4);
-                    return [2 /*return*/, { success: false, error: error_4.message }];
-                case 7: return [2 /*return*/];
-            }
-        });
-    }); });
-    /**
-     * キャッシュされたプレイリストを取得
-     */
-    electron_1.ipcMain.handle("get-cached-playlists", function (_, userId) { return __awaiter(_this, void 0, void 0, function () {
-        var cachedPlaylists, error_5;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    (0, utils_1.debugLog)("[IPC] get-cached-playlists for user: ".concat(userId));
-                    _a.label = 1;
-                case 1:
-                    _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, db.query.playlists.findMany({
-                            where: (0, drizzle_orm_1.eq)(schema_1.playlists.userId, userId),
-                        })];
-                case 2:
-                    cachedPlaylists = _a.sent();
-                    // Supabase形式に変換して返す
-                    return [2 /*return*/, cachedPlaylists.map(function (p) { return ({
-                            id: p.id,
-                            user_id: p.userId,
-                            title: p.title,
-                            image_path: p.imagePath,
-                            is_public: p.isPublic,
-                            created_at: p.createdAt,
+                    _c.sent();
+                    return [4 /*yield*/, db.transaction(function (tx) { return __awaiter(_this, void 0, void 0, function () {
+                            var _i, fullSongsData_2, songData;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        _i = 0, fullSongsData_2 = fullSongsData;
+                                        _a.label = 1;
+                                    case 1:
+                                        if (!(_i < fullSongsData_2.length)) return [3 /*break*/, 4];
+                                        songData = fullSongsData_2[_i];
+                                        return [4 /*yield*/, tx
+                                                .insert(schema_1.likedSongs)
+                                                .values({
+                                                userId: String(userId),
+                                                songId: normalizeId(songData.id),
+                                                likedAt: songData.created_at || new Date().toISOString(),
+                                            })
+                                                .onConflictDoNothing()];
+                                    case 2:
+                                        _a.sent();
+                                        _a.label = 3;
+                                    case 3:
+                                        _i++;
+                                        return [3 /*break*/, 1];
+                                    case 4: return [2 /*return*/];
+                                }
+                            });
                         }); })];
+                case 2:
+                    _c.sent();
+                    return [2 /*return*/, { success: true }];
                 case 3:
-                    error_5 = _a.sent();
-                    console.error("[IPC] Failed to get cached playlists:", error_5);
-                    return [2 /*return*/, []];
+                    error_4 = _c.sent();
+                    console.error("[Sync] Liked Songs Error:", error_4);
+                    return [2 /*return*/, { success: false, error: error_4.message }];
                 case 4: return [2 /*return*/];
             }
         });
     }); });
-    /**
-     * キャッシュされたいいね曲を取得（ダウンロード状態付き）
-     */
     electron_1.ipcMain.handle("get-cached-liked-songs", function (_, userId) { return __awaiter(_this, void 0, void 0, function () {
-        var likes, songIds, songsData, error_6;
+        var results, error_5;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    (0, utils_1.debugLog)("[IPC] get-cached-liked-songs for user: ".concat(userId));
-                    _a.label = 1;
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, db
+                            .select()
+                            .from(schema_1.likedSongs)
+                            .leftJoin(schema_1.songs, (0, drizzle_orm_1.sql)(templateObject_1 || (templateObject_1 = __makeTemplateObject(["CAST(", " AS TEXT) = CAST(", " AS TEXT)"], ["CAST(", " AS TEXT) = CAST(", " AS TEXT)"])), schema_1.likedSongs.songId, schema_1.songs.id))
+                            .where((0, drizzle_orm_1.eq)(schema_1.likedSongs.userId, String(userId)))];
                 case 1:
-                    _a.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, db.query.likedSongs.findMany({
-                            where: (0, drizzle_orm_1.eq)(schema_1.likedSongs.userId, userId),
+                    results = _a.sent();
+                    return [2 /*return*/, results.map(function (row) {
+                            var liked_songs = row.liked_songs;
+                            var song = row.songs;
+                            return {
+                                id: (song === null || song === void 0 ? void 0 : song.id) || liked_songs.songId,
+                                user_id: liked_songs.userId,
+                                title: (song === null || song === void 0 ? void 0 : song.title) || "Unknown Title",
+                                author: (song === null || song === void 0 ? void 0 : song.author) || "Unknown Author",
+                                song_path: (song === null || song === void 0 ? void 0 : song.originalSongPath) || null,
+                                image_path: (song === null || song === void 0 ? void 0 : song.originalImagePath) || null,
+                                is_downloaded: !!(song === null || song === void 0 ? void 0 : song.songPath),
+                                local_song_path: (song === null || song === void 0 ? void 0 : song.songPath) || null,
+                                local_image_path: (song === null || song === void 0 ? void 0 : song.imagePath) || null,
+                                created_at: liked_songs.likedAt,
+                            };
                         })];
                 case 2:
-                    likes = _a.sent();
-                    if (likes.length === 0) {
-                        return [2 /*return*/, []];
-                    }
-                    songIds = likes.map(function (l) { return l.songId; });
-                    return [4 /*yield*/, db.query.songs.findMany({
-                            where: (0, drizzle_orm_1.inArray)(schema_1.songs.id, songIds),
-                        })];
-                case 3:
-                    songsData = _a.sent();
-                    // 曲データにダウンロード状態を追加して返す
-                    return [2 /*return*/, songsData.map(function (song) { return ({
-                            id: song.id,
-                            user_id: song.userId,
-                            title: song.title,
-                            author: song.author,
-                            song_path: song.originalSongPath, // オフライン表示用にはリモートURL
-                            image_path: song.originalImagePath,
-                            duration: song.duration,
-                            genre: song.genre,
-                            lyrics: song.lyrics,
-                            created_at: song.createdAt,
-                            // ダウンロード状態を追加
-                            is_downloaded: song.songPath !== null,
-                            local_song_path: song.songPath, // ダウンロード済みならローカルパス
-                            local_image_path: song.imagePath,
-                        }); })];
-                case 4:
-                    error_6 = _a.sent();
-                    console.error("[IPC] Failed to get cached liked songs:", error_6);
+                    error_5 = _a.sent();
+                    console.error("[IPC] get-cached-liked-songs error:", error_5);
                     return [2 /*return*/, []];
-                case 5: return [2 /*return*/];
+                case 3: return [2 /*return*/];
             }
         });
     }); });
-    /**
-     * キャッシュされたプレイリスト内の曲を取得（ダウンロード状態付き）
-     */
-    electron_1.ipcMain.handle("get-cached-playlist-songs", function (_, playlistId) { return __awaiter(_this, void 0, void 0, function () {
-        var psSongs, songIds, songsData, error_7;
+    electron_1.ipcMain.handle("get-cached-playlists", function (_, userId) { return __awaiter(_this, void 0, void 0, function () {
+        var data, error_6;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    (0, utils_1.debugLog)("[IPC] get-cached-playlist-songs for playlist: ".concat(playlistId));
-                    _a.label = 1;
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, db.query.playlists.findMany({
+                            where: (0, drizzle_orm_1.eq)(schema_1.playlists.userId, String(userId)),
+                        })];
                 case 1:
-                    _a.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, db.query.playlistSongs.findMany({
-                            where: (0, drizzle_orm_1.eq)(schema_1.playlistSongs.playlistId, playlistId),
+                    data = _a.sent();
+                    return [2 /*return*/, data.map(function (item) { return ({
+                            id: item.id,
+                            user_id: item.userId,
+                            title: item.title,
+                            image_path: item.imagePath,
+                            is_public: item.isPublic,
+                            created_at: item.createdAt,
+                        }); })];
+                case 2:
+                    error_6 = _a.sent();
+                    return [2 /*return*/, []];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
+    electron_1.ipcMain.handle("get-cached-playlist-songs", function (_, playlistId) { return __awaiter(_this, void 0, void 0, function () {
+        var results, error_7;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, db
+                            .select()
+                            .from(schema_1.playlistSongs)
+                            .leftJoin(schema_1.songs, (0, drizzle_orm_1.sql)(templateObject_2 || (templateObject_2 = __makeTemplateObject(["CAST(", " AS TEXT) = CAST(", " AS TEXT)"], ["CAST(", " AS TEXT) = CAST(", " AS TEXT)"])), schema_1.playlistSongs.songId, schema_1.songs.id))
+                            .where((0, drizzle_orm_1.eq)(schema_1.playlistSongs.playlistId, normalizeId(playlistId)))];
+                case 1:
+                    results = _a.sent();
+                    return [2 /*return*/, results.map(function (row) {
+                            var playlist_songs = row.playlist_songs;
+                            var song = row.songs;
+                            return {
+                                id: (song === null || song === void 0 ? void 0 : song.id) || playlist_songs.songId,
+                                user_id: (song === null || song === void 0 ? void 0 : song.userId) || "",
+                                title: (song === null || song === void 0 ? void 0 : song.title) || "Unknown Title",
+                                author: (song === null || song === void 0 ? void 0 : song.author) || "Unknown Author",
+                                song_path: (song === null || song === void 0 ? void 0 : song.originalSongPath) || null,
+                                image_path: (song === null || song === void 0 ? void 0 : song.originalImagePath) || null,
+                                is_downloaded: !!(song === null || song === void 0 ? void 0 : song.songPath),
+                                local_song_path: (song === null || song === void 0 ? void 0 : song.songPath) || null,
+                                local_image_path: (song === null || song === void 0 ? void 0 : song.imagePath) || null,
+                                created_at: playlist_songs.addedAt,
+                            };
                         })];
                 case 2:
-                    psSongs = _a.sent();
-                    if (psSongs.length === 0) {
-                        return [2 /*return*/, []];
-                    }
-                    songIds = psSongs.map(function (ps) { return ps.songId; });
-                    return [4 /*yield*/, db.query.songs.findMany({
-                            where: (0, drizzle_orm_1.inArray)(schema_1.songs.id, songIds),
-                        })];
-                case 3:
-                    songsData = _a.sent();
-                    // 曲データにダウンロード状態を追加して返す
-                    return [2 /*return*/, songsData.map(function (song) { return ({
-                            id: song.id,
-                            user_id: song.userId,
-                            title: song.title,
-                            author: song.author,
-                            song_path: song.originalSongPath,
-                            image_path: song.originalImagePath,
-                            duration: song.duration,
-                            genre: song.genre,
-                            lyrics: song.lyrics,
-                            created_at: song.createdAt,
-                            is_downloaded: song.songPath !== null,
-                            local_song_path: song.songPath,
-                            local_image_path: song.imagePath,
-                        }); })];
-                case 4:
                     error_7 = _a.sent();
-                    console.error("[IPC] Failed to get cached playlist songs:", error_7);
                     return [2 /*return*/, []];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
+    electron_1.ipcMain.handle("debug-dump-db", function () { return __awaiter(_this, void 0, void 0, function () {
+        var liked, allSongs, joined, error_8;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 4, , 5]);
+                    return [4 /*yield*/, db.select().from(schema_1.likedSongs).limit(10)];
+                case 1:
+                    liked = _a.sent();
+                    return [4 /*yield*/, db.select().from(schema_1.songs).limit(10)];
+                case 2:
+                    allSongs = _a.sent();
+                    return [4 /*yield*/, db
+                            .select()
+                            .from(schema_1.likedSongs)
+                            .leftJoin(schema_1.songs, (0, drizzle_orm_1.sql)(templateObject_3 || (templateObject_3 = __makeTemplateObject(["CAST(", " AS TEXT) = CAST(", " AS TEXT)"], ["CAST(", " AS TEXT) = CAST(", " AS TEXT)"])), schema_1.likedSongs.songId, schema_1.songs.id))
+                            .limit(10)];
+                case 3:
+                    joined = _a.sent();
+                    return [2 /*return*/, { liked: liked, allSongs: allSongs, joined: joined }];
+                case 4:
+                    error_8 = _a.sent();
+                    return [2 /*return*/, { error: error_8.message }];
                 case 5: return [2 /*return*/];
             }
         });
     }); });
 }
+var templateObject_1, templateObject_2, templateObject_3;
 //# sourceMappingURL=cache.js.map

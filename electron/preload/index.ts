@@ -42,6 +42,11 @@ const ALLOWED_INVOKE_CHANNELS = [
   "get-cached-playlists",
   "get-cached-liked-songs",
   "get-cached-playlist-songs",
+  "debug-dump-db",
+  // 認証キャッシュ
+  "save-cached-user",
+  "get-cached-user",
+  "clear-cached-user",
 ];
 
 const ALLOWED_ON_CHANNELS = [
@@ -139,6 +144,22 @@ contextBridge.exposeInMainWorld("electron", {
     // キャッシュからプレイリスト内の曲を取得
     getCachedPlaylistSongs: (playlistId: string) =>
       ipcRenderer.invoke("get-cached-playlist-songs", playlistId),
+    // DBの中身をダンプ (デバッグ用)
+    debugDumpDb: () => ipcRenderer.invoke("debug-dump-db"),
+  },
+
+  // 認証キャッシュ（オフラインログイン用）
+  auth: {
+    // ユーザー情報を保存
+    saveCachedUser: (user: {
+      id: string;
+      email?: string;
+      avatarUrl?: string;
+    }) => ipcRenderer.invoke("save-cached-user", user),
+    // ユーザー情報を取得
+    getCachedUser: () => ipcRenderer.invoke("get-cached-user"),
+    // ユーザー情報をクリア
+    clearCachedUser: () => ipcRenderer.invoke("clear-cached-user"),
   },
 
   // IPC通信

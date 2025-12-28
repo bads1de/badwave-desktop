@@ -39,56 +39,59 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getIsSimulatingOffline = getIsSimulatingOffline;
-exports.setIsSimulatingOffline = setIsSimulatingOffline;
-exports.setupSettingsHandlers = setupSettingsHandlers;
+exports.setupAuthHandlers = setupAuthHandlers;
 var electron_1 = require("electron");
-var store_1 = __importDefault(require("../lib/store"));
-var utils_1 = require("../utils");
-// オフラインシミュレーション状態を追跡（外部からアクセス可能）
-var isSimulatingOffline = false;
-function getIsSimulatingOffline() {
-    return isSimulatingOffline;
-}
-function setIsSimulatingOffline(value) {
-    isSimulatingOffline = value;
-}
-function setupSettingsHandlers() {
+var electron_store_1 = __importDefault(require("electron-store"));
+var store = new electron_store_1.default();
+function setupAuthHandlers() {
     var _this = this;
-    // アプリケーション設定の取得
-    electron_1.ipcMain.handle("get-store-value", function (_, key) {
-        return store_1.default.get(key);
-    });
-    // アプリケーション設定の保存
-    electron_1.ipcMain.handle("set-store-value", function (_, key, value) {
-        store_1.default.set(key, value);
-        return true;
-    });
-    // オフラインモードのシミュレーションを切り替え（開発用）
-    electron_1.ipcMain.handle("toggle-offline-simulation", function () { return __awaiter(_this, void 0, void 0, function () {
+    /**
+     * ユーザー情報をローカルに保存
+     */
+    electron_1.ipcMain.handle("save-cached-user", function (_, user) { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
-            isSimulatingOffline = !isSimulatingOffline;
-            electron_1.session.defaultSession.enableNetworkEmulation({
-                offline: isSimulatingOffline,
-            });
-            (0, utils_1.debugLog)("[Debug] Offline simulation: ".concat(isSimulatingOffline ? "ON" : "OFF"));
-            return [2 /*return*/, { isOffline: isSimulatingOffline }];
+            try {
+                store.set("cachedUser", user);
+                return [2 /*return*/, { success: true }];
+            }
+            catch (error) {
+                console.error("[Auth] Failed to save user:", error);
+                return [2 /*return*/, { success: false, error: error.message }];
+            }
+            return [2 /*return*/];
         });
     }); });
-    // 現在のオフラインシミュレーション状態を取得
-    electron_1.ipcMain.handle("get-offline-simulation-status", function () {
-        return { isOffline: isSimulatingOffline };
-    });
-    // オフラインシミュレーションを設定（明示的に ON/OFF）
-    electron_1.ipcMain.handle("set-offline-simulation", function (_, offline) { return __awaiter(_this, void 0, void 0, function () {
+    /**
+     * ローカルに保存されたユーザー情報を取得
+     */
+    electron_1.ipcMain.handle("get-cached-user", function () { return __awaiter(_this, void 0, void 0, function () {
+        var user;
         return __generator(this, function (_a) {
-            isSimulatingOffline = offline;
-            electron_1.session.defaultSession.enableNetworkEmulation({
-                offline: isSimulatingOffline,
-            });
-            (0, utils_1.debugLog)("[Debug] Offline simulation set to: ".concat(isSimulatingOffline ? "ON" : "OFF"));
-            return [2 /*return*/, { isOffline: isSimulatingOffline }];
+            try {
+                user = store.get("cachedUser", null);
+                return [2 /*return*/, user];
+            }
+            catch (error) {
+                console.error("[Auth] Failed to get cached user:", error);
+                return [2 /*return*/, null];
+            }
+            return [2 /*return*/];
+        });
+    }); });
+    /**
+     * ローカルのユーザー情報をクリア（ログアウト時）
+     */
+    electron_1.ipcMain.handle("clear-cached-user", function () { return __awaiter(_this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            try {
+                store.delete("cachedUser");
+                return [2 /*return*/, { success: true }];
+            }
+            catch (error) {
+                return [2 /*return*/, { success: false, error: error.message }];
+            }
+            return [2 /*return*/];
         });
     }); });
 }
-//# sourceMappingURL=settings.js.map
+//# sourceMappingURL=auth.js.map

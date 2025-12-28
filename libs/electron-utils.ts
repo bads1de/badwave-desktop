@@ -295,25 +295,30 @@ export const electronAPI = {
     },
 
     /**
-     * プレイリスト内の曲をローカルDBにキャッシュ
+     * プレイリスト内の曲をローカルDBにキャッシュ（メタデータも同期）
      */
     syncPlaylistSongs: async (
-      playlistSongs: any[]
+      playlistId: string,
+      songs: any[]
     ): Promise<{ success: boolean; count: number; error?: string }> => {
       if (isElectron()) {
-        return (window as any).electron.cache.syncPlaylistSongs(playlistSongs);
+        return (window as any).electron.cache.syncPlaylistSongs({
+          playlistId,
+          songs,
+        });
       }
       return { success: false, count: 0, error: "Not in Electron environment" };
     },
 
     /**
-     * いいねした曲をローカルDBにキャッシュ
+     * いいねした曲をローカルDBにキャッシュ（メタデータも同期）
      */
     syncLikedSongs: async (
-      likedSongs: any[]
+      userId: string,
+      songs: any[]
     ): Promise<{ success: boolean; count: number; error?: string }> => {
       if (isElectron()) {
-        return (window as any).electron.cache.syncLikedSongs(likedSongs);
+        return (window as any).electron.cache.syncLikedSongs({ userId, songs });
       }
       return { success: false, count: 0, error: "Not in Electron environment" };
     },
@@ -348,6 +353,47 @@ export const electronAPI = {
         );
       }
       return [];
+    },
+  },
+
+  // 認証キャッシュ（オフラインログイン用）
+  auth: {
+    /**
+     * ユーザー情報をローカルに保存
+     */
+    saveCachedUser: async (user: {
+      id: string;
+      email?: string;
+      avatarUrl?: string;
+    }): Promise<{ success: boolean }> => {
+      if (isElectron()) {
+        return (window as any).electron.auth.saveCachedUser(user);
+      }
+      return { success: false };
+    },
+
+    /**
+     * ローカルに保存されたユーザー情報を取得
+     */
+    getCachedUser: async (): Promise<{
+      id: string;
+      email?: string;
+      avatarUrl?: string;
+    } | null> => {
+      if (isElectron()) {
+        return (window as any).electron.auth.getCachedUser();
+      }
+      return null;
+    },
+
+    /**
+     * ローカルのユーザー情報をクリア
+     */
+    clearCachedUser: async (): Promise<{ success: boolean }> => {
+      if (isElectron()) {
+        return (window as any).electron.auth.clearCachedUser();
+      }
+      return { success: false };
     },
   },
 };

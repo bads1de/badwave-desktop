@@ -15,9 +15,9 @@ import { useEffect } from "react";
 const useGetPlaylists = () => {
   const supabase = createClient();
   const { user } = useUser();
-  const { isOnline } = useNetworkStatus();
+  const { isOnline, isInitialized } = useNetworkStatus();
 
-  const queryKey = [CACHED_QUERIES.playlists, "user", user?.id];
+  const queryKey = [CACHED_QUERIES.playlists, "user", user?.id, isOnline];
 
   const {
     data: playlists = [],
@@ -29,8 +29,19 @@ const useGetPlaylists = () => {
     queryFn: async () => {
       if (!user?.id) return [];
 
+      // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
+      let isCurrentlyOffline = !isOnline;
+      if (electronAPI.isElectron()) {
+        try {
+          const status = await (
+            window as any
+          ).electron.dev.getOfflineSimulationStatus();
+          isCurrentlyOffline = status.isOffline;
+        } catch {}
+      }
+
       // オフラインの場合は SQLite キャッシュから取得
-      if (!isOnline) {
+      if (isCurrentlyOffline) {
         try {
           const cachedData = await electronAPI.cache.getCachedPlaylists(
             user.id
@@ -65,7 +76,7 @@ const useGetPlaylists = () => {
 
       return result;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && isInitialized,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: isOnline ? 1 : false,

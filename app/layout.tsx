@@ -14,6 +14,7 @@ import ThemeProvider from "@/providers/ThemeProvider";
 import ToasterProvider from "@/providers/ToasterProvider";
 import UserProvider from "@/providers/UserProvider";
 import TanStackProvider from "@/providers/TanStackProvider";
+import { SyncProvider } from "@/providers/SyncProvider";
 import "./globals.css";
 
 const font = Figtree({ subsets: ["latin"] });
@@ -34,16 +35,18 @@ export default function RootLayout({
         <ToasterProvider />
         <TanStackProvider>
           <UserProvider>
-            <ThemeProvider>
-              <ModalProvider />
-              <WindowControls />
-              <Sidebar>
-                <RightSidebar>{children}</RightSidebar>
-              </Sidebar>
-              <Player />
-              <OfflineIndicator />
-              <OfflineRedirector />
-            </ThemeProvider>
+            <SyncProvider>
+              <ThemeProvider>
+                <ModalProvider />
+                <WindowControls />
+                <Sidebar>
+                  <RightSidebar>{children}</RightSidebar>
+                </Sidebar>
+                <Player />
+                <OfflineIndicator />
+                <OfflineRedirector />
+              </ThemeProvider>
+            </SyncProvider>
           </UserProvider>
         </TanStackProvider>
       </body>

@@ -2,8 +2,16 @@ import { ipcMain, session } from "electron";
 import store from "../lib/store";
 import { debugLog } from "../utils";
 
-// オフラインシミュレーション状態を追跡
+// オフラインシミュレーション状態を追跡（外部からアクセス可能）
 let isSimulatingOffline = false;
+
+export function getIsSimulatingOffline() {
+  return isSimulatingOffline;
+}
+
+export function setIsSimulatingOffline(value: boolean) {
+  isSimulatingOffline = value;
+}
 
 export function setupSettingsHandlers() {
   // アプリケーション設定の取得
@@ -13,7 +21,6 @@ export function setupSettingsHandlers() {
 
   // アプリケーション設定の保存
   ipcMain.handle("set-store-value", (_, key: string, value: any) => {
-    // 設定値をストアに直接保存
     store.set(key, value);
     return true;
   });

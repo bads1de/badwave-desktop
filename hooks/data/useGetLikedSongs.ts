@@ -13,9 +13,9 @@ import { useEffect } from "react";
  */
 const useGetLikedSongs = (userId?: string) => {
   const supabaseClient = createClient();
-  const { isOnline } = useNetworkStatus();
+  const { isOnline, isInitialized } = useNetworkStatus();
 
-  const queryKey = [CACHED_QUERIES.likedSongs, userId];
+  const queryKey = [CACHED_QUERIES.likedSongs, userId, isOnline];
 
   const {
     data: likedSongs = [],
@@ -29,8 +29,19 @@ const useGetLikedSongs = (userId?: string) => {
         return [];
       }
 
+      // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
+      let isCurrentlyOffline = !isOnline;
+      if (electronAPI.isElectron()) {
+        try {
+          const status = await (
+            window as any
+          ).electron.dev.getOfflineSimulationStatus();
+          isCurrentlyOffline = status.isOffline;
+        } catch {}
+      }
+
       // オフラインの場合は SQLite キャッシュから取得
-      if (!isOnline) {
+      if (isCurrentlyOffline) {
         try {
           const cachedData = await electronAPI.cache.getCachedLikedSongs(
             userId
@@ -64,32 +75,17 @@ const useGetLikedSongs = (userId?: string) => {
       })) as Song[];
 
       // キャッシュ同期（バックグラウンド）
-      const songsForCache = songs.map((song) => ({
-        id: song.id,
-        user_id: song.user_id,
-        title: song.title,
-        author: song.author,
-        song_path: song.song_path,
-        image_path: song.image_path,
-        duration: song.duration,
-        genre: song.genre,
-        lyrics: song.lyrics,
-        created_at: song.created_at,
-      }));
-      electronAPI.cache.syncSongsMetadata(songsForCache).catch(console.error);
-
-      const likedSongsForCache = data.map((item) => ({
-        user_id: item.user_id,
-        song_id: item.song_id,
-        created_at: item.created_at,
-      }));
-      electronAPI.cache.syncLikedSongs(likedSongsForCache).catch(console.error);
+      if (electronAPI.isElectron()) {
+        electronAPI.cache.syncLikedSongs(userId, songs).catch((e) => {
+          console.error("Failed to sync liked songs with metadata:", e);
+        });
+      }
 
       return songs;
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!userId,
+    enabled: !!userId && isInitialized,
     retry: isOnline ? 1 : false,
   });
 

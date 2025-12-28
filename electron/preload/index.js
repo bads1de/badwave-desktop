@@ -49,6 +49,11 @@ var ALLOWED_INVOKE_CHANNELS = [
     "get-cached-playlists",
     "get-cached-liked-songs",
     "get-cached-playlist-songs",
+    "debug-dump-db",
+    // 認証キャッシュ
+    "save-cached-user",
+    "get-cached-user",
+    "clear-cached-user",
 ];
 var ALLOWED_ON_CHANNELS = [
     "media-control",
@@ -149,6 +154,17 @@ electron_1.contextBridge.exposeInMainWorld("electron", {
         getCachedPlaylistSongs: function (playlistId) {
             return electron_1.ipcRenderer.invoke("get-cached-playlist-songs", playlistId);
         },
+        // DBの中身をダンプ (デバッグ用)
+        debugDumpDb: function () { return electron_1.ipcRenderer.invoke("debug-dump-db"); },
+    },
+    // 認証キャッシュ（オフラインログイン用）
+    auth: {
+        // ユーザー情報を保存
+        saveCachedUser: function (user) { return electron_1.ipcRenderer.invoke("save-cached-user", user); },
+        // ユーザー情報を取得
+        getCachedUser: function () { return electron_1.ipcRenderer.invoke("get-cached-user"); },
+        // ユーザー情報をクリア
+        clearCachedUser: function () { return electron_1.ipcRenderer.invoke("clear-cached-user"); },
     },
     // IPC通信
     ipc: {

@@ -1,26 +1,18 @@
 /**
  * @fileoverview ユーザー認証状態を管理するためのカスタムフック
  *
- * このモジュールはSupabaseを使用した認証状態の管理と、
- * ユーザー情報の取得を行うためのコンテキストとフックを提供します。
- * TanStack Queryを使用してユーザーデータのキャッシュと再取得を最適化しています。
+ * オフライン対応: Electron環境ではローカルにキャッシュされたユーザー情報を使用
  */
 
+import React, { useEffect, useState, createContext, useContext } from "react";
 import { UserDetails } from "@/types";
-import { useEffect, useState, createContext, useContext } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { electronAPI } from "@/libs/electron-utils";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
-/**
- * ユーザーコンテキストの型定義
- * @typedef {Object} UserContextType
- * @property {string|null} accessToken - ユーザーの認証トークン
- * @property {User|null} user - Supabaseのユーザーオブジェクト
- * @property {UserDetails|null} userDetails - データベースから取得したユーザー詳細情報
- * @property {boolean} isLoading - ユーザー情報の読み込み状態
- */
 type UserContextType = {
   accessToken: string | null;
   user: User | null;
@@ -28,61 +20,105 @@ type UserContextType = {
   isLoading: boolean;
 };
 
-/**
- * ユーザー情報を保持するReactコンテキスト
- * アプリケーション全体でユーザー状態を共有するために使用
- */
 export const UserContext = createContext<UserContextType | undefined>(
   undefined
 );
 
-/**
- * コンテキストプロバイダーのプロパティ型
- * @interface Props
- * @property {any} [propName] - 任意のプロパティを受け入れる
- */
 export interface Props {
   [propName: string]: any;
 }
 
-/**
- * ユーザーコンテキストプロバイダーコンポーネント
- * アプリケーション内でユーザー認証状態を管理し、子コンポーネントに提供する
- * @param {Props} props - コンポーネントのプロパティ
- */
 export const MyUserContextProvider = (props: Props) => {
   const supabase = createClient();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const { isOnline, isInitialized } = useNetworkStatus();
 
   /**
    * セッション状態を監視するエフェクト
-   * 初期セッションの取得と認証状態の変更を監視する
+   * オンライン時: Supabase から取得
+   * オフライン時: ローカルキャッシュから取得
    */
   useEffect(() => {
-    const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
+    const initializeSession = async () => {
+      // Electron 環境でオフラインの場合、キャッシュからユーザーを復元
+      if (electronAPI.isElectron() && !isOnline && isInitialized) {
+        try {
+          const cachedUser = await electronAPI.auth.getCachedUser();
+          if (cachedUser) {
+            // オフラインキャッシュから復元する部分的な User オブジェクト
+            // 注意: 完全な User 型ではないが、アプリで必要な最小限のプロパティのみを持つ
+            // 型安全性のため unknown を経由してキャスト
+            const partialUser = {
+              id: cachedUser.id,
+              email: cachedUser.email,
+              user_metadata: { avatar_url: cachedUser.avatarUrl },
+            } as unknown as User;
+            setUser(partialUser);
+            setIsSessionLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error("Failed to load cached user:", e);
+        }
+      }
+
+      // オンライン時: Supabase からセッションを取得
+      try {
+        const { data } = await supabase.auth.getSession();
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+
+        // Electron 環境かつオンラインの場合、ユーザー情報をキャッシュ
+        if (electronAPI.isElectron() && data.session?.user) {
+          const u = data.session.user;
+          electronAPI.auth.saveCachedUser({
+            id: u.id,
+            email: u.email,
+            avatarUrl: u.user_metadata?.avatar_url,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to get session:", e);
+      } finally {
+        setIsSessionLoading(false);
+      }
     };
 
-    getSession();
+    if (isInitialized) {
+      initializeSession();
+    }
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+
+      // オンラインでログインしたらキャッシュを更新
+      if (electronAPI.isElectron() && session?.user) {
+        const u = session.user;
+        electronAPI.auth.saveCachedUser({
+          id: u.id,
+          email: u.email,
+          avatarUrl: u.user_metadata?.avatar_url,
+        });
+      }
+
+      // ログアウト時はキャッシュをクリア
+      if (!session && electronAPI.isElectron()) {
+        electronAPI.auth.clearCachedUser();
+      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, isOnline, isInitialized]);
 
   /**
    * ユーザー詳細情報をデータベースから取得するクエリ
-   * TanStack Queryを使用してキャッシュと再取得を最適化
    */
   const { data: userDetails, isLoading: isLoadingUserDetails } = useQuery({
     queryKey: [CACHED_QUERIES.userDetails, user?.id],
@@ -97,34 +133,21 @@ export const MyUserContextProvider = (props: Props) => {
 
       return data as UserDetails;
     },
-    enabled: !!user, // ユーザーが存在する場合のみクエリを実行
+    enabled: !!user && isOnline,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
   });
 
-  /**
-   * コンテキストに提供する値の構築
-   * セッション、ユーザー、詳細情報、ローディング状態を含む
-   */
   const value = {
     accessToken: session?.access_token ?? null,
     user,
     userDetails: userDetails ?? null,
-    isLoading: !session || isLoadingUserDetails,
+    isLoading: isSessionLoading || (isOnline && isLoadingUserDetails),
   };
 
   return <UserContext.Provider value={value} {...props} />;
 };
 
-/**
- * ユーザー情報にアクセスするためのカスタムフック
- *
- * このフックを使用することで、コンポーネントからユーザーの認証状態や
- * 詳細情報に簡単にアクセスできます。
- *
- * @returns {UserContextType} ユーザーコンテキスト情報
- * @throws {Error} MyUserContextProviderの外部で使用された場合にエラーをスロー
- */
 export const useUser = () => {
   const context = useContext(UserContext);
 
