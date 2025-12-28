@@ -27,8 +27,19 @@ const useGetPlaylistSongs = (playlistId?: string) => {
     queryFn: async () => {
       if (!playlistId) return [];
 
+      // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
+      let isCurrentlyOffline = !isOnline;
+      if (electronAPI.isElectron()) {
+        try {
+          const status = await (
+            window as any
+          ).electron.dev.getOfflineSimulationStatus();
+          isCurrentlyOffline = status.isOffline;
+        } catch {}
+      }
+
       // オフラインの場合は SQLite キャッシュから取得
-      if (!isOnline) {
+      if (isCurrentlyOffline) {
         try {
           const cachedData = await electronAPI.cache.getCachedPlaylistSongs(
             playlistId
@@ -62,7 +73,6 @@ const useGetPlaylistSongs = (playlistId?: string) => {
       })) as Song[];
 
       // キャッシュ同期（バックグラウンド）
-      // 改良版: 曲のメタデータも含めて同期
       if (electronAPI.isElectron()) {
         electronAPI.cache
           .syncPlaylistSongs(playlistId, mappedSongs)

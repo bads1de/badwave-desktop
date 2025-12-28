@@ -3,21 +3,21 @@ import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
+import { electronAPI } from "@/libs/electron-utils";
+import { useUser } from "@/hooks/auth/useUser";
 import { useEffect } from "react";
 
 /**
  * プレイリスト情報を取得するカスタムフック
  *
- * @param playlistId プレイリストID
- * @returns プレイリスト情報とローディング状態
+ * オフライン対応: SQLiteキャッシュから取得
  */
 const useGetPlaylist = (playlistId?: string) => {
   const supabaseClient = createClient();
   const { isOnline } = useNetworkStatus();
-  const { saveToCache, loadFromCache } = useOfflineCache();
+  const { user } = useUser();
 
-  const queryKey = [CACHED_QUERIES.playlists, playlistId];
+  const queryKey = [CACHED_QUERIES.playlists, playlistId, isOnline];
 
   const {
     data: playlist,
@@ -31,10 +31,46 @@ const useGetPlaylist = (playlistId?: string) => {
         return null;
       }
 
-      // オフラインの場合はキャッシュから取得を試みる
-      if (!isOnline) {
-        const cachedData = await loadFromCache<Playlist>(queryKey.join(":"));
-        if (cachedData) return cachedData;
+      // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
+      let isCurrentlyOffline = !isOnline;
+      if (electronAPI.isElectron()) {
+        try {
+          const status = await (
+            window as any
+          ).electron.dev.getOfflineSimulationStatus();
+          isCurrentlyOffline = status.isOffline;
+        } catch {}
+      }
+
+      // オフラインの場合はSQLiteキャッシュから取得
+      if (isCurrentlyOffline) {
+        // user.id がなくても、ローカルキャッシュからユーザーIDを取得して試す
+        let userId = user?.id;
+        if (!userId && electronAPI.isElectron()) {
+          try {
+            const cachedUser = await electronAPI.auth.getCachedUser();
+            userId = cachedUser?.id;
+          } catch {}
+        }
+
+        if (userId) {
+          try {
+            const cachedPlaylists = await electronAPI.cache.getCachedPlaylists(
+              userId
+            );
+            if (cachedPlaylists) {
+              const found = cachedPlaylists.find(
+                (p: Playlist) => String(p.id) === String(playlistId)
+              );
+              if (found) {
+                return found as Playlist;
+              }
+            }
+          } catch (e) {
+            console.error("Failed to load playlist from SQLite cache:", e);
+          }
+        }
+        // オフラインでキャッシュがない場合はnullを返す（エラーは投げない）
         return null;
       }
 
@@ -49,12 +85,7 @@ const useGetPlaylist = (playlistId?: string) => {
         throw new Error("プレイリストの取得に失敗しました");
       }
 
-      const result = data as Playlist;
-
-      // バックグラウンドでキャッシュに保存
-      saveToCache(queryKey.join(":"), result).catch(console.error);
-
-      return result;
+      return data as Playlist;
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,

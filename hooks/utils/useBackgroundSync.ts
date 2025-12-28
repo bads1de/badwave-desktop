@@ -45,9 +45,50 @@ export const useBackgroundSync = () => {
         if (playlistsData) {
           await electronAPI.cache.syncPlaylists(playlistsData as Playlist[]);
           console.log(`[Sync] Synced ${playlistsData.length} playlists`);
+
+          // 2. 各プレイリスト内の曲を同期
+          for (const playlist of playlistsData) {
+            try {
+              const { data: playlistSongsData, error: psError } = await supabase
+                .from("playlist_songs")
+                .select("*, songs(*)")
+                .eq("playlist_id", playlist.id)
+                .order("created_at", { ascending: false });
+
+              if (psError) {
+                console.error(
+                  `[Sync] Failed to fetch songs for playlist ${playlist.id}:`,
+                  psError
+                );
+                continue;
+              }
+
+              if (playlistSongsData && playlistSongsData.length > 0) {
+                const songs = playlistSongsData.map((item: any) => ({
+                  ...item.songs,
+                  songType: "regular",
+                })) as Song[];
+
+                await electronAPI.cache.syncPlaylistSongs(
+                  String(playlist.id),
+                  songs
+                );
+                console.log(
+                  `[Sync] Synced ${songs.length} songs for playlist "${playlist.title}"`
+                );
+              }
+            } catch (e) {
+              console.error(`[Sync] Error syncing playlist ${playlist.id}:`, e);
+            }
+          }
+
+          // プレイリストのキャッシュが更新されたことを通知
+          queryClient.invalidateQueries({
+            queryKey: [CACHED_QUERIES.playlists],
+          });
         }
 
-        // 2. いいねした曲を同期
+        // 3. いいねした曲を同期
         const { data: likedData, error: lError } = await supabase
           .from("liked_songs_regular")
           .select("*, songs(*)")
