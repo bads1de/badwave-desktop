@@ -17,6 +17,7 @@ const TanStackProvider = ({ children }: Props) => {
             staleTime: CACHE_CONFIG.staleTime,
             gcTime: CACHE_CONFIG.gcTime,
             retry: false,
+            refetchOnWindowFocus: false, // タブフォーカス時の再フェッチを無効化
           },
         },
       })

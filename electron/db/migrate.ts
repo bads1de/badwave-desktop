@@ -1,8 +1,6 @@
-import { app } from "electron";
 import path from "path";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { getDb } from "./client";
-import { debugLog } from "../utils";
 
 /**
  * データベースのマイグレーションを実行する
@@ -18,13 +16,11 @@ export async function runMigrations() {
     // electron/db/ 内に配置されるため、../../drizzle となる
     const migrationsFolder = path.join(__dirname, "../../drizzle");
 
-    debugLog(`Running migrations from: ${migrationsFolder}`);
     const db = getDb();
 
     migrate(db, {
       migrationsFolder,
     });
-    debugLog("Migrations completed successfully.");
   } catch (error) {
     console.error("Error during migration:", error);
     throw error;

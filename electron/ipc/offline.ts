@@ -4,7 +4,7 @@ import path from "path";
 import https from "https";
 import http from "http";
 import { fileURLToPath } from "url";
-import { debugLog, toLocalPath } from "../utils";
+import { toLocalPath } from "../utils";
 import { getDb } from "../db/client";
 import { songs } from "../db/schema";
 import { eq, isNotNull } from "drizzle-orm";
@@ -32,7 +32,6 @@ export const setupDownloadHandlers = () => {
   // 楽曲のダウンロードリクエストを処理
   ipcMain.handle("download-song", async (event, song: SongDownloadPayload) => {
     const songId = song.id;
-    debugLog(`[IPC] download-song request for: ${song.title} (${songId})`);
 
     try {
       // 1. パスの準備
@@ -132,7 +131,6 @@ export const setupDownloadHandlers = () => {
       }
 
       await Promise.all(downloadTasks);
-      debugLog(`[IPC] Files downloaded for: ${songId}`);
 
       // 3. メタデータをSQLiteに保存 (Upsert)
       const songRecord = {
@@ -162,11 +160,8 @@ export const setupDownloadHandlers = () => {
         set: songRecord,
       });
 
-      debugLog(`[IPC] Database updated for: ${songId}`);
-
       return { success: true, localPath: songRecord.songPath };
     } catch (error: any) {
-      debugLog(`[IPC] Download failed for ${songId}:`, error);
       return { success: false, error: error.message };
     }
   });
@@ -195,15 +190,11 @@ export const setupDownloadHandlers = () => {
 
   // すべてのオフライン楽曲（ダウンロード済み）を取得
   ipcMain.handle("get-offline-songs", async () => {
-    debugLog("[IPC] get-offline-songs request");
-
     try {
       // 実際にファイルがダウンロードされている楽曲のみを抽出
       const offlineSongs = await db.query.songs.findMany({
         where: isNotNull(songs.songPath),
       });
-
-      debugLog(`[IPC] Found ${offlineSongs.length} offline songs`);
 
       // レンダラープロセスが期待する Song 型に変換して返す
       return offlineSongs.map((song) => ({
@@ -229,8 +220,6 @@ export const setupDownloadHandlers = () => {
 
   // オフライン楽曲の削除 (ファイルとDBレコードの両方を削除)
   ipcMain.handle("delete-offline-song", async (_, songId: string) => {
-    debugLog(`[IPC] delete-offline-song request for: ${songId}`);
-
     try {
       // 1. ファイルパスを取得するためにレコードを確認
       const songRecord = await db.query.songs.findFirst({
@@ -238,7 +227,6 @@ export const setupDownloadHandlers = () => {
       });
 
       if (!songRecord) {
-        debugLog(`[IPC] Song not found in DB: ${songId}`);
         return { success: false, error: "Song not found" };
       }
 
@@ -258,18 +246,16 @@ export const setupDownloadHandlers = () => {
         try {
           if (fs.existsSync(filePath)) {
             await fs.promises.unlink(filePath);
-            debugLog(`[IPC] Deleted file: ${filePath}`);
           }
         } catch (err: any) {
           if (err.code !== "ENOENT") {
-            debugLog(`[IPC] Warning: Could not delete file: ${filePath}`, err);
+            // ignore
           }
         }
       }
 
       // 3. データベースからレコードを削除
       await db.delete(songs).where(eq(songs.id, songId));
-      debugLog(`[IPC] Deleted song from DB: ${songId}`);
 
       return { success: true };
     } catch (error: any) {

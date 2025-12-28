@@ -105,7 +105,8 @@ function startNextServer() {
                         : path.join(electron_1.app.getAppPath(), ".next", "standalone", "server.js");
                     (0, utils_1.debugLog)("Starting Next.js server from: ".concat(serverPath));
                     // 空きポートを探す
-                    findAvailablePort(3000).then(function (port) {
+                    // 開発者がよく使う3000番台を避けて 13000 から開始する
+                    findAvailablePort(13000).then(function (port) {
                         var _a, _b;
                         serverPort = port;
                         // 環境変数を設定

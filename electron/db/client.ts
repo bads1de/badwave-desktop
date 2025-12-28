@@ -20,7 +20,7 @@ export const getDb = () => {
 
   // SQLiteインスタンスの初期化
   // verboseを有効にすると、デバッグ用にクエリログが出力されます
-  const sqlite = new Database(dbPath, { verbose: console.log });
+  const sqlite = new Database(dbPath);
 
   // Drizzleの初期化
   dbInstance = drizzle(sqlite, { schema });
