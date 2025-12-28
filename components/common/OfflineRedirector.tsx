@@ -10,12 +10,13 @@ const OfflineRedirector = () => {
   const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
-    // If we are offline and NOT already on the offline page, redirect
+    // スマートオフライン実装のため、強制リダイレクトは無効化します。
+    // 代わりに各ページでグレーアウト等の処理を行います。
+    /*
     if (!isOnline && pathname !== "/offline") {
       router.push("/offline");
     }
-    // Logic to return to home when online is handled in OfflinePage itself (or can be here too)
-    // but the offline page already has a check.
+    */
   }, [isOnline, pathname, router]);
 
   return null;

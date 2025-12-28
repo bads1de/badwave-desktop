@@ -4,18 +4,18 @@ import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
+import { electronAPI } from "@/libs/electron-utils";
 import { useEffect } from "react";
 
 /**
- * ユーザーのプレイリスト一覧を取得するカスタムフック (オフライン対応)
- * @returns プレイリストの配列とローディング状態
+ * ユーザーのプレイリスト一覧を取得するカスタムフック
+ *
+ * オフライン対応 (SQLiteキャッシュ使用)
  */
 const useGetPlaylists = () => {
   const supabase = createClient();
   const { user } = useUser();
   const { isOnline } = useNetworkStatus();
-  const { saveToCache, loadFromCache } = useOfflineCache();
 
   const queryKey = [CACHED_QUERIES.playlists, "user", user?.id];
 
@@ -29,13 +29,22 @@ const useGetPlaylists = () => {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // オフラインの場合はキャッシュから取得を試みる
+      // オフラインの場合は SQLite キャッシュから取得
       if (!isOnline) {
-        const cachedData = await loadFromCache<Playlist[]>(queryKey.join(":"));
-        if (cachedData) return cachedData;
+        try {
+          const cachedData = await electronAPI.cache.getCachedPlaylists(
+            user.id
+          );
+          if (cachedData && cachedData.length > 0) {
+            return cachedData as Playlist[];
+          }
+        } catch (e) {
+          console.error("Failed to load from SQLite cache:", e);
+        }
         return [];
       }
 
+      // オンラインの場合は Supabase から取得
       const { data, error } = await supabase
         .from("playlists")
         .select("*")
@@ -49,8 +58,10 @@ const useGetPlaylists = () => {
 
       const result = (data as Playlist[]) || [];
 
-      // バックグラウンドでキャッシュに保存
-      saveToCache(queryKey.join(":"), result).catch(console.error);
+      // バックグラウンドで SQLite キャッシュに保存
+      electronAPI.cache.syncPlaylists(result).catch((e) => {
+        console.error("Failed to sync playlists to cache:", e);
+      });
 
       return result;
     },

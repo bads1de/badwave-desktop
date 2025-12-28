@@ -34,9 +34,21 @@ const ALLOWED_INVOKE_CHANNELS = [
   "toggle-offline-simulation",
   "get-offline-simulation-status",
   "set-offline-simulation",
+  // キャッシュハンドラー（オフラインライブラリ表示用）
+  "sync-songs-metadata",
+  "sync-playlists",
+  "sync-playlist-songs",
+  "sync-liked-songs",
+  "get-cached-playlists",
+  "get-cached-liked-songs",
+  "get-cached-playlist-songs",
 ];
 
-const ALLOWED_ON_CHANNELS = ["media-control", "download-progress"];
+const ALLOWED_ON_CHANNELS = [
+  "media-control",
+  "download-progress",
+  "offline-simulation-changed",
+];
 
 const ALLOWED_SEND_CHANNELS = ["log", "player-state-change"];
 
@@ -102,6 +114,31 @@ contextBridge.exposeInMainWorld("electron", {
     // オフラインシミュレーションを明示的に設定
     setOfflineSimulation: (offline: boolean) =>
       ipcRenderer.invoke("set-offline-simulation", offline),
+  },
+
+  // キャッシュ機能（オフラインライブラリ表示用）
+  cache: {
+    // 曲のメタデータをキャッシュ
+    syncSongsMetadata: (songs: any[]) =>
+      ipcRenderer.invoke("sync-songs-metadata", songs),
+    // プレイリストをキャッシュ
+    syncPlaylists: (playlists: any[]) =>
+      ipcRenderer.invoke("sync-playlists", playlists),
+    // プレイリスト内の曲をキャッシュ
+    syncPlaylistSongs: (playlistSongs: any[]) =>
+      ipcRenderer.invoke("sync-playlist-songs", playlistSongs),
+    // いいねをキャッシュ
+    syncLikedSongs: (likedSongs: any[]) =>
+      ipcRenderer.invoke("sync-liked-songs", likedSongs),
+    // キャッシュからプレイリストを取得
+    getCachedPlaylists: (userId: string) =>
+      ipcRenderer.invoke("get-cached-playlists", userId),
+    // キャッシュからいいね曲を取得
+    getCachedLikedSongs: (userId: string) =>
+      ipcRenderer.invoke("get-cached-liked-songs", userId),
+    // キャッシュからプレイリスト内の曲を取得
+    getCachedPlaylistSongs: (playlistId: string) =>
+      ipcRenderer.invoke("get-cached-playlist-songs", playlistId),
   },
 
   // IPC通信

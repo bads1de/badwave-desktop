@@ -2,17 +2,14 @@ import { Song } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { createClient } from "@/libs/supabase/client";
 import { useEffect } from "react";
 import dayjs from "dayjs";
 
 /**
- * 指定された期間に基づいてトレンド曲を取得するカスタムフック (クライアントサイド)
+ * トレンド曲を取得するカスタムフック
  *
- * @param {"all" | "month" | "week" | "day"} period - 取得する期間
- * @param {Song[]} initialData - サーバーから取得した初期データ
- * @returns {Object} トレンド曲の取得状態と結果
+ * オフライン時はローカルスキーマがないため、空配列を返します。
  */
 const useGetTrendSongs = (
   period: "all" | "month" | "week" | "day" = "all",
@@ -20,7 +17,6 @@ const useGetTrendSongs = (
 ) => {
   const supabase = createClient();
   const { isOnline } = useNetworkStatus();
-  const { saveToCache, loadFromCache } = useOfflineCache();
 
   const queryKey = [CACHED_QUERIES.trendSongs, period];
 
@@ -32,17 +28,14 @@ const useGetTrendSongs = (
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      // オフラインの場合はキャッシュから取得を試みる
+      // オフライン時は何も取得しない
       if (!isOnline) {
-        const cachedData = await loadFromCache<Song[]>(queryKey.join(":"));
-        if (cachedData) return cachedData;
         return [];
       }
 
-      // オンラインの場合はSupabaseから直接取得
+      // オンラインの場合はSupabaseから取得
       let query = supabase.from("songs").select("*");
 
-      // 指定された期間に基づいてデータをフィルタリング
       switch (period) {
         case "month":
           query = query.filter(
@@ -65,11 +58,8 @@ const useGetTrendSongs = (
             dayjs().subtract(1, "day").toISOString()
           );
           break;
-        default:
-          break;
       }
 
-      // データを取得し、カウントの降順でソートし、最大10曲まで取得
       const { data, error } = await query
         .order("count", { ascending: false })
         .limit(10);
@@ -79,29 +69,19 @@ const useGetTrendSongs = (
         throw error;
       }
 
-      const result = (data as Song[]) || [];
-
-      // バックグラウンドでキャッシュに保存
-      saveToCache(queryKey.join(":"), result).catch(console.error);
-
-      return result;
+      return (data as Song[]) || [];
     },
     initialData: initialData,
-    staleTime: 1000 * 60 * 60 * 24, // 1日間
-    gcTime: 1000 * 60 * 60 * 24, // 1日間
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
     retry: isOnline ? 1 : false,
   });
 
-  // オンラインに戻ったときに再取得
   useEffect(() => {
     if (isOnline) {
       refetch();
     }
   }, [isOnline, refetch]);
-
-  if (error && isOnline) {
-    console.error("トレンドデータの取得に失敗しました。", error);
-  }
 
   return { trends, isLoading, error };
 };

@@ -266,4 +266,88 @@ export const electronAPI = {
       return { isOffline: false };
     },
   },
+
+  // キャッシュ機能（オフラインライブラリ表示用）
+  cache: {
+    /**
+     * 曲のメタデータをローカルDBにキャッシュ
+     * ダウンロード状態は上書きしない
+     */
+    syncSongsMetadata: async (
+      songs: any[]
+    ): Promise<{ success: boolean; count: number; error?: string }> => {
+      if (isElectron()) {
+        return (window as any).electron.cache.syncSongsMetadata(songs);
+      }
+      return { success: false, count: 0, error: "Not in Electron environment" };
+    },
+
+    /**
+     * プレイリストをローカルDBにキャッシュ
+     */
+    syncPlaylists: async (
+      playlists: any[]
+    ): Promise<{ success: boolean; count: number; error?: string }> => {
+      if (isElectron()) {
+        return (window as any).electron.cache.syncPlaylists(playlists);
+      }
+      return { success: false, count: 0, error: "Not in Electron environment" };
+    },
+
+    /**
+     * プレイリスト内の曲をローカルDBにキャッシュ
+     */
+    syncPlaylistSongs: async (
+      playlistSongs: any[]
+    ): Promise<{ success: boolean; count: number; error?: string }> => {
+      if (isElectron()) {
+        return (window as any).electron.cache.syncPlaylistSongs(playlistSongs);
+      }
+      return { success: false, count: 0, error: "Not in Electron environment" };
+    },
+
+    /**
+     * いいねした曲をローカルDBにキャッシュ
+     */
+    syncLikedSongs: async (
+      likedSongs: any[]
+    ): Promise<{ success: boolean; count: number; error?: string }> => {
+      if (isElectron()) {
+        return (window as any).electron.cache.syncLikedSongs(likedSongs);
+      }
+      return { success: false, count: 0, error: "Not in Electron environment" };
+    },
+
+    /**
+     * キャッシュからプレイリストを取得
+     */
+    getCachedPlaylists: async (userId: string): Promise<any[]> => {
+      if (isElectron()) {
+        return (window as any).electron.cache.getCachedPlaylists(userId);
+      }
+      return [];
+    },
+
+    /**
+     * キャッシュからいいね曲を取得（ダウンロード状態付き）
+     */
+    getCachedLikedSongs: async (userId: string): Promise<any[]> => {
+      if (isElectron()) {
+        return (window as any).electron.cache.getCachedLikedSongs(userId);
+      }
+      return [];
+    },
+
+    /**
+     * キャッシュからプレイリスト内の曲を取得（ダウンロード状態付き）
+     */
+    getCachedPlaylistSongs: async (playlistId: string): Promise<any[]> => {
+      if (isElectron()) {
+        return (window as any).electron.cache.getCachedPlaylistSongs(
+          playlistId
+        );
+      }
+      return [];
+    },
+  },
 };

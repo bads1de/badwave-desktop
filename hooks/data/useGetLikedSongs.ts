@@ -3,19 +3,17 @@ import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
+import { electronAPI } from "@/libs/electron-utils";
 import { useEffect } from "react";
 
 /**
  * ユーザーがいいねした曲を取得するカスタムフック
  *
- * @param userId ユーザーID
- * @returns いいねした曲のリストとローディング状態
+ * オフライン対応 (SQLiteキャッシュ使用)
  */
 const useGetLikedSongs = (userId?: string) => {
   const supabaseClient = createClient();
   const { isOnline } = useNetworkStatus();
-  const { saveToCache, loadFromCache } = useOfflineCache();
 
   const queryKey = [CACHED_QUERIES.likedSongs, userId];
 
@@ -31,13 +29,22 @@ const useGetLikedSongs = (userId?: string) => {
         return [];
       }
 
-      // オフラインの場合はキャッシュから取得を試みる
+      // オフラインの場合は SQLite キャッシュから取得
       if (!isOnline) {
-        const cachedData = await loadFromCache<Song[]>(queryKey.join(":"));
-        if (cachedData) return cachedData;
+        try {
+          const cachedData = await electronAPI.cache.getCachedLikedSongs(
+            userId
+          );
+          if (cachedData && cachedData.length > 0) {
+            return cachedData as Song[];
+          }
+        } catch (e) {
+          console.error("Failed to load liked songs from SQLite cache:", e);
+        }
         return [];
       }
 
+      // オンラインの場合は Supabase から取得
       const { data, error } = await supabaseClient
         .from("liked_songs_regular")
         .select("*, songs(*)")
@@ -49,19 +56,34 @@ const useGetLikedSongs = (userId?: string) => {
         throw new Error("いいねした曲の取得に失敗しました");
       }
 
-      // データがなければ空の配列を返す
-      if (!data) {
-        return [];
-      }
+      if (!data) return [];
 
-      // 取得したデータから曲の情報のみを新しい配列にして返す
       const songs = data.map((item) => ({
         ...item.songs,
         songType: "regular" as const,
       })) as Song[];
 
-      // バックグラウンドでキャッシュに保存
-      saveToCache(queryKey.join(":"), songs).catch(console.error);
+      // キャッシュ同期（バックグラウンド）
+      const songsForCache = songs.map((song) => ({
+        id: song.id,
+        user_id: song.user_id,
+        title: song.title,
+        author: song.author,
+        song_path: song.song_path,
+        image_path: song.image_path,
+        duration: song.duration,
+        genre: song.genre,
+        lyrics: song.lyrics,
+        created_at: song.created_at,
+      }));
+      electronAPI.cache.syncSongsMetadata(songsForCache).catch(console.error);
+
+      const likedSongsForCache = data.map((item) => ({
+        user_id: item.user_id,
+        song_id: item.song_id,
+        created_at: item.created_at,
+      }));
+      electronAPI.cache.syncLikedSongs(likedSongsForCache).catch(console.error);
 
       return songs;
     },
@@ -71,18 +93,13 @@ const useGetLikedSongs = (userId?: string) => {
     retry: isOnline ? 1 : false,
   });
 
-  // オンラインに戻ったときに再取得
   useEffect(() => {
     if (isOnline && userId) {
       refetch();
     }
   }, [isOnline, userId, refetch]);
 
-  return {
-    likedSongs,
-    isLoading,
-    error,
-  };
+  return { likedSongs, isLoading, error };
 };
 
 export default useGetLikedSongs;

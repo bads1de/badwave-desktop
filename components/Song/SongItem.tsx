@@ -7,7 +7,8 @@ import { CiHeart, CiPlay1 } from "react-icons/ci";
 import ScrollingText from "../common/ScrollingText";
 import { memo, useCallback } from "react";
 import useDownloadSong from "@/hooks/utils/useDownloadSong";
-import { IoCloudDone } from "react-icons/io5";
+import { IoCloudDone, IoCloudOffline } from "react-icons/io5";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 interface SongItemProps {
   onClick: (id: string) => void;
@@ -15,13 +16,21 @@ interface SongItemProps {
 }
 
 const SongItem: React.FC<SongItemProps> = memo(({ onClick, data }) => {
+  const { isOnline } = useNetworkStatus();
+  const { isDownloaded } = useDownloadSong(data);
+
+  // オフラインかつダウンロードされていない場合は再生不可
+  const isPlayable = isOnline || isDownloaded;
+
   // クリックハンドラーをメモ化
   const handleClick = useCallback(() => {
+    if (!isPlayable) return; // 再生不可の場合はクリックを無視
     onClick(data.id);
-  }, [onClick, data.id]);
+  }, [onClick, data.id, isPlayable]);
+
   return (
     <div
-      className="
+      className={`
         relative
         group
         flex
@@ -33,18 +42,22 @@ const SongItem: React.FC<SongItemProps> = memo(({ onClick, data }) => {
         bg-gradient-to-b
         from-gray-900/10
         to-gray-900/20
-        cursor-pointer
-        hover:from-gray-800/20
-        hover:to-gray-800/30
         transition-all
         duration-300
         aspect-[9/16]
-      "
+        ${
+          isPlayable
+            ? "cursor-pointer hover:from-gray-800/20 hover:to-gray-800/30"
+            : "cursor-not-allowed"
+        }
+      `}
     >
       <div className="relative w-full h-full">
         {data.image_path && (
           <Image
-            className="object-cover w-full h-full transition-all duration-500 group-hover:scale-110"
+            className={`object-cover w-full h-full transition-all duration-500 ${
+              isPlayable ? "group-hover:scale-110" : "grayscale opacity-50"
+            }`}
             src={data.image_path}
             fill
             alt="Image"
@@ -52,24 +65,69 @@ const SongItem: React.FC<SongItemProps> = memo(({ onClick, data }) => {
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width:1280px) 25vw, 20vw"
           />
         )}
+
+        {/* オフラインで再生不可の場合のオーバーレイ */}
+        {!isPlayable && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10">
+            <div className="text-center">
+              <IoCloudOffline
+                size={32}
+                className="text-gray-400 mx-auto mb-2"
+              />
+              <span className="text-gray-400 text-xs">
+                オフライン時は再生不可
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
-          <Link href={`/songs/${data.id}`} className="w-full block">
+          <Link
+            href={`/songs/${data.id}`}
+            className={`w-full block ${
+              !isPlayable ? "pointer-events-none" : ""
+            }`}
+          >
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            <div className="font-medium text-gray-100 truncate text-sm hover:text-gray-300 transition-colors group-hover:text-white group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+            <div
+              className={`font-medium truncate text-sm transition-colors ${
+                isPlayable
+                  ? "text-gray-100 hover:text-gray-300 group-hover:text-white group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                  : "text-gray-500"
+              }`}
+            >
               <ScrollingText text={data.title} />
             </div>
           </Link>
 
-          <p className="text-gray-400 text-xs mt-1 truncate hover:text-gray-300 transition-colors group-hover:text-white group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+          <p
+            className={`text-xs mt-1 truncate transition-colors ${
+              isPlayable
+                ? "text-gray-400 hover:text-gray-300 group-hover:text-white group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                : "text-gray-600"
+            }`}
+          >
             {data.author}
           </p>
 
           <div className="flex items-center justify-start mt-2 space-x-4">
-            <div className="flex items-center text-gray-400 hover:text-gray-300 transition-colors group-hover:text-white group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+            <div
+              className={`flex items-center transition-colors ${
+                isPlayable
+                  ? "text-gray-400 hover:text-gray-300 group-hover:text-white group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                  : "text-gray-600"
+              }`}
+            >
               <CiPlay1 size={14} />
               <span className="ml-1 text-xs">{data.count}</span>
             </div>
-            <div className="flex items-center text-gray-400 hover:text-gray-300 transition-colors group-hover:text-white group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+            <div
+              className={`flex items-center transition-colors ${
+                isPlayable
+                  ? "text-gray-400 hover:text-gray-300 group-hover:text-white group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                  : "text-gray-600"
+              }`}
+            >
               <CiHeart size={14} />
               <span className="ml-1 text-xs">{data.like_count}</span>
             </div>

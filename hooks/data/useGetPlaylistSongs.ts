@@ -3,19 +3,17 @@ import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
+import { electronAPI } from "@/libs/electron-utils";
 import { useEffect } from "react";
 
 /**
  * プレイリストの曲を取得するカスタムフック
  *
- * @param playlistId プレイリストID
- * @returns プレイリストの曲のリストとローディング状態
+ * オフライン対応 (SQLiteキャッシュ使用)
  */
 const useGetPlaylistSongs = (playlistId?: string) => {
   const supabaseClient = createClient();
   const { isOnline } = useNetworkStatus();
-  const { saveToCache, loadFromCache } = useOfflineCache();
 
   const queryKey = [CACHED_QUERIES.playlists, playlistId, "songs"];
 
@@ -27,17 +25,24 @@ const useGetPlaylistSongs = (playlistId?: string) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      if (!playlistId) {
-        return [];
-      }
+      if (!playlistId) return [];
 
-      // オフラインの場合はキャッシュから取得を試みる
+      // オフラインの場合は SQLite キャッシュから取得
       if (!isOnline) {
-        const cachedData = await loadFromCache<Song[]>(queryKey.join(":"));
-        if (cachedData) return cachedData;
+        try {
+          const cachedData = await electronAPI.cache.getCachedPlaylistSongs(
+            playlistId
+          );
+          if (cachedData && cachedData.length > 0) {
+            return cachedData as Song[];
+          }
+        } catch (e) {
+          console.error("Failed to load playlist songs from SQLite cache:", e);
+        }
         return [];
       }
 
+      // オンラインの場合は Supabase から取得
       const { data, error } = await supabaseClient
         .from("playlist_songs")
         .select("*, songs(*)")
@@ -49,19 +54,37 @@ const useGetPlaylistSongs = (playlistId?: string) => {
         throw new Error("プレイリストの曲の取得に失敗しました");
       }
 
-      // データがなければ空の配列を返す
-      if (!data) {
-        return [];
-      }
+      if (!data) return [];
 
-      // 取得したデータから曲の情報のみを新しい配列にして返す
       const mappedSongs = data.map((item) => ({
         ...item.songs,
         songType: "regular" as const,
       })) as Song[];
 
-      // バックグラウンドでキャッシュに保存
-      saveToCache(queryKey.join(":"), mappedSongs).catch(console.error);
+      // キャッシュ同期（バックグラウンド）
+      const songsForCache = mappedSongs.map((song) => ({
+        id: song.id,
+        user_id: song.user_id,
+        title: song.title,
+        author: song.author,
+        song_path: song.song_path,
+        image_path: song.image_path,
+        duration: song.duration,
+        genre: song.genre,
+        lyrics: song.lyrics,
+        created_at: song.created_at,
+      }));
+      electronAPI.cache.syncSongsMetadata(songsForCache).catch(console.error);
+
+      const playlistSongsForCache = data.map((item) => ({
+        id: item.id,
+        playlist_id: item.playlist_id,
+        song_id: item.song_id,
+        created_at: item.created_at,
+      }));
+      electronAPI.cache
+        .syncPlaylistSongs(playlistSongsForCache)
+        .catch(console.error);
 
       return mappedSongs;
     },
@@ -71,18 +94,13 @@ const useGetPlaylistSongs = (playlistId?: string) => {
     retry: isOnline ? 1 : false,
   });
 
-  // オンラインに戻ったときに再取得
   useEffect(() => {
     if (isOnline && playlistId) {
       refetch();
     }
   }, [isOnline, playlistId, refetch]);
 
-  return {
-    songs,
-    isLoading,
-    error,
-  };
+  return { songs, isLoading, error };
 };
 
 export default useGetPlaylistSongs;

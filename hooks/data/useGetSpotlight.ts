@@ -2,19 +2,16 @@ import { Spotlight } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { createClient } from "@/libs/supabase/client";
 import { useEffect } from "react";
 
 /**
  * スポットライトデータを取得するカスタムフック (クライアントサイド)
  *
- * @param {Spotlight[]} initialData - サーバーから取得した初期データ（Optional）
- * @returns {Object} スポットライトの取得状態と結果
+ * オフライン時は通信を行わず空を返します（スポットライトは現状オフライン非対応）
  */
 const useGetSpotlight = (initialData?: Spotlight[]) => {
   const { isOnline } = useNetworkStatus();
-  const { saveToCache, loadFromCache } = useOfflineCache();
   const supabase = createClient();
 
   const queryKey = [CACHED_QUERIES.spotlight];
@@ -27,10 +24,8 @@ const useGetSpotlight = (initialData?: Spotlight[]) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      // オフラインの場合はキャッシュから取得を試みる
+      // オフラインの場合は通信しない
       if (!isOnline) {
-        const cachedData = await loadFromCache<Spotlight[]>(queryKey.join(":"));
-        if (cachedData) return cachedData;
         return [];
       }
 
@@ -45,16 +40,12 @@ const useGetSpotlight = (initialData?: Spotlight[]) => {
         throw error;
       }
 
-      const result = (data as Spotlight[]) || [];
-
-      // バックグラウンドでキャッシュに保存
-      saveToCache(queryKey.join(":"), result).catch(console.error);
-
-      return result;
+      return (data as Spotlight[]) || [];
     },
     initialData: initialData,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
+    enabled: true,
     retry: isOnline ? 1 : false,
   });
 

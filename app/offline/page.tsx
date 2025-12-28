@@ -16,12 +16,14 @@ const OfflinePage = () => {
   const [offlineSongs, setOfflineSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // オンラインに復帰したらホームに戻る
+  // オンラインに自動で戻る処理はスマートオフライン実装のため無効化
+  /*
   useEffect(() => {
     if (isOnline) {
       router.push("/");
     }
   }, [isOnline, router]);
+  */
 
   // オフライン曲の取得
   useEffect(() => {

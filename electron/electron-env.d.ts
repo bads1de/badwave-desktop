@@ -134,6 +134,32 @@ interface ElectronAPI {
     // オフラインシミュレーションを明示的に設定
     setOfflineSimulation: (offline: boolean) => Promise<{ isOffline: boolean }>;
   };
+
+  // キャッシュ機能（オフラインライブラリ表示用）
+  cache: {
+    // 曲のメタデータをキャッシュ
+    syncSongsMetadata: (
+      songs: any[]
+    ) => Promise<{ success: boolean; count: number; error?: string }>;
+    // プレイリストをキャッシュ
+    syncPlaylists: (
+      playlists: any[]
+    ) => Promise<{ success: boolean; count: number; error?: string }>;
+    // プレイリスト内の曲をキャッシュ
+    syncPlaylistSongs: (
+      playlistSongs: any[]
+    ) => Promise<{ success: boolean; count: number; error?: string }>;
+    // いいねをキャッシュ
+    syncLikedSongs: (
+      likedSongs: any[]
+    ) => Promise<{ success: boolean; count: number; error?: string }>;
+    // キャッシュからプレイリストを取得
+    getCachedPlaylists: (userId: string) => Promise<any[]>;
+    // キャッシュからいいね曲を取得
+    getCachedLikedSongs: (userId: string) => Promise<any[]>;
+    // キャッシュからプレイリスト内の曲を取得
+    getCachedPlaylistSongs: (playlistId: string) => Promise<any[]>;
+  };
 }
 
 // グローバルなWindowオブジェクトにElectron APIを追加

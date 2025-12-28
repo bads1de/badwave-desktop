@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, globalShortcut, session } from "electron";
 import * as path from "path";
 import { loadEnvVariables, debugLog } from "./utils";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
@@ -6,7 +6,7 @@ import { getDb } from "./db/client";
 
 // モジュールのインポート
 import { registerProtocolHandlers } from "./lib/protocol";
-import { createMainWindow } from "./lib/window-manager";
+import { createMainWindow, getMainWindow } from "./lib/window-manager";
 import { setupTray, destroyTray } from "./lib/tray";
 
 // IPCハンドラーのインポート
@@ -16,12 +16,16 @@ import { setupWindowHandlers } from "./ipc/window";
 import { setupDialogHandlers } from "./ipc/dialog";
 import { setupLibraryHandlers } from "./ipc/library";
 import { setupSimpleDownloadHandlers } from "./ipc/simple_download";
+import { setupCacheHandlers } from "./ipc/cache";
 
 // 環境変数を読み込む
 loadEnvVariables();
 
 // プラットフォーム判定
 const isMac = process.platform === "darwin";
+
+// オフラインシミュレーション状態
+let isSimulatingOffline = false;
 
 // IPC通信のセットアップ
 function setupIPC() {
@@ -42,6 +46,62 @@ function setupIPC() {
 
   // オフラインダウンロードハンドラーのセットアップ
   setupDownloadHandlers();
+
+  // キャッシュハンドラーのセットアップ（オフラインライブラリ表示用）
+  setupCacheHandlers();
+}
+
+// 開発用ショートカットキーのセットアップ
+function setupDevShortcuts() {
+  // Ctrl+Shift+O: オフラインモードのトグル
+  globalShortcut.register("CommandOrControl+Shift+O", () => {
+    isSimulatingOffline = !isSimulatingOffline;
+
+    const mainWindow = getMainWindow();
+    if (mainWindow) {
+      // 1. ネットワークエミュレーションの設定
+      mainWindow.webContents.session.enableNetworkEmulation({
+        offline: isSimulatingOffline,
+      });
+
+      // 2. WebRequestによる強制ブロック (localhost以外)
+      const filter = { urls: ["*://*/*"] };
+      if (isSimulatingOffline) {
+        session.defaultSession.webRequest.onBeforeRequest(
+          filter,
+          (details, callback) => {
+            // localhost (開発サーバー) の通信だけは許可しないとアプリが白目剥く
+            if (
+              details.url.includes("localhost") ||
+              details.url.includes("127.0.0.1")
+            ) {
+              callback({ cancel: false });
+            } else {
+              // それ以外（Supabase等）はすべて即座にキャンセル
+              callback({ cancel: true });
+            }
+          }
+        );
+      } else {
+        // オンライン時は制限解除
+        session.defaultSession.webRequest.onBeforeRequest(filter, null);
+      }
+
+      // レンダラーに通知を送信
+      mainWindow.webContents.send(
+        "offline-simulation-changed",
+        isSimulatingOffline
+      );
+    }
+
+    debugLog(
+      `[Shortcut] Offline simulation: ${
+        isSimulatingOffline ? "ON" : "OFF"
+      } (Ctrl+Shift+O)`
+    );
+  });
+
+  debugLog("[Dev] Shortcuts registered: Ctrl+Shift+O = Toggle Offline Mode");
 }
 
 // アプリケーションの初期化
@@ -72,6 +132,9 @@ app.whenReady().then(() => {
   // システムトレイの設定
   setupTray();
 
+  // 開発用ショートカットキーのセットアップ
+  setupDevShortcuts();
+
   app.on("activate", () => {
     // macOSでは、Dockアイコンクリック時に
     // ウィンドウがない場合は新しいウィンドウを作成
@@ -93,4 +156,6 @@ app.on("window-all-closed", () => {
 // アプリケーションの終了処理
 app.on("before-quit", () => {
   destroyTray();
+  // グローバルショートカットを解除
+  globalShortcut.unregisterAll();
 });

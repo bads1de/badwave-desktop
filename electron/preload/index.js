@@ -41,8 +41,20 @@ var ALLOWED_INVOKE_CHANNELS = [
     "toggle-offline-simulation",
     "get-offline-simulation-status",
     "set-offline-simulation",
+    // キャッシュハンドラー（オフラインライブラリ表示用）
+    "sync-songs-metadata",
+    "sync-playlists",
+    "sync-playlist-songs",
+    "sync-liked-songs",
+    "get-cached-playlists",
+    "get-cached-liked-songs",
+    "get-cached-playlist-songs",
 ];
-var ALLOWED_ON_CHANNELS = ["media-control", "download-progress"];
+var ALLOWED_ON_CHANNELS = [
+    "media-control",
+    "download-progress",
+    "offline-simulation-changed",
+];
 var ALLOWED_SEND_CHANNELS = ["log", "player-state-change"];
 // Electronの機能をウィンドウオブジェクトに安全に公開
 electron_1.contextBridge.exposeInMainWorld("electron", {
@@ -105,6 +117,37 @@ electron_1.contextBridge.exposeInMainWorld("electron", {
         // オフラインシミュレーションを明示的に設定
         setOfflineSimulation: function (offline) {
             return electron_1.ipcRenderer.invoke("set-offline-simulation", offline);
+        },
+    },
+    // キャッシュ機能（オフラインライブラリ表示用）
+    cache: {
+        // 曲のメタデータをキャッシュ
+        syncSongsMetadata: function (songs) {
+            return electron_1.ipcRenderer.invoke("sync-songs-metadata", songs);
+        },
+        // プレイリストをキャッシュ
+        syncPlaylists: function (playlists) {
+            return electron_1.ipcRenderer.invoke("sync-playlists", playlists);
+        },
+        // プレイリスト内の曲をキャッシュ
+        syncPlaylistSongs: function (playlistSongs) {
+            return electron_1.ipcRenderer.invoke("sync-playlist-songs", playlistSongs);
+        },
+        // いいねをキャッシュ
+        syncLikedSongs: function (likedSongs) {
+            return electron_1.ipcRenderer.invoke("sync-liked-songs", likedSongs);
+        },
+        // キャッシュからプレイリストを取得
+        getCachedPlaylists: function (userId) {
+            return electron_1.ipcRenderer.invoke("get-cached-playlists", userId);
+        },
+        // キャッシュからいいね曲を取得
+        getCachedLikedSongs: function (userId) {
+            return electron_1.ipcRenderer.invoke("get-cached-liked-songs", userId);
+        },
+        // キャッシュからプレイリスト内の曲を取得
+        getCachedPlaylistSongs: function (playlistId) {
+            return electron_1.ipcRenderer.invoke("get-cached-playlist-songs", playlistId);
         },
     },
     // IPC通信

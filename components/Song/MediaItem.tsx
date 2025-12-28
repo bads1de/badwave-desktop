@@ -6,20 +6,33 @@ import usePlayer from "@/hooks/player/usePlayer";
 import { twMerge } from "tailwind-merge";
 import ScrollingText from "../common/ScrollingText";
 import { memo, useCallback } from "react";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import useDownloadSong from "@/hooks/utils/useDownloadSong";
+import { IoCloudDone, IoCloudOffline } from "react-icons/io5";
 
 interface MediaItemProps {
   data: Song;
   onClick?: (id: string) => void;
   isCollapsed?: boolean;
   className?: string;
+  /** 再生可能状態を外部から制御する場合に使用 */
+  forcePlayable?: boolean;
 }
 
 const MediaItem: React.FC<MediaItemProps> = memo(
-  ({ data, onClick, isCollapsed, className }) => {
+  ({ data, onClick, isCollapsed, className, forcePlayable }) => {
     const player = usePlayer();
+    const { isOnline } = useNetworkStatus();
+    const { isDownloaded } = useDownloadSong(data);
+
+    // オフラインかつダウンロードされていない場合は再生不可
+    // forcePlayable が true の場合は常に再生可能
+    const isPlayable = forcePlayable ?? (isOnline || isDownloaded);
 
     // クリックハンドラーをメモ化
     const handleClick = useCallback(() => {
+      if (!isPlayable) return; // 再生不可の場合はクリックを無視
+
       if (onClick) {
         return onClick(data.id!);
       }
@@ -27,7 +40,7 @@ const MediaItem: React.FC<MediaItemProps> = memo(
       if ("author" in data && data.id) {
         return player.setId(data.id);
       }
-    }, [onClick, data.id, player]);
+    }, [onClick, data.id, player, isPlayable]);
 
     return (
       <div
@@ -37,12 +50,12 @@ const MediaItem: React.FC<MediaItemProps> = memo(
         flex
         items-center
         gap-x-3
-        cursor-pointer
         rounded-xl
         p-2
         group
         relative
         animate-fade-in
+        ${isPlayable ? "cursor-pointer" : "cursor-not-allowed opacity-60"}
         `,
           className
         )}
@@ -65,15 +78,39 @@ const MediaItem: React.FC<MediaItemProps> = memo(
               fill
               src={data.image_path!}
               alt="MediaItem"
-              className="object-cover rounded-xl transition-all duration-500 group-hover:scale-110"
+              className={`object-cover rounded-xl transition-all duration-500 ${
+                isPlayable ? "group-hover:scale-110" : "grayscale"
+              }`}
               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width:1280px) 25vw, 20vw"
             />
+          )}
+
+          {/* オフラインで再生不可のインジケーター */}
+          {!isPlayable && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+              <IoCloudOffline size={20} className="text-gray-400" />
+            </div>
           )}
         </div>
         {!isCollapsed && (
           <div className="flex flex-col gap-y-1 overflow-hidden w-[70%]">
-            <ScrollingText text={data.title} limitCharacters={10} />
-            <p className="text-neutral-400 text-sm truncate group-hover:text-neutral-300 transition-colors">
+            <div className="flex items-center gap-2">
+              <ScrollingText text={data.title} limitCharacters={10} />
+              {/* ダウンロード済みインジケーター */}
+              {isDownloaded && (
+                <IoCloudDone
+                  size={14}
+                  className="text-theme-500 flex-shrink-0"
+                />
+              )}
+            </div>
+            <p
+              className={`text-sm truncate transition-colors ${
+                isPlayable
+                  ? "text-neutral-400 group-hover:text-neutral-300"
+                  : "text-neutral-600"
+              }`}
+            >
               {data.author}
             </p>
           </div>
