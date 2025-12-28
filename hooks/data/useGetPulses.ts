@@ -4,7 +4,7 @@ import { Pulse } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { useEffect } from "react";
 
@@ -16,7 +16,7 @@ import { useEffect } from "react";
  */
 const useGetPulses = (initialData?: Pulse[]) => {
   const supabaseClient = createClient();
-  const { isOnline } = useNetworkStatus();
+  const { isOnline, checkOffline } = useOfflineCheck();
   const { saveToCache, loadFromCache } = useOfflineCache();
 
   const queryKey = [CACHED_QUERIES.pulse];
@@ -29,8 +29,9 @@ const useGetPulses = (initialData?: Pulse[]) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      const isCurrentlyOffline = await checkOffline();
       // オフラインの場合はキャッシュから取得を試みる
-      if (!isOnline) {
+      if (isCurrentlyOffline) {
         const cachedData = await loadFromCache<Pulse[]>(queryKey.join(":"));
         if (cachedData) return cachedData;
         return [];

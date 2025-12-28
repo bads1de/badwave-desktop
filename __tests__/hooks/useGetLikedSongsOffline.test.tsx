@@ -1,13 +1,21 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import useGetLikedSongs from "@/hooks/data/useGetLikedSongs";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
+import { electronAPI } from "@/libs/electron-utils";
 import React from "react";
 
 // モックの設定
-jest.mock("@/hooks/utils/useOfflineCache");
-jest.mock("@/hooks/utils/useNetworkStatus");
+jest.mock("@/hooks/utils/useOfflineCheck");
+jest.mock("@/libs/electron-utils", () => ({
+  electronAPI: {
+    isElectron: jest.fn(),
+    cache: {
+      getCachedLikedSongs: jest.fn(),
+      syncLikedSongs: jest.fn(),
+    },
+  },
+}));
 
 // Supabaseクライアントのモック
 const mockSupabase = {
@@ -37,28 +45,35 @@ const createWrapper = () => {
 };
 
 describe("useGetLikedSongs (Offline Support)", () => {
-  const mockSaveToCache = jest.fn().mockResolvedValue(undefined);
-  const mockLoadFromCache = jest.fn();
-  const mockUseNetworkStatus = useNetworkStatus as jest.Mock;
+  const mockUseOfflineCheck = useOfflineCheck as jest.Mock;
+  const mockGetCachedLikedSongs = electronAPI.cache
+    .getCachedLikedSongs as jest.Mock;
+  const mockSyncLikedSongs = electronAPI.cache.syncLikedSongs as jest.Mock;
+  const mockIsElectron = electronAPI.isElectron as jest.Mock;
 
   const mockUserId = "test-user-id";
-  const mockSongs = [{ id: "1", title: "Liked Offline Song" }];
+  const mockSongs = [
+    { id: "1", title: "Liked Offline Song", created_at: "2023-01-01" },
+  ];
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useOfflineCache as jest.Mock).mockReturnValue({
-      saveToCache: mockSaveToCache,
-      loadFromCache: mockLoadFromCache,
-    });
+    mockIsElectron.mockReturnValue(true);
+    mockSyncLikedSongs.mockResolvedValue(undefined);
   });
 
   it("オンライン時はAPIからいいねした曲を取得し、キャッシュに保存する", async () => {
+    // オンライン設定
+    mockUseOfflineCheck.mockReturnValue({
+      isOnline: true,
+      isInitialized: true,
+      checkOffline: jest.fn().mockResolvedValue(false),
+    });
+
     mockSupabase.order.mockResolvedValue({
       data: [{ songs: mockSongs[0] }],
       error: null,
     });
-
-    mockUseNetworkStatus.mockReturnValue({ isOnline: true });
 
     const { result } = renderHook(() => useGetLikedSongs(mockUserId), {
       wrapper: createWrapper(),
@@ -72,21 +87,30 @@ describe("useGetLikedSongs (Offline Support)", () => {
       { timeout: 10000 }
     );
 
-    // キャッシュ保存が呼ばれたことを確認
+    // APIが呼ばれたことを確認
+    expect(mockSupabase.from).toHaveBeenCalledWith("liked_songs_regular");
+
+    // キャッシュ保存（syncLikedSongs）が呼ばれたことを確認
     await waitFor(
       () => {
-        expect(mockSaveToCache).toHaveBeenCalledWith(
-          expect.stringContaining(`likedSongs:${mockUserId}`),
-          expect.any(Array)
+        expect(mockSyncLikedSongs).toHaveBeenCalledWith(
+          mockUserId,
+          expect.anything() // Song object transform verification if needed
         );
       },
       { timeout: 10000 }
     );
   });
 
-  it("オフライン時はキャッシュからいいねした曲を取得する", async () => {
-    mockUseNetworkStatus.mockReturnValue({ isOnline: false });
-    mockLoadFromCache.mockResolvedValue(mockSongs);
+  it("オフライン時はSQLiteキャッシュからいいねした曲を取得する", async () => {
+    // オフライン設定
+    mockUseOfflineCheck.mockReturnValue({
+      isOnline: false,
+      isInitialized: true,
+      checkOffline: jest.fn().mockResolvedValue(true),
+    });
+
+    mockGetCachedLikedSongs.mockResolvedValue(mockSongs);
 
     const { result } = renderHook(() => useGetLikedSongs(mockUserId), {
       wrapper: createWrapper(),
@@ -101,5 +125,8 @@ describe("useGetLikedSongs (Offline Support)", () => {
 
     // APIが呼ばれていないことを確認
     expect(mockSupabase.from).not.toHaveBeenCalled();
+
+    // キャッシュ取得が呼ばれたことを確認
+    expect(mockGetCachedLikedSongs).toHaveBeenCalledWith(mockUserId);
   });
 });

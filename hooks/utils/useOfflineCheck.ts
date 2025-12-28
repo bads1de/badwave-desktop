@@ -10,25 +10,25 @@ import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
  * （主にqueryFn内などの非同期処理で最新の状態を確認するために使用）
  */
 export const useOfflineCheck = () => {
-  const { isOnline } = useNetworkStatus();
+  const status = useNetworkStatus();
 
   const checkOffline = useCallback(async () => {
     // まず状態ベースで判定
-    let isCurrentlyOffline = !isOnline;
+    let isCurrentlyOffline = !status.isOnline;
 
     // Electronの場合はメインプロセスに問い合わせて確実な状態を取得
     if (electronAPI.isElectron()) {
       try {
-        const status = await (
+        const simStatus = await (
           window as any
         ).electron.dev.getOfflineSimulationStatus();
-        isCurrentlyOffline = status.isOffline;
+        isCurrentlyOffline = simStatus.isOffline;
       } catch (error) {
         // エラー時は元の isOnline ベースの判定を維持
       }
     }
     return isCurrentlyOffline;
-  }, [isOnline]);
+  }, [status.isOnline]);
 
-  return { checkOffline };
+  return { ...status, checkOffline };
 };

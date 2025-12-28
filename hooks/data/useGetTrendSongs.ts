@@ -1,7 +1,7 @@
 import { Song } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { createClient } from "@/libs/supabase/client";
 import { useEffect } from "react";
 import dayjs from "dayjs";
@@ -16,7 +16,7 @@ const useGetTrendSongs = (
   initialData?: Song[]
 ) => {
   const supabase = createClient();
-  const { isOnline } = useNetworkStatus();
+  const { isOnline, checkOffline } = useOfflineCheck();
 
   const queryKey = [CACHED_QUERIES.trendSongs, period];
 
@@ -28,8 +28,10 @@ const useGetTrendSongs = (
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      // 念のため実行時にもチェック
+      const isCurrentlyOffline = await checkOffline();
       // オフライン時は何も取得しない
-      if (!isOnline) {
+      if (isCurrentlyOffline) {
         return [];
       }
 

@@ -1,7 +1,7 @@
 import { Song } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { createClient } from "@/libs/supabase/client";
 import { useEffect } from "react";
@@ -13,7 +13,7 @@ import { useEffect } from "react";
  */
 const useGetSongsByGenre = (genre: string | string[]) => {
   const supabase = createClient();
-  const { isOnline } = useNetworkStatus();
+  const { isOnline, checkOffline } = useOfflineCheck();
   const { saveToCache, loadFromCache } = useOfflineCache();
 
   // ジャンルが文字列の場合は、カンマで分割して配列に変換
@@ -34,8 +34,9 @@ const useGetSongsByGenre = (genre: string | string[]) => {
         return [];
       }
 
+      const isCurrentlyOffline = await checkOffline();
       // オフラインの場合はキャッシュから取得を試みる
-      if (!isOnline) {
+      if (isCurrentlyOffline) {
         const cachedData = await loadFromCache<Song[]>(queryKey.join(":"));
         if (cachedData) return cachedData;
         return [];

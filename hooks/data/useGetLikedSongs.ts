@@ -2,7 +2,6 @@ import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { electronAPI } from "@/libs/electron-utils";
 import { useEffect } from "react";
@@ -14,8 +13,7 @@ import { useEffect } from "react";
  */
 const useGetLikedSongs = (userId?: string) => {
   const supabaseClient = createClient();
-  const { isOnline, isInitialized } = useNetworkStatus();
-  const { checkOffline } = useOfflineCheck();
+  const { isOnline, isInitialized, checkOffline } = useOfflineCheck();
 
   const queryKey = [CACHED_QUERIES.likedSongs, userId, isOnline];
 
