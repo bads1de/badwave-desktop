@@ -1,6 +1,7 @@
 import { BrowserWindow, shell, app } from "electron";
 import * as path from "path";
-import { isDev } from "../utils";
+import { isDev, debugLog } from "../utils";
+import { startNextServer, getServerPort, stopNextServer } from "./server";
 
 // グローバル参照を保持（ガベージコレクションを防ぐため）
 let mainWindow: BrowserWindow | null = null;
@@ -43,62 +44,62 @@ export async function createMainWindow() {
 
   // 開発モードの場合
   if (isDev) {
-    console.log(
-      "isDev =",
-      isDev,
-      "process.env.NODE_ENV =",
-      process.env.NODE_ENV,
-      "app.isPackaged =",
-      app.isPackaged
+    debugLog(
+      `isDev = ${isDev}, process.env.NODE_ENV = ${process.env.NODE_ENV}, app.isPackaged = ${app.isPackaged}`
     );
-  }
-
-  if (isDev) {
-    console.log("開発モードで起動しています");
+    debugLog("開発モードで起動しています");
     mainWindow.webContents.openDevTools();
 
     try {
       // 開発サーバーが起動しているか確認
-      console.log(
+      debugLog(
         "ローカル開発サーバー(http://localhost:3000)に接続を試みます..."
       );
       await mainWindow.loadURL("http://localhost:3000");
-      console.log("開発サーバーに接続しました");
+      debugLog("開発サーバーに接続しました");
     } catch (err) {
       console.error("開発サーバーへの接続に失敗しました:", err);
-      console.log("デプロイ済みのURLに接続を試みます...");
-
-      try {
-        // デプロイ済みのURLに接続
-        await mainWindow.loadURL("https://badwave-desktop.vercel.app/");
-        console.log("デプロイ済みのURLに接続しました");
-      } catch (deployErr) {
-        console.error("デプロイ済みのURLへの接続にも失敗しました:", deployErr);
-        // 両方とも失敗した場合はエラーメッセージを表示
-        await mainWindow.loadURL(
-          "data:text/html;charset=utf-8," +
-            encodeURIComponent(
-              "<html><body><h1>エラー</h1><p>開発サーバーとデプロイ済みのURLどちらにも接続できませんでした。</p><p>インターネット接続を確認してください。</p></body></html>"
-            )
-        );
-      }
-    }
-  }
-  // 本番モードの場合
-  else {
-    // 本番モードではDevToolsを開かない
-    mainWindow.webContents.closeDevTools();
-
-    // 本番モードでのログは最小限に
-    try {
-      // 外部URLに直接接続
-      await mainWindow.loadURL("https://badwave-desktop.vercel.app/");
-    } catch (err) {
-      // 接続に失敗した場合はエラーメッセージを表示
+      // 開発モードでは開発サーバーが必須
       await mainWindow.loadURL(
         "data:text/html;charset=utf-8," +
           encodeURIComponent(
-            "<html><body><h1>エラー</h1><p>アプリケーションの起動に失敗しました。</p><p>インターネット接続を確認してください。</p></body></html>"
+            `<html>
+              <head><style>body{background:#121212;color:#fff;font-family:sans-serif;padding:40px;}</style></head>
+              <body>
+                <h1>開発サーバーに接続できません</h1>
+                <p>別のターミナルで <code>npm run dev</code> を実行してから、アプリを再起動してください。</p>
+              </body>
+            </html>`
+          )
+      );
+    }
+  }
+  // 本番モードの場合: Standaloneサーバーを起動
+  else {
+    debugLog("本番モードで起動しています - Standaloneサーバーを起動します");
+    mainWindow.webContents.closeDevTools();
+
+    try {
+      // Next.js Standaloneサーバーを起動
+      const port = await startNextServer();
+      debugLog(`Standaloneサーバーがポート ${port} で起動しました`);
+
+      // ローカルサーバーに接続
+      await mainWindow.loadURL(`http://localhost:${port}`);
+      debugLog("Standaloneサーバーに接続しました");
+    } catch (err) {
+      console.error("Standaloneサーバーの起動に失敗しました:", err);
+      await mainWindow.loadURL(
+        "data:text/html;charset=utf-8," +
+          encodeURIComponent(
+            `<html>
+              <head><style>body{background:#121212;color:#fff;font-family:sans-serif;padding:40px;}</style></head>
+              <body>
+                <h1>アプリケーションの起動に失敗しました</h1>
+                <p>アプリケーションを再インストールしてください。</p>
+                <p>エラー: ${err}</p>
+              </body>
+            </html>`
           )
       );
     }
@@ -107,6 +108,10 @@ export async function createMainWindow() {
   // ウィンドウが閉じられたときの処理
   mainWindow.on("closed", () => {
     mainWindow = null;
+    // 本番モードの場合、サーバーも停止
+    if (!isDev) {
+      stopNextServer();
+    }
   });
 
   return mainWindow;

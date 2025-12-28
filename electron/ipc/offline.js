@@ -245,7 +245,7 @@ var setupDownloadHandlers = function () {
     }); });
     // オフライン楽曲の削除 (ファイルとDBレコードの両方を削除)
     electron_1.ipcMain.handle("delete-offline-song", function (_, songId) { return __awaiter(void 0, void 0, void 0, function () {
-        var songRecord, filesToDelete, toLocalPath, _i, filesToDelete_1, filePath, err_1, error_4;
+        var songRecord, filesToDelete, _i, filesToDelete_1, filePath, err_1, error_4;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -263,31 +263,11 @@ var setupDownloadHandlers = function () {
                         return [2 /*return*/, { success: false, error: "Song not found" }];
                     }
                     filesToDelete = [];
-                    toLocalPath = function (fileUrl) {
-                        var filePath = fileUrl;
-                        if (filePath.startsWith("file:///")) {
-                            filePath = filePath.slice(8);
-                        }
-                        else if (filePath.startsWith("file://")) {
-                            filePath = filePath.slice(7);
-                        }
-                        // Windowsの場合、パスの先頭に / が残ることがある (例: /C:/Users/...)
-                        if (process.platform === "win32" && filePath.startsWith("/")) {
-                            filePath = filePath.slice(1);
-                        }
-                        try {
-                            // パスに含まれるエンコードされた文字（%20など）を復元
-                            return decodeURIComponent(filePath);
-                        }
-                        catch (e) {
-                            return filePath;
-                        }
-                    };
                     if (songRecord.songPath) {
-                        filesToDelete.push(toLocalPath(songRecord.songPath));
+                        filesToDelete.push((0, utils_1.toLocalPath)(songRecord.songPath));
                     }
                     if (songRecord.imagePath) {
-                        filesToDelete.push(toLocalPath(songRecord.imagePath));
+                        filesToDelete.push((0, utils_1.toLocalPath)(songRecord.imagePath));
                     }
                     _i = 0, filesToDelete_1 = filesToDelete;
                     _a.label = 3;

@@ -42,13 +42,35 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isDev = void 0;
+exports.isDev = exports.toLocalPath = void 0;
 exports.loadEnvVariables = loadEnvVariables;
 exports.debugLog = debugLog;
 var electron_1 = require("electron");
 var path = __importStar(require("path"));
 var fs = __importStar(require("fs"));
 var dotenv = __importStar(require("dotenv"));
+var url_1 = require("url");
+/**
+ * file:// URLをローカルパスに変換するヘルパー
+ * Node.jsの標準機能を使用してクロスプラットフォーム対応
+ *
+ * @param {string} fileUrl - 変換するファイルURL
+ * @returns {string} ローカルファイルパス
+ */
+var toLocalPath = function (fileUrl) {
+    try {
+        // file:// プロトコルでない場合はそのまま返す
+        if (!fileUrl.startsWith("file:")) {
+            return fileUrl;
+        }
+        return (0, url_1.fileURLToPath)(fileUrl);
+    }
+    catch (e) {
+        console.error("Error converting file URL to path: ".concat(fileUrl), e);
+        return fileUrl;
+    }
+};
+exports.toLocalPath = toLocalPath;
 /**
  * .env.localファイルから環境変数を読み込む
  *

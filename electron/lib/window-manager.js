@@ -74,6 +74,7 @@ exports.createMainWindow = createMainWindow;
 var electron_1 = require("electron");
 var path = __importStar(require("path"));
 var utils_1 = require("../utils");
+var server_1 = require("./server");
 // グローバル参照を保持（ガベージコレクションを防ぐため）
 var mainWindow = null;
 // メインウィンドウの取得
@@ -83,7 +84,7 @@ function getMainWindow() {
 // メインウィンドウの作成
 function createMainWindow() {
     return __awaiter(this, void 0, void 0, function () {
-        var isMac, err_1, deployErr_1, err_2;
+        var isMac, err_1, port, err_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -114,74 +115,64 @@ function createMainWindow() {
                         electron_1.shell.openExternal(url);
                         return { action: "deny" };
                     });
-                    // 開発モードの場合
-                    if (utils_1.isDev) {
-                        console.log("isDev =", utils_1.isDev, "process.env.NODE_ENV =", process.env.NODE_ENV, "app.isPackaged =", electron_1.app.isPackaged);
-                    }
-                    if (!utils_1.isDev) return [3 /*break*/, 10];
-                    console.log("開発モードで起動しています");
+                    if (!utils_1.isDev) return [3 /*break*/, 6];
+                    (0, utils_1.debugLog)("isDev = ".concat(utils_1.isDev, ", process.env.NODE_ENV = ").concat(process.env.NODE_ENV, ", app.isPackaged = ").concat(electron_1.app.isPackaged));
+                    (0, utils_1.debugLog)("開発モードで起動しています");
                     mainWindow.webContents.openDevTools();
                     _a.label = 1;
                 case 1:
-                    _a.trys.push([1, 3, , 9]);
+                    _a.trys.push([1, 3, , 5]);
                     // 開発サーバーが起動しているか確認
-                    console.log("ローカル開発サーバー(http://localhost:3000)に接続を試みます...");
+                    (0, utils_1.debugLog)("ローカル開発サーバー(http://localhost:3000)に接続を試みます...");
                     return [4 /*yield*/, mainWindow.loadURL("http://localhost:3000")];
                 case 2:
                     _a.sent();
-                    console.log("開発サーバーに接続しました");
-                    return [3 /*break*/, 9];
+                    (0, utils_1.debugLog)("開発サーバーに接続しました");
+                    return [3 /*break*/, 5];
                 case 3:
                     err_1 = _a.sent();
                     console.error("開発サーバーへの接続に失敗しました:", err_1);
-                    console.log("デプロイ済みのURLに接続を試みます...");
-                    _a.label = 4;
+                    // 開発モードでは開発サーバーが必須
+                    return [4 /*yield*/, mainWindow.loadURL("data:text/html;charset=utf-8," +
+                            encodeURIComponent("<html>\n              <head><style>body{background:#121212;color:#fff;font-family:sans-serif;padding:40px;}</style></head>\n              <body>\n                <h1>\u958B\u767A\u30B5\u30FC\u30D0\u30FC\u306B\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093</h1>\n                <p>\u5225\u306E\u30BF\u30FC\u30DF\u30CA\u30EB\u3067 <code>npm run dev</code> \u3092\u5B9F\u884C\u3057\u3066\u304B\u3089\u3001\u30A2\u30D7\u30EA\u3092\u518D\u8D77\u52D5\u3057\u3066\u304F\u3060\u3055\u3044\u3002</p>\n              </body>\n            </html>"))];
                 case 4:
-                    _a.trys.push([4, 6, , 8]);
-                    // デプロイ済みのURLに接続
-                    return [4 /*yield*/, mainWindow.loadURL("https://badwave-desktop.vercel.app/")];
-                case 5:
-                    // デプロイ済みのURLに接続
+                    // 開発モードでは開発サーバーが必須
                     _a.sent();
-                    console.log("デプロイ済みのURLに接続しました");
-                    return [3 /*break*/, 8];
+                    return [3 /*break*/, 5];
+                case 5: return [3 /*break*/, 12];
                 case 6:
-                    deployErr_1 = _a.sent();
-                    console.error("デプロイ済みのURLへの接続にも失敗しました:", deployErr_1);
-                    // 両方とも失敗した場合はエラーメッセージを表示
-                    return [4 /*yield*/, mainWindow.loadURL("data:text/html;charset=utf-8," +
-                            encodeURIComponent("<html><body><h1>エラー</h1><p>開発サーバーとデプロイ済みのURLどちらにも接続できませんでした。</p><p>インターネット接続を確認してください。</p></body></html>"))];
-                case 7:
-                    // 両方とも失敗した場合はエラーメッセージを表示
-                    _a.sent();
-                    return [3 /*break*/, 8];
-                case 8: return [3 /*break*/, 9];
-                case 9: return [3 /*break*/, 15];
-                case 10:
-                    // 本番モードではDevToolsを開かない
+                    (0, utils_1.debugLog)("本番モードで起動しています - Standaloneサーバーを起動します");
                     mainWindow.webContents.closeDevTools();
-                    _a.label = 11;
-                case 11:
-                    _a.trys.push([11, 13, , 15]);
-                    // 外部URLに直接接続
-                    return [4 /*yield*/, mainWindow.loadURL("https://badwave-desktop.vercel.app/")];
-                case 12:
-                    // 外部URLに直接接続
+                    _a.label = 7;
+                case 7:
+                    _a.trys.push([7, 10, , 12]);
+                    return [4 /*yield*/, (0, server_1.startNextServer)()];
+                case 8:
+                    port = _a.sent();
+                    (0, utils_1.debugLog)("Standalone\u30B5\u30FC\u30D0\u30FC\u304C\u30DD\u30FC\u30C8 ".concat(port, " \u3067\u8D77\u52D5\u3057\u307E\u3057\u305F"));
+                    // ローカルサーバーに接続
+                    return [4 /*yield*/, mainWindow.loadURL("http://localhost:".concat(port))];
+                case 9:
+                    // ローカルサーバーに接続
                     _a.sent();
-                    return [3 /*break*/, 15];
-                case 13:
+                    (0, utils_1.debugLog)("Standaloneサーバーに接続しました");
+                    return [3 /*break*/, 12];
+                case 10:
                     err_2 = _a.sent();
-                    // 接続に失敗した場合はエラーメッセージを表示
+                    console.error("Standaloneサーバーの起動に失敗しました:", err_2);
                     return [4 /*yield*/, mainWindow.loadURL("data:text/html;charset=utf-8," +
-                            encodeURIComponent("<html><body><h1>エラー</h1><p>アプリケーションの起動に失敗しました。</p><p>インターネット接続を確認してください。</p></body></html>"))];
-                case 14:
-                    // 接続に失敗した場合はエラーメッセージを表示
+                            encodeURIComponent("<html>\n              <head><style>body{background:#121212;color:#fff;font-family:sans-serif;padding:40px;}</style></head>\n              <body>\n                <h1>\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306E\u8D77\u52D5\u306B\u5931\u6557\u3057\u307E\u3057\u305F</h1>\n                <p>\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u3092\u518D\u30A4\u30F3\u30B9\u30C8\u30FC\u30EB\u3057\u3066\u304F\u3060\u3055\u3044\u3002</p>\n                <p>\u30A8\u30E9\u30FC: ".concat(err_2, "</p>\n              </body>\n            </html>")))];
+                case 11:
                     _a.sent();
-                    return [3 /*break*/, 15];
-                case 15:
+                    return [3 /*break*/, 12];
+                case 12:
                     // ウィンドウが閉じられたときの処理
                     mainWindow.on("closed", function () {
                         mainWindow = null;
+                        // 本番モードの場合、サーバーも停止
+                        if (!utils_1.isDev) {
+                            (0, server_1.stopNextServer)();
+                        }
                     });
                     return [2 /*return*/, mainWindow];
             }

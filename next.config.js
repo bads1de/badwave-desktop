@@ -2,6 +2,9 @@
 const path = require("path");
 
 const nextConfig = {
+  // Standaloneモード: 本番用に必要なファイルのみを抽出
+  // Electronアプリ内でNode.jsサーバーとして起動するために必要
+  output: "standalone",
   images: {
     remotePatterns: [
       {

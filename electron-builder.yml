@@ -10,19 +10,42 @@ icon: public/logo.png
 
 # ファイル設定
 files:
-  # 静的ファイル（.next）は使用しないため含めない
   - electron/main.js
-  - electron/preload.js
-  - electron/utils.js
+  - electron/preload/**/*
+  - electron/lib/**/*
+  - electron/ipc/**/*
   - electron/db/**/*
+  - electron/utils/**/*
+  - electron/shortcuts/**/*
   - package.json
-  - node_modules
   - public/**/*
+  # Electronメインプロセスで必要なネイティブモジュール
+  - node_modules/better-sqlite3/**/*
+  - node_modules/bindings/**/*
+  - node_modules/file-uri-to-path/**/*
+  - node_modules/electron-store/**/*
+  - node_modules/conf/**/*
+  - node_modules/dotenv/**/*
+  - node_modules/drizzle-orm/**/*
 
-# リソース設定
+# リソース設定 - Standaloneビルドを含める
 extraResources:
   - from: drizzle
     to: drizzle
+  # Next.js Standaloneビルド出力
+  - from: .next/standalone
+    to: standalone
+    filter:
+      - "**/*"
+  # 静的ファイル（StandaloneにはNext.jsの静的ファイルが含まれない）
+  - from: .next/static
+    to: standalone/.next/static
+    filter:
+      - "**/*"
+  - from: public
+    to: standalone/public
+    filter:
+      - "**/*"
 
 # 公開設定
 publish:
