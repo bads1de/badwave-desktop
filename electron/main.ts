@@ -1,7 +1,6 @@
 import { app, BrowserWindow, globalShortcut, session } from "electron";
 import * as path from "path";
 import { loadEnvVariables, debugLog } from "./utils";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { getDb } from "./db/client";
 
 // モジュールのインポート
@@ -22,6 +21,8 @@ import { setupLibraryHandlers } from "./ipc/library";
 import { setupSimpleDownloadHandlers } from "./ipc/simple_download";
 import { setupCacheHandlers } from "./ipc/cache";
 import { setupAuthHandlers } from "./ipc/auth";
+import { setupDevShortcuts } from "./shortcuts";
+import { runMigrations } from "./db/migrate";
 
 // 環境変数を読み込む
 loadEnvVariables();
@@ -56,79 +57,9 @@ function setupIPC() {
   setupAuthHandlers();
 }
 
-// 開発用ショートカットキーのセットアップ
-function setupDevShortcuts() {
-  // Ctrl+Shift+O: オフラインモードのトグル
-  globalShortcut.register("CommandOrControl+Shift+O", () => {
-    // settings.ts の状態を更新
-    const newState = !getIsSimulatingOffline();
-    setIsSimulatingOffline(newState);
-
-    const mainWindow = getMainWindow();
-    if (mainWindow) {
-      // 1. ネットワークエミュレーションの設定
-      mainWindow.webContents.session.enableNetworkEmulation({
-        offline: newState,
-      });
-
-      // 2. WebRequestによる強制ブロック (localhost以外)
-      const filter = { urls: ["*://*/*"] };
-      if (newState) {
-        session.defaultSession.webRequest.onBeforeRequest(
-          filter,
-          (details, callback) => {
-            if (
-              details.url.includes("localhost") ||
-              details.url.includes("127.0.0.1")
-            ) {
-              callback({ cancel: false });
-            } else {
-              callback({ cancel: true });
-            }
-          }
-        );
-      } else {
-        session.defaultSession.webRequest.onBeforeRequest(filter, null);
-      }
-
-      // レンダラーに通知を送信
-      mainWindow.webContents.send("offline-simulation-changed", newState);
-    }
-
-    debugLog(
-      `[Shortcut] Offline simulation: ${newState ? "ON" : "OFF"} (Ctrl+Shift+O)`
-    );
-  });
-
-  // Ctrl+Shift+I: DevToolsを開く
-  globalShortcut.register("CommandOrControl+Shift+I", () => {
-    const mainWindow = getMainWindow();
-    if (mainWindow) {
-      mainWindow.webContents.openDevTools();
-    }
-  });
-
-  debugLog("Ctrl+Shift+I = Open DevTools, Ctrl+Shift+O = Toggle Offline Mode");
-}
-
-// アプリケーション起動時の処理
-async function init() {
-  try {
-    debugLog("Running migrations from: " + path.join(__dirname, "../drizzle"));
-    const db = getDb();
-
-    migrate(db, {
-      migrationsFolder: path.join(__dirname, "../drizzle"),
-    });
-    debugLog("Migrations completed successfully.");
-  } catch (error) {
-    console.error("Error during migration:", error);
-  }
-}
-
 // アプリケーションの準備完了時の処理
 app.on("ready", async () => {
-  await init();
+  await runMigrations();
   registerProtocolHandlers();
   setupIPC();
 

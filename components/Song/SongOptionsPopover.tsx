@@ -16,6 +16,7 @@ import { Download } from "lucide-react";
 import { downloadFile } from "@/libs/helpers";
 import { useUser } from "@/hooks/auth/useUser";
 import useDownloadSong from "@/hooks/utils/useDownloadSong";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { IoCloudDownloadOutline, IoTrashOutline } from "react-icons/io5";
 import { isLocalSong } from "@/libs/songUtils";
 import DisabledOverlay from "../common/DisabledOverlay";
@@ -29,6 +30,7 @@ interface SongOptionsPopoverProps {
 const SongOptionsPopover: React.FC<SongOptionsPopoverProps> = memo(
   ({ song, playlistId, playlistUserId }) => {
     const { user } = useUser();
+    const { isOnline } = useNetworkStatus();
     const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
     const { fileUrl: audioUrl } = useDownload(song.song_path);
     const [isLoading, setIsLoading] = useState(false);
@@ -62,6 +64,11 @@ const SongOptionsPopover: React.FC<SongOptionsPopoverProps> = memo(
 
     const isPlaylistCreator =
       playlistId && playlistUserId && user?.id === playlistUserId;
+
+    // オフライン時はメニューを表示しない
+    if (!isOnline) {
+      return null;
+    }
 
     // ダウンロード以外のオプションが表示されるかどうかを確認
     const hasOtherOptions = user || isPlaylistCreator;

@@ -53,6 +53,7 @@ export const CACHED_QUERIES = {
 export const ELECTRON_STORE_KEYS = {
   VOLUME: "player_volume",
   RIGHT_SIDEBAR_WIDTH: "right_sidebar_width",
+  RIGHT_SIDEBAR_CLOSED: "right_sidebar_closed",
   MUSIC_LIBRARY: "music_library",
   MUSIC_LIBRARY_LAST_SCAN: "music_library_last_scan",
 } as const;

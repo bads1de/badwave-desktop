@@ -3,6 +3,7 @@
 import React from "react";
 import { HiDownload, HiTrash } from "react-icons/hi";
 import useBulkDownload from "@/hooks/downloads/useBulkDownload";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { Song } from "@/types";
 import { electronAPI } from "@/libs/electron-utils";
 import { toast } from "react-hot-toast";
@@ -39,9 +40,15 @@ const BulkDownloadButton: React.FC<BulkDownloadButtonProps> = ({
     deleteAll,
     cancel,
   } = useBulkDownload(songs);
+  const { isOnline } = useNetworkStatus();
 
   // Electron 環境でない場合は表示しない
   if (!electronAPI.isElectron()) {
+    return null;
+  }
+
+  // オフライン時は「ダウンロード」ボタンを隠す（削除ボタンのみ許可）
+  if (!isOnline && !isAllDownloaded) {
     return null;
   }
 
