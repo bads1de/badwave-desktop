@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { Song } from "@/types";
 import { electronAPI } from "@/libs/electron-utils";
 import SongItem from "@/components/Song/SongItem";
@@ -10,20 +8,9 @@ import Header from "@/components/Header/Header";
 import usePlayer from "@/hooks/player/usePlayer";
 
 const OfflinePage = () => {
-  const router = useRouter();
   const player = usePlayer();
-  const { isOnline } = useNetworkStatus();
   const [offlineSongs, setOfflineSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // オンラインに自動で戻る処理はスマートオフライン実装のため無効化
-  /*
-  useEffect(() => {
-    if (isOnline) {
-      router.push("/");
-    }
-  }, [isOnline, router]);
-  */
 
   // オフライン曲の取得
   useEffect(() => {

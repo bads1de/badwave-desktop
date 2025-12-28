@@ -4,6 +4,7 @@ import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { electronAPI } from "@/libs/electron-utils";
 import { useEffect } from "react";
 
@@ -16,6 +17,7 @@ const useGetPlaylists = () => {
   const supabase = createClient();
   const { user } = useUser();
   const { isOnline, isInitialized } = useNetworkStatus();
+  const { checkOffline } = useOfflineCheck();
 
   const queryKey = [CACHED_QUERIES.playlists, "user", user?.id, isOnline];
 
@@ -30,15 +32,8 @@ const useGetPlaylists = () => {
       if (!user?.id) return [];
 
       // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
-      let isCurrentlyOffline = !isOnline;
-      if (electronAPI.isElectron()) {
-        try {
-          const status = await (
-            window as any
-          ).electron.dev.getOfflineSimulationStatus();
-          isCurrentlyOffline = status.isOffline;
-        } catch {}
-      }
+      // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
+      const isCurrentlyOffline = await checkOffline();
 
       // オフラインの場合は SQLite キャッシュから取得
       if (isCurrentlyOffline) {
