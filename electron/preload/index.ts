@@ -30,6 +30,10 @@ const ALLOWED_INVOKE_CHANNELS = [
   "get-offline-songs",
   "delete-offline-song",
   "check-offline-status",
+  // 開発用: オフラインシミュレーション
+  "toggle-offline-simulation",
+  "get-offline-simulation-status",
+  "set-offline-simulation",
 ];
 
 const ALLOWED_ON_CHANNELS = ["media-control", "download-progress"];
@@ -73,22 +77,6 @@ contextBridge.exposeInMainWorld("electron", {
     },
   },
 
-  // ダウンロード機能 (Phase 2)
-  downloadSong: (url: string, filename: string) =>
-    ipcRenderer.invoke("download-song", url, filename),
-  onDownloadProgress: (callback: (progress: number) => void) => {
-    const subscription = (_: any, progress: number) => callback(progress);
-    ipcRenderer.on("download-progress", subscription);
-    return () => {
-      ipcRenderer.removeListener("download-progress", subscription);
-    };
-  },
-  checkFileExists: (filename: string) =>
-    ipcRenderer.invoke("check-file-exists", filename),
-  getLocalFilePath: (filename: string) =>
-    ipcRenderer.invoke("get-local-file-path", filename),
-  deleteSong: (filename: string) => ipcRenderer.invoke("delete-song", filename),
-
   // オフライン機能 (Phase 2)
   offline: {
     // オフライン（ダウンロード済み）の曲を全て取得
@@ -101,6 +89,19 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke("delete-offline-song", songId),
     // 曲をダウンロード（メタデータ付き）
     downloadSong: (song: any) => ipcRenderer.invoke("download-song", song),
+  },
+
+  // 開発用ユーティリティ
+  dev: {
+    // オフラインシミュレーションを切り替え
+    toggleOfflineSimulation: () =>
+      ipcRenderer.invoke("toggle-offline-simulation"),
+    // 現在のオフラインシミュレーション状態を取得
+    getOfflineSimulationStatus: () =>
+      ipcRenderer.invoke("get-offline-simulation-status"),
+    // オフラインシミュレーションを明示的に設定
+    setOfflineSimulation: (offline: boolean) =>
+      ipcRenderer.invoke("set-offline-simulation", offline),
   },
 
   // IPC通信

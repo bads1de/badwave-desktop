@@ -95,13 +95,6 @@ interface ElectronAPI {
     onUpdateDownloaded: (callback: (info: any) => void) => () => void;
   };
 
-  // ファイルダウンローダー (Phase 2追加)
-  downloadSong: (url: string, filename: string) => Promise<string>;
-  onDownloadProgress: (callback: (progress: number) => void) => () => void;
-  checkFileExists: (filename: string) => Promise<boolean>;
-  getLocalFilePath: (filename: string) => Promise<string>;
-  deleteSong: (filename: string) => Promise<boolean>;
-
   // オフライン機能 (Phase 2)
   offline: {
     // オフライン（ダウンロード済み）の曲を全て取得
@@ -130,6 +123,16 @@ interface ElectronAPI {
     ) => () => void;
     // メインプロセスにメッセージを送信（応答を待たない）
     send: (channel: string, ...args: any[]) => void;
+  };
+
+  // 開発用ユーティリティ
+  dev: {
+    // オフラインシミュレーションを切り替え
+    toggleOfflineSimulation: () => Promise<{ isOffline: boolean }>;
+    // 現在のオフラインシミュレーション状態を取得
+    getOfflineSimulationStatus: () => Promise<{ isOffline: boolean }>;
+    // オフラインシミュレーションを明示的に設定
+    setOfflineSimulation: (offline: boolean) => Promise<{ isOffline: boolean }>;
   };
 }
 

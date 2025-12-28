@@ -37,6 +37,10 @@ var ALLOWED_INVOKE_CHANNELS = [
     "get-offline-songs",
     "delete-offline-song",
     "check-offline-status",
+    // 開発用: オフラインシミュレーション
+    "toggle-offline-simulation",
+    "get-offline-simulation-status",
+    "set-offline-simulation",
 ];
 var ALLOWED_ON_CHANNELS = ["media-control", "download-progress"];
 var ALLOWED_SEND_CHANNELS = ["log", "player-state-change"];
@@ -73,24 +77,6 @@ electron_1.contextBridge.exposeInMainWorld("electron", {
             };
         },
     },
-    // ダウンロード機能 (Phase 2)
-    downloadSong: function (url, filename) {
-        return electron_1.ipcRenderer.invoke("download-song", url, filename);
-    },
-    onDownloadProgress: function (callback) {
-        var subscription = function (_, progress) { return callback(progress); };
-        electron_1.ipcRenderer.on("download-progress", subscription);
-        return function () {
-            electron_1.ipcRenderer.removeListener("download-progress", subscription);
-        };
-    },
-    checkFileExists: function (filename) {
-        return electron_1.ipcRenderer.invoke("check-file-exists", filename);
-    },
-    getLocalFilePath: function (filename) {
-        return electron_1.ipcRenderer.invoke("get-local-file-path", filename);
-    },
-    deleteSong: function (filename) { return electron_1.ipcRenderer.invoke("delete-song", filename); },
     // オフライン機能 (Phase 2)
     offline: {
         // オフライン（ダウンロード済み）の曲を全て取得
@@ -105,6 +91,21 @@ electron_1.contextBridge.exposeInMainWorld("electron", {
         },
         // 曲をダウンロード（メタデータ付き）
         downloadSong: function (song) { return electron_1.ipcRenderer.invoke("download-song", song); },
+    },
+    // 開発用ユーティリティ
+    dev: {
+        // オフラインシミュレーションを切り替え
+        toggleOfflineSimulation: function () {
+            return electron_1.ipcRenderer.invoke("toggle-offline-simulation");
+        },
+        // 現在のオフラインシミュレーション状態を取得
+        getOfflineSimulationStatus: function () {
+            return electron_1.ipcRenderer.invoke("get-offline-simulation-status");
+        },
+        // オフラインシミュレーションを明示的に設定
+        setOfflineSimulation: function (offline) {
+            return electron_1.ipcRenderer.invoke("set-offline-simulation", offline);
+        },
     },
     // IPC通信
     ipc: {

@@ -1,5 +1,9 @@
-import { ipcMain } from "electron";
+import { ipcMain, session } from "electron";
 import store from "../lib/store";
+import { debugLog } from "../utils";
+
+// オフラインシミュレーション状態を追跡
+let isSimulatingOffline = false;
 
 export function setupSettingsHandlers() {
   // アプリケーション設定の取得
@@ -12,5 +16,38 @@ export function setupSettingsHandlers() {
     // 設定値をストアに直接保存
     store.set(key, value);
     return true;
+  });
+
+  // オフラインモードのシミュレーションを切り替え（開発用）
+  ipcMain.handle("toggle-offline-simulation", async () => {
+    isSimulatingOffline = !isSimulatingOffline;
+
+    session.defaultSession.enableNetworkEmulation({
+      offline: isSimulatingOffline,
+    });
+
+    debugLog(
+      `[Debug] Offline simulation: ${isSimulatingOffline ? "ON" : "OFF"}`
+    );
+    return { isOffline: isSimulatingOffline };
+  });
+
+  // 現在のオフラインシミュレーション状態を取得
+  ipcMain.handle("get-offline-simulation-status", () => {
+    return { isOffline: isSimulatingOffline };
+  });
+
+  // オフラインシミュレーションを設定（明示的に ON/OFF）
+  ipcMain.handle("set-offline-simulation", async (_, offline: boolean) => {
+    isSimulatingOffline = offline;
+
+    session.defaultSession.enableNetworkEmulation({
+      offline: isSimulatingOffline,
+    });
+
+    debugLog(
+      `[Debug] Offline simulation set to: ${isSimulatingOffline ? "ON" : "OFF"}`
+    );
+    return { isOffline: isSimulatingOffline };
   });
 }

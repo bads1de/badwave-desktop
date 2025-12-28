@@ -44,15 +44,16 @@ var electron_1 = require("electron");
 var fs_1 = __importDefault(require("fs"));
 var path_1 = __importDefault(require("path"));
 var https_1 = __importDefault(require("https"));
+var http_1 = __importDefault(require("http"));
 var utils_1 = require("../utils");
 var client_1 = require("../db/client");
 var schema_1 = require("../db/schema");
 var drizzle_orm_1 = require("drizzle-orm");
 var setupDownloadHandlers = function () {
     var db = (0, client_1.getDb)();
-    // Handle song download request
+    // 楽曲のダウンロードリクエストを処理
     electron_1.ipcMain.handle("download-song", function (event, song) { return __awaiter(void 0, void 0, void 0, function () {
-        var songId, userDataPath, offlineDir, songsDir, imagesDir, localSongFilename, localImageFilename, localSongPath, localImagePath, downloadFile, downloadConfig, songRecord, error_1;
+        var songId, userDataPath, offlineDir, songsDir, imagesDir, getExtension, songExt, imageExt, localSongFilename, localImageFilename, localSongPath, localImagePath_1, downloadFile_1, downloadTasks, finalLocalImagePath_1, songRecord, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -65,47 +66,79 @@ var setupDownloadHandlers = function () {
                     offlineDir = path_1.default.join(userDataPath, "offline_storage");
                     songsDir = path_1.default.join(offlineDir, "songs");
                     imagesDir = path_1.default.join(offlineDir, "images");
-                    // Ensure directories exist
+                    // ディレクトリが存在することを確認
                     return [4 /*yield*/, fs_1.default.promises.mkdir(songsDir, { recursive: true })];
                 case 2:
-                    // Ensure directories exist
+                    // ディレクトリが存在することを確認
                     _a.sent();
                     return [4 /*yield*/, fs_1.default.promises.mkdir(imagesDir, { recursive: true })];
                 case 3:
                     _a.sent();
-                    localSongFilename = "".concat(songId, ".mp3");
-                    localImageFilename = "".concat(songId, ".jpg");
+                    getExtension = function (url, fallback) {
+                        try {
+                            var urlObj = new URL(url);
+                            var ext = path_1.default.extname(urlObj.pathname);
+                            return ext || fallback;
+                        }
+                        catch (e) {
+                            var match = url.match(/\.([a-z0-9]+)(?:[\?#]|$)/i);
+                            return match ? ".".concat(match[1]) : fallback;
+                        }
+                    };
+                    songExt = getExtension(song.song_path, ".mp3");
+                    imageExt = song.image_path
+                        ? getExtension(song.image_path, ".jpg")
+                        : ".jpg";
+                    localSongFilename = "".concat(songId).concat(songExt);
+                    localImageFilename = "".concat(songId).concat(imageExt);
                     localSongPath = path_1.default.join(songsDir, localSongFilename);
-                    localImagePath = path_1.default.join(imagesDir, localImageFilename);
-                    downloadFile = function (url, dest) {
+                    localImagePath_1 = path_1.default.join(imagesDir, localImageFilename);
+                    downloadFile_1 = function (url, dest) {
                         return new Promise(function (resolve, reject) {
+                            var client = url.startsWith("https") ? https_1.default : http_1.default;
                             var file = fs_1.default.createWriteStream(dest);
-                            https_1.default
-                                .get(url, function (response) {
+                            var request = client.get(url, function (response) {
+                                // リダイレクトの処理 (301, 302)
+                                if (response.statusCode === 301 || response.statusCode === 302) {
+                                    var redirectUrl = response.headers.location;
+                                    if (redirectUrl) {
+                                        file.close();
+                                        downloadFile_1(redirectUrl, dest).then(resolve).catch(reject);
+                                        return;
+                                    }
+                                }
                                 if (response.statusCode !== 200) {
                                     fs_1.default.unlink(dest, function () { });
-                                    reject(new Error("Download failed with status code: ".concat(response.statusCode)));
+                                    reject(new Error("Download failed with status code: ".concat(response.statusCode, " for ").concat(url)));
                                     return;
                                 }
                                 response.pipe(file);
                                 file.on("finish", function () {
                                     file.close(function () { return resolve(); });
                                 });
-                            })
-                                .on("error", function (err) {
+                            });
+                            request.on("error", function (err) {
                                 fs_1.default.unlink(dest, function () { });
                                 reject(err);
                             });
+                            // タイムアウト設定 (30秒)
+                            request.setTimeout(30000, function () {
+                                request.destroy();
+                                reject(new Error("Download timeout for ".concat(url)));
+                            });
                         });
                     };
-                    downloadConfig = [];
+                    downloadTasks = [];
                     if (song.song_path) {
-                        downloadConfig.push(downloadFile(song.song_path, localSongPath));
+                        downloadTasks.push(downloadFile_1(song.song_path, localSongPath));
                     }
+                    finalLocalImagePath_1 = null;
                     if (song.image_path) {
-                        downloadConfig.push(downloadFile(song.image_path, localImagePath));
+                        downloadTasks.push(downloadFile_1(song.image_path, localImagePath_1).then(function () {
+                            finalLocalImagePath_1 = "file://".concat(localImagePath_1);
+                        }));
                     }
-                    return [4 /*yield*/, Promise.all(downloadConfig)];
+                    return [4 /*yield*/, Promise.all(downloadTasks)];
                 case 4:
                     _a.sent();
                     (0, utils_1.debugLog)("[IPC] Files downloaded for: ".concat(songId));
@@ -114,21 +147,21 @@ var setupDownloadHandlers = function () {
                         userId: song.userId,
                         title: song.title,
                         author: song.author,
-                        // Local paths (protocol format)
+                        // ローカルパス (独自のプロトコル形式)
                         songPath: "file://".concat(localSongPath),
-                        imagePath: "file://".concat(localImagePath),
-                        // Original URLs (for reference)
+                        imagePath: finalLocalImagePath_1,
+                        // 元のリモートURL (再ダウンロードなどの参照用)
                         originalSongPath: song.song_path,
                         originalImagePath: song.image_path,
                         duration: song.duration,
                         genre: song.genre,
                         lyrics: song.lyrics,
                         createdAt: song.created_at,
-                        downloadedAt: new Date(), // Set current time
+                        downloadedAt: new Date(),
                     };
                     return [4 /*yield*/, db.insert(schema_1.songs).values(songRecord).onConflictDoUpdate({
                             target: schema_1.songs.id,
-                            set: songRecord, // Update everything if exists
+                            set: songRecord,
                         })];
                 case 5:
                     _a.sent();
@@ -142,7 +175,7 @@ var setupDownloadHandlers = function () {
             }
         });
     }); });
-    // Check offline status
+    // オフラインステータスの確認
     electron_1.ipcMain.handle("check-offline-status", function (_, songId) { return __awaiter(void 0, void 0, void 0, function () {
         var result, isDownloaded, error_2;
         return __generator(this, function (_a) {
@@ -158,16 +191,19 @@ var setupDownloadHandlers = function () {
                 case 1:
                     result = _a.sent();
                     isDownloaded = !!(result && result.songPath);
-                    return [2 /*return*/, isDownloaded];
+                    return [2 /*return*/, {
+                            isDownloaded: isDownloaded,
+                            localPath: (result === null || result === void 0 ? void 0 : result.songPath) || undefined,
+                        }];
                 case 2:
                     error_2 = _a.sent();
                     console.error("Failed to check offline status:", error_2);
-                    return [2 /*return*/, false];
+                    return [2 /*return*/, { isDownloaded: false }];
                 case 3: return [2 /*return*/];
             }
         });
     }); });
-    // Get all offline (downloaded) songs
+    // すべてのオフライン楽曲（ダウンロード済み）を取得
     electron_1.ipcMain.handle("get-offline-songs", function () { return __awaiter(void 0, void 0, void 0, function () {
         var offlineSongs, error_3;
         return __generator(this, function (_a) {
@@ -183,13 +219,13 @@ var setupDownloadHandlers = function () {
                 case 2:
                     offlineSongs = _a.sent();
                     (0, utils_1.debugLog)("[IPC] Found ".concat(offlineSongs.length, " offline songs"));
-                    // Transform to match the Song type expected by the renderer
+                    // レンダラープロセスが期待する Song 型に変換して返す
                     return [2 /*return*/, offlineSongs.map(function (song) { return ({
                             id: song.id,
                             user_id: song.userId,
                             title: song.title,
                             author: song.author,
-                            song_path: song.songPath, // Local file path
+                            song_path: song.songPath,
                             image_path: song.imagePath,
                             original_song_path: song.originalSongPath,
                             original_image_path: song.originalImagePath,
@@ -207,16 +243,16 @@ var setupDownloadHandlers = function () {
             }
         });
     }); });
-    // Delete offline song (remove files and DB record)
+    // オフライン楽曲の削除 (ファイルとDBレコードの両方を削除)
     electron_1.ipcMain.handle("delete-offline-song", function (_, songId) { return __awaiter(void 0, void 0, void 0, function () {
-        var songRecord, filesToDelete, localSongPath, localImagePath, _i, filesToDelete_1, filePath, err_1, error_4;
+        var songRecord, filesToDelete, toLocalPath, _i, filesToDelete_1, filePath, err_1, error_4;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     (0, utils_1.debugLog)("[IPC] delete-offline-song request for: ".concat(songId));
                     _a.label = 1;
                 case 1:
-                    _a.trys.push([1, 10, , 11]);
+                    _a.trys.push([1, 11, , 12]);
                     return [4 /*yield*/, db.query.songs.findFirst({
                             where: (0, drizzle_orm_1.eq)(schema_1.songs.id, songId),
                         })];
@@ -227,50 +263,69 @@ var setupDownloadHandlers = function () {
                         return [2 /*return*/, { success: false, error: "Song not found" }];
                     }
                     filesToDelete = [];
+                    toLocalPath = function (fileUrl) {
+                        var filePath = fileUrl;
+                        if (filePath.startsWith("file:///")) {
+                            filePath = filePath.slice(8);
+                        }
+                        else if (filePath.startsWith("file://")) {
+                            filePath = filePath.slice(7);
+                        }
+                        // Windowsの場合、パスの先頭に / が残ることがある (例: /C:/Users/...)
+                        if (process.platform === "win32" && filePath.startsWith("/")) {
+                            filePath = filePath.slice(1);
+                        }
+                        try {
+                            // パスに含まれるエンコードされた文字（%20など）を復元
+                            return decodeURIComponent(filePath);
+                        }
+                        catch (e) {
+                            return filePath;
+                        }
+                    };
                     if (songRecord.songPath) {
-                        localSongPath = songRecord.songPath.replace("file://", "");
-                        filesToDelete.push(localSongPath);
+                        filesToDelete.push(toLocalPath(songRecord.songPath));
                     }
                     if (songRecord.imagePath) {
-                        localImagePath = songRecord.imagePath.replace("file://", "");
-                        filesToDelete.push(localImagePath);
+                        filesToDelete.push(toLocalPath(songRecord.imagePath));
                     }
                     _i = 0, filesToDelete_1 = filesToDelete;
                     _a.label = 3;
                 case 3:
-                    if (!(_i < filesToDelete_1.length)) return [3 /*break*/, 8];
+                    if (!(_i < filesToDelete_1.length)) return [3 /*break*/, 9];
                     filePath = filesToDelete_1[_i];
                     _a.label = 4;
                 case 4:
-                    _a.trys.push([4, 6, , 7]);
+                    _a.trys.push([4, 7, , 8]);
+                    if (!fs_1.default.existsSync(filePath)) return [3 /*break*/, 6];
                     return [4 /*yield*/, fs_1.default.promises.unlink(filePath)];
                 case 5:
                     _a.sent();
                     (0, utils_1.debugLog)("[IPC] Deleted file: ".concat(filePath));
-                    return [3 /*break*/, 7];
-                case 6:
+                    _a.label = 6;
+                case 6: return [3 /*break*/, 8];
+                case 7:
                     err_1 = _a.sent();
                     if (err_1.code !== "ENOENT") {
-                        // Log but don't fail if file doesn't exist
                         (0, utils_1.debugLog)("[IPC] Warning: Could not delete file: ".concat(filePath), err_1);
                     }
-                    return [3 /*break*/, 7];
-                case 7:
+                    return [3 /*break*/, 8];
+                case 8:
                     _i++;
                     return [3 /*break*/, 3];
-                case 8: 
-                // 3. Delete from database
+                case 9: 
+                // 3. データベースからレコードを削除
                 return [4 /*yield*/, db.delete(schema_1.songs).where((0, drizzle_orm_1.eq)(schema_1.songs.id, songId))];
-                case 9:
-                    // 3. Delete from database
+                case 10:
+                    // 3. データベースからレコードを削除
                     _a.sent();
                     (0, utils_1.debugLog)("[IPC] Deleted song from DB: ".concat(songId));
                     return [2 /*return*/, { success: true }];
-                case 10:
+                case 11:
                     error_4 = _a.sent();
                     console.error("[IPC] Failed to delete offline song ".concat(songId, ":"), error_4);
                     return [2 /*return*/, { success: false, error: error_4.message }];
-                case 11: return [2 /*return*/];
+                case 12: return [2 /*return*/];
             }
         });
     }); });
