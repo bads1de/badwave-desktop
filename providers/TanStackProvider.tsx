@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { CACHE_CONFIG } from "@/constants";
@@ -77,7 +78,10 @@ const TanStackProvider = ({ children }: Props) => {
 
   if (!persister) {
     return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
     );
   }
 
@@ -87,6 +91,7 @@ const TanStackProvider = ({ children }: Props) => {
       persistOptions={{ persister }}
     >
       {children}
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </PersistQueryClientProvider>
   );
 };

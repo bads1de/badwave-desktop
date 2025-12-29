@@ -74,8 +74,6 @@ app.on("ready", async () => {
     createMainWindow();
   } else {
     debugLog("本番モードで起動しています");
-    const staticPath = path.join(__dirname, "../out/index.html");
-    debugLog(`静的ファイルを読み込みます: ${staticPath}`);
     createMainWindow();
   }
 
