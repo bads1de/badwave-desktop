@@ -140,18 +140,18 @@ export function setupCacheHandlers() {
     ) => {
       try {
         await internalSyncSongs(fullSongsData);
-        await db.transaction(async (tx) => {
-          for (const songData of fullSongsData) {
-            await tx
-              .insert(likedSongs)
-              .values({
-                userId: String(userId),
-                songId: normalizeId(songData.id),
-                likedAt: songData.created_at || new Date().toISOString(),
-              })
-              .onConflictDoNothing();
-          }
-        });
+        // better-sqlite3 は同期的なドライバーなので、トランザクション内で async/await は使用不可
+        // 代わりに、個別のinsert文をシンプルなループで実行
+        for (const songData of fullSongsData) {
+          await db
+            .insert(likedSongs)
+            .values({
+              userId: String(userId),
+              songId: normalizeId(songData.id),
+              likedAt: songData.created_at || new Date().toISOString(),
+            })
+            .onConflictDoNothing();
+        }
         return { success: true };
       } catch (error: any) {
         console.error("[Sync] Liked Songs Error:", error);

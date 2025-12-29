@@ -3,6 +3,7 @@ import { Song } from "@/types";
 import usePlayer from "./usePlayer";
 import { createClient } from "@/libs/supabase/client";
 import usePlayHistory from "./usePlayHistory";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 const DEFAULT_COOLDOWN = 1000;
 
@@ -27,6 +28,7 @@ const createDebounce = (wait: number) => {
 const useOnPlay = (songs: Song[]) => {
   const player = usePlayer();
   const supabase = createClient();
+  const { isOnline } = useNetworkStatus();
   const [lastPlayTime, setLastPlayTime] = useState<number>(0);
   const cooldownRef = useRef<boolean>(false);
   const pendingPlayRef = useRef<string | null>(null);
@@ -40,42 +42,45 @@ const useOnPlay = (songs: Song[]) => {
         player.setId(id);
         player.setIds(songs.map((song) => song.id));
 
-        // songデータを取得
-        const { data: songData, error: selectError } = await supabase
-          .from("songs")
-          .select("count")
-          .eq("id", id)
-          .single();
+        // オフライン時はプレイカウント更新をスキップ
+        if (isOnline) {
+          // songデータを取得
+          const { data: songData, error: selectError } = await supabase
+            .from("songs")
+            .select("count")
+            .eq("id", id)
+            .single();
 
-        if (selectError || !songData) {
-          throw selectError;
+          if (selectError || !songData) {
+            throw selectError;
+          }
+
+          // カウントをインクリメント
+          const { data: incrementedCount, error: incrementError } =
+            await supabase.rpc("increment", { x: songData.count });
+
+          if (incrementError) {
+            throw incrementError;
+          }
+
+          // インクリメントされたカウントでsongを更新
+          const { error: updateError } = await supabase
+            .from("songs")
+            .update({ count: incrementedCount })
+            .eq("id", id);
+
+          if (updateError) {
+            throw updateError;
+          }
+
+          // 再生履歴を記録（Supabaseに保存するためオンライン時のみ）
+          await playHistory.recordPlay(id);
         }
-
-        // カウントをインクリメント
-        const { data: incrementedCount, error: incrementError } =
-          await supabase.rpc("increment", { x: songData.count });
-
-        if (incrementError) {
-          throw incrementError;
-        }
-
-        // インクリメントされたカウントでsongを更新
-        const { error: updateError } = await supabase
-          .from("songs")
-          .update({ count: incrementedCount })
-          .eq("id", id);
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        // 再生履歴を記録
-        await playHistory.recordPlay(id);
       } catch (error) {
         console.error("エラーが発生しました:", error);
       }
     },
-    [player, songs, supabase, playHistory]
+    [player, songs, supabase, playHistory, isOnline]
   );
 
   const onPlay = useCallback(

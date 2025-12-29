@@ -141,4 +141,19 @@ describe("useDownloadSong", () => {
     expect(mockDownloadSong).not.toHaveBeenCalled();
     expect(result.current.error).toContain("Electron API");
   });
+
+  it("songオブジェクトにis_downloadedが含まれる場合、初期値として使用される", async () => {
+    const songWithStatus: Song = {
+      ...mockSong,
+      is_downloaded: true,
+    };
+
+    // checkStatusは呼ばれるが、初期値はtrueであるべき
+    mockCheckStatus.mockResolvedValue({ isDownloaded: true });
+
+    const { result } = renderHook(() => useDownloadSong(songWithStatus));
+
+    // マウント直後（checkStatus完了前）でもtrueであること
+    expect(result.current.isDownloaded).toBe(true);
+  });
 });

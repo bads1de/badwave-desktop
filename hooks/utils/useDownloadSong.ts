@@ -23,7 +23,10 @@ interface UseDownloadSongResult {
  */
 const useDownloadSong = (song: Song | null): UseDownloadSongResult => {
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isDownloaded, setIsDownloaded] = useState(false);
+  /* is_downloaded プロパティが存在する場合はそれを初期値として使用 */
+  const [isDownloaded, setIsDownloaded] = useState(
+    song?.is_downloaded ?? false
+  );
   const [error, setError] = useState<string | null>(null);
 
   /**

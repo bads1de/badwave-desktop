@@ -225,52 +225,40 @@ function setupCacheHandlers() {
         });
     }); });
     electron_1.ipcMain.handle("sync-liked-songs", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
-        var error_4;
-        var _this = this;
+        var _i, fullSongsData_2, songData, error_4;
         var userId = _b.userId, fullSongsData = _b.songs;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
-                    _c.trys.push([0, 3, , 4]);
+                    _c.trys.push([0, 6, , 7]);
                     return [4 /*yield*/, internalSyncSongs(fullSongsData)];
                 case 1:
                     _c.sent();
-                    return [4 /*yield*/, db.transaction(function (tx) { return __awaiter(_this, void 0, void 0, function () {
-                            var _i, fullSongsData_2, songData;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        _i = 0, fullSongsData_2 = fullSongsData;
-                                        _a.label = 1;
-                                    case 1:
-                                        if (!(_i < fullSongsData_2.length)) return [3 /*break*/, 4];
-                                        songData = fullSongsData_2[_i];
-                                        return [4 /*yield*/, tx
-                                                .insert(schema_1.likedSongs)
-                                                .values({
-                                                userId: String(userId),
-                                                songId: normalizeId(songData.id),
-                                                likedAt: songData.created_at || new Date().toISOString(),
-                                            })
-                                                .onConflictDoNothing()];
-                                    case 2:
-                                        _a.sent();
-                                        _a.label = 3;
-                                    case 3:
-                                        _i++;
-                                        return [3 /*break*/, 1];
-                                    case 4: return [2 /*return*/];
-                                }
-                            });
-                        }); })];
+                    _i = 0, fullSongsData_2 = fullSongsData;
+                    _c.label = 2;
                 case 2:
-                    _c.sent();
-                    return [2 /*return*/, { success: true }];
+                    if (!(_i < fullSongsData_2.length)) return [3 /*break*/, 5];
+                    songData = fullSongsData_2[_i];
+                    return [4 /*yield*/, db
+                            .insert(schema_1.likedSongs)
+                            .values({
+                            userId: String(userId),
+                            songId: normalizeId(songData.id),
+                            likedAt: songData.created_at || new Date().toISOString(),
+                        })
+                            .onConflictDoNothing()];
                 case 3:
+                    _c.sent();
+                    _c.label = 4;
+                case 4:
+                    _i++;
+                    return [3 /*break*/, 2];
+                case 5: return [2 /*return*/, { success: true }];
+                case 6:
                     error_4 = _c.sent();
                     console.error("[Sync] Liked Songs Error:", error_4);
                     return [2 /*return*/, { success: false, error: error_4.message }];
-                case 4: return [2 /*return*/];
+                case 7: return [2 /*return*/];
             }
         });
     }); });

@@ -3,11 +3,11 @@ import { createBrowserClient } from "@supabase/ssr";
 /**
  * Supabaseクライアントを作成する関数
  *
- * タブフォーカス時の自動セッション更新を無効化するための実装を行っています。
- * これにより、タブを非アクティブから再度アクティブにした際に、
- * ページ全体が再フェッチされることを防ぎ、プレイヤーの再生位置がリセットされる問題を解消します。
+ * 注: タブフォーカス時の再フェッチを防ぐ設定は、ここではなく
+ * data fetching ライブラリ（TanStack Queryなど）側で行うのが適切です。
+ * ここで stopAutoRefresh() を行うと、セッションの有効期限が切れた際に
+ * 自動更新されず、ログアウトしてしまう可能性があります。
  *
- * @see https://github.com/supabase/ssr/blob/main/src/createBrowserClient.ts
  * @see https://supabase.com/docs/guides/auth/server-side/creating-a-client
  */
 export function createClient() {
@@ -17,8 +17,5 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // 自動セッション更新を停止
-  // https://supabase.com/docs/reference/javascript/auth-stopautorefresh
-  client.auth.stopAutoRefresh();
   return client;
 }

@@ -79,7 +79,7 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
       }
     },
     initialData: initialData,
-    enabled: !!user?.id,
+    enabled: !!user?.id && isOnline, // オフライン時はクエリを無効化
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: isOnline ? 1 : false,

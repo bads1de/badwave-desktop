@@ -31,21 +31,40 @@ const useGetSongById = (id?: string | number) => {
     refetch,
   } = useQuery({
     queryKey,
-    queryFn: async () => {
+    queryFn: async (): Promise<Song | null> => {
       if (!normalizedId) {
-        return undefined;
+        return null;
       }
 
       // ローカル曲のIDの場合は処理をスキップ
       if (normalizedId.startsWith("local_")) {
-        return undefined;
+        return null;
       }
 
-      // オフラインの場合はキャッシュから取得を試みる
+      // オフラインの場合
       if (!isOnline) {
+        // まずキャッシュから取得を試みる
         const cachedData = await loadFromCache<Song>(queryKey.join(":"));
         if (cachedData) return cachedData;
-        return undefined;
+
+        // ElectronAPIからダウンロード済み曲を取得
+        if (electronAPI.isElectron()) {
+          try {
+            const offlineSongs = await electronAPI.offline.getSongs();
+            const offlineSong = offlineSongs.find(
+              (s) => String(s.id) === normalizedId
+            );
+            if (offlineSong) {
+              // OfflineSong を Song 型にキャスト
+              return offlineSong as unknown as Song;
+            }
+          } catch (e) {
+            console.error("Failed to get offline song:", e);
+          }
+        }
+
+        // オフラインでデータが見つからない場合はnullを返す
+        return null;
       }
 
       const { data, error } = await supabaseClient
@@ -58,7 +77,7 @@ const useGetSongById = (id?: string | number) => {
         throw new Error(`Failed to load song: ${error.message}`);
       }
 
-      const result = data as Song;
+      const result = data as Song | null;
 
       // バックグラウンドでキャッシュに保存
       if (result) {
@@ -90,14 +109,14 @@ const useGetSongById = (id?: string | number) => {
   }, [isOnline, normalizedId, refetch]);
 
   // ローカルファイルの確認とパスの差し替え
-  const [finalSong, setFinalSong] = useState<Song | undefined>(song);
+  const [finalSong, setFinalSong] = useState<Song | null | undefined>(song);
 
   useEffect(() => {
     let isMounted = true;
 
     const checkLocalFile = async () => {
       if (!song || !electronAPI.isElectron()) {
-        if (isMounted) setFinalSong(song);
+        if (isMounted) setFinalSong(song ?? undefined);
         return;
       }
 

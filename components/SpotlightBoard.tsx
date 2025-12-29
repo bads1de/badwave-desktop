@@ -3,6 +3,8 @@ import { Spotlight } from "@/types";
 import useSpotlightModal from "@/hooks/modal/useSpotlightModal";
 import ScrollableContainer from "./common/ScrollableContainer";
 import useVolumeStore from "@/hooks/stores/useVolumeStore";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { WifiOff } from "lucide-react";
 
 interface SpotlightBoardProps {
   spotlightData: Spotlight[];
@@ -18,6 +20,7 @@ const SpotlightBoardComponent: React.FC<SpotlightBoardProps> = ({
   const videoRefs = useRef<HTMLVideoElement[]>([]);
   const spotlightModal = useSpotlightModal();
   const { volume } = useVolumeStore();
+  const { isOnline } = useNetworkStatus();
 
   const handleVideoHover = (index: number) => {
     setHoveredIndex(index);
@@ -59,24 +62,32 @@ const SpotlightBoardComponent: React.FC<SpotlightBoardProps> = ({
           {spotlightData.map((item, index) => (
             <div
               key={item.id}
-              className="flex-none w-40 relative aspect-[9/16] rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
-              onMouseEnter={() => handleVideoHover(index)}
+              className={`flex-none w-40 relative aspect-[9/16] rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group ${
+                !isOnline ? "opacity-50" : ""
+              }`}
+              onMouseEnter={() => isOnline && handleVideoHover(index)}
               onMouseLeave={handleVideoLeave}
-              onClick={() => spotlightModal.onOpen(item)}
+              onClick={() => isOnline && spotlightModal.onOpen(item)}
             >
-              <video
-                ref={(el) => {
-                  if (el) {
-                    videoRefs.current[index] = el;
-                    el.volume = volume;
-                  }
-                }}
-                src={item.video_path}
-                muted={isMuted}
-                playsInline
-                loop
-                className="w-full h-full object-cover"
-              />
+              {isOnline ? (
+                <video
+                  ref={(el) => {
+                    if (el) {
+                      videoRefs.current[index] = el;
+                      el.volume = volume;
+                    }
+                  }}
+                  src={item.video_path}
+                  muted={isMuted}
+                  playsInline
+                  loop
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+                  <WifiOff className="w-8 h-8 text-neutral-500" />
+                </div>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
