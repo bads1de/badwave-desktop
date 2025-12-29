@@ -2,7 +2,7 @@
 
 import React from "react";
 import { RiDeleteBin5Line } from "react-icons/ri";
-import useMutatePlaylistSong from "@/hooks/data/useMutatePlaylistSong";
+import useMutatePlaylistSong from "@/hooks/mutations/useMutatePlaylistSong";
 
 interface DeletePlaylistSongsBtnProps {
   songId: string;

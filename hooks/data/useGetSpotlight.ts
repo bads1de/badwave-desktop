@@ -3,12 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
-import { useEffect, useRef } from "react";
 
 /**
  * スポットライトデータを取得するカスタムフック (クライアントサイド)
  *
- * オフライン時は通信を行わず空を返します（スポットライトは現状オフライン非対応）
+ * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  */
 const useGetSpotlight = (initialData?: Spotlight[]) => {
   const { isOnline } = useNetworkStatus();
@@ -20,15 +19,9 @@ const useGetSpotlight = (initialData?: Spotlight[]) => {
     data: spotlightData = [],
     isLoading,
     error,
-    refetch,
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      // オフラインの場合は通信しない
-      if (!isOnline) {
-        return [];
-      }
-
       // オンラインの場合はSupabaseから取得
       const { data, error } = await supabase
         .from("spotlights")
@@ -45,19 +38,9 @@ const useGetSpotlight = (initialData?: Spotlight[]) => {
     initialData: initialData,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: true,
-    retry: isOnline ? 1 : false,
+    enabled: isOnline,
+    retry: false,
   });
-
-  const prevIsOnline = useRef(isOnline);
-
-  // オンラインに戻ったときに再取得
-  useEffect(() => {
-    if (!prevIsOnline.current && isOnline) {
-      refetch();
-    }
-    prevIsOnline.current = isOnline;
-  }, [isOnline, refetch]);
 
   return { spotlightData, isLoading, error };
 };

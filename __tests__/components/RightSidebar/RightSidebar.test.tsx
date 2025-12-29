@@ -15,6 +15,17 @@ jest.mock("@/libs/electron-utils", () => ({
     get: jest.fn(),
     set: jest.fn(),
   },
+  isElectron: jest.fn(() => true),
+  electronAPI: {
+    isElectron: jest.fn(() => true),
+    offline: {
+      checkStatus: jest.fn().mockResolvedValue({ isDownloaded: false }),
+    },
+    store: {
+      get: jest.fn(),
+      set: jest.fn(),
+    },
+  },
 }));
 
 // react-springのモック

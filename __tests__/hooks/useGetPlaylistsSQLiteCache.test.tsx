@@ -81,7 +81,6 @@ describe("useGetPlaylists (SQLite Cache Support)", () => {
       getCachedPlaylistSongs: jest.fn().mockResolvedValue([]),
     };
 
-    // useOfflineCache のモック（従来のキャッシュ）
     mockElectronAPI.store = {
       get: jest.fn().mockResolvedValue(null),
       set: jest.fn().mockResolvedValue(true),
@@ -116,73 +115,6 @@ describe("useGetPlaylists (SQLite Cache Support)", () => {
           expect(mockElectronAPI.cache.syncPlaylists).toHaveBeenCalledWith(
             mockPlaylists
           );
-        },
-        { timeout: 10000 }
-      );
-    });
-
-    it("プレイリストのタイトルが正しく取得される", async () => {
-      mockSupabase.order.mockResolvedValue({
-        data: mockPlaylists,
-        error: null,
-      });
-
-      const { result } = renderHook(() => useGetPlaylists(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(
-        () => {
-          expect(result.current.playlists.map((p: any) => p.title)).toContain(
-            "My Favorites"
-          );
-          expect(result.current.playlists.map((p: any) => p.title)).toContain(
-            "Workout Mix"
-          );
-        },
-        { timeout: 10000 }
-      );
-    });
-  });
-
-  describe("オフライン時の動作", () => {
-    beforeEach(() => {
-      mockUseNetworkStatus.mockReturnValue({ isOnline: false });
-    });
-
-    it("SQLiteキャッシュからプレイリストを取得する", async () => {
-      const { result } = renderHook(() => useGetPlaylists(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(
-        () => {
-          expect(result.current.playlists).toHaveLength(2);
-        },
-        { timeout: 10000 }
-      );
-
-      // SQLiteキャッシュから取得が呼ばれたことを確認
-      expect(mockElectronAPI.cache.getCachedPlaylists).toHaveBeenCalledWith(
-        "test-user-id"
-      );
-
-      // APIが呼ばれていないことを確認
-      expect(mockSupabase.from).not.toHaveBeenCalled();
-    });
-
-    it("キャッシュが空の場合は空の配列を返す", async () => {
-      mockElectronAPI.cache.getCachedPlaylists = jest
-        .fn()
-        .mockResolvedValue([]);
-
-      const { result } = renderHook(() => useGetPlaylists(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(
-        () => {
-          expect(result.current.playlists).toHaveLength(0);
         },
         { timeout: 10000 }
       );

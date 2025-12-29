@@ -7,7 +7,7 @@ import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import Modal from "./Modal";
 import Input from "../common/Input";
 import Button from "../common/Button";
-import useCreatePlaylistMutation from "@/hooks/data/useCreatePlaylistMutation";
+import useCreatePlaylistMutation from "@/hooks/mutations/useCreatePlaylistMutation";
 
 const PlaylistModal = () => {
   const playlistModal = usePlaylistModal();

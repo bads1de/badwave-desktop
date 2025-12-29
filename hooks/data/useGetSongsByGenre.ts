@@ -1,20 +1,20 @@
 import { Song } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
-import { useEffect, useRef } from "react";
 
 /**
  * 指定したジャンルの曲一覧を取得するカスタムフック (オフライン対応)
+ *
+ * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
+ *
  * @param genre ジャンル名またはジャンル名の配列
  * @returns 曲の配列とローディング状態
  */
 const useGetSongsByGenre = (genre: string | string[]) => {
   const supabase = createClient();
-  const { isOnline, checkOffline } = useOfflineCheck();
-  const { saveToCache, loadFromCache } = useOfflineCache();
+  const { isOnline } = useNetworkStatus();
 
   // ジャンルが文字列の場合は、カンマで分割して配列に変換
   const genreArray =
@@ -26,19 +26,10 @@ const useGetSongsByGenre = (genre: string | string[]) => {
     data: songs = [],
     isLoading,
     error,
-    refetch,
   } = useQuery({
     queryKey,
     queryFn: async () => {
       if (genreArray.length === 0) {
-        return [];
-      }
-
-      const isCurrentlyOffline = await checkOffline();
-      // オフラインの場合はキャッシュから取得を試みる
-      if (isCurrentlyOffline) {
-        const cachedData = await loadFromCache<Song[]>(queryKey.join(":"));
-        if (cachedData) return cachedData;
         return [];
       }
 
@@ -54,28 +45,13 @@ const useGetSongsByGenre = (genre: string | string[]) => {
         throw error;
       }
 
-      const result = (data as Song[]) || [];
-
-      // バックグラウンドでキャッシュに保存
-      saveToCache(queryKey.join(":"), result).catch(console.error);
-
-      return result;
+      return (data as Song[]) || [];
     },
-    enabled: genreArray.length > 0,
+    enabled: genreArray.length > 0 && isOnline,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    retry: isOnline ? 1 : false,
+    retry: false,
   });
-
-  const prevIsOnline = useRef(isOnline);
-
-  // オンラインに戻ったときに再取得
-  useEffect(() => {
-    if (!prevIsOnline.current && isOnline && genreArray.length > 0) {
-      refetch();
-    }
-    prevIsOnline.current = isOnline;
-  }, [isOnline, genreArray, refetch]);
 
   return { songs, isLoading, error };
 };

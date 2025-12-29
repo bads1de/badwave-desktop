@@ -3,7 +3,7 @@ import React from "react";
 
 import { HiTrash } from "react-icons/hi";
 import { twMerge } from "tailwind-merge";
-import useDeleteSongMutation from "@/hooks/data/useDeleteSongMutation";
+import useDeleteSongMutation from "@/hooks/mutations/useDeleteSongMutation";
 
 interface DeleteButtonProps {
   songId: string;

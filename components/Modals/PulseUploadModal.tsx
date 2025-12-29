@@ -6,7 +6,7 @@ import { RiPulseLine } from "react-icons/ri";
 
 import { useUser } from "@/hooks/auth/useUser";
 import usePulseUploadModal from "@/hooks/modal/usePulseUploadModal";
-import usePulseUploadMutation from "@/hooks/data/usePulseUploadMutation";
+import usePulseUploadMutation from "@/hooks/mutations/usePulseUploadMutation";
 
 import Modal from "./Modal";
 import Input from "@/components/common/Input";

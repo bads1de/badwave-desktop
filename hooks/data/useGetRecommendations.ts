@@ -2,13 +2,13 @@ import { Song, SongWithRecommendation } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { createClient } from "@/libs/supabase/client";
 import { useUser } from "@/hooks/auth/useUser";
-import { useEffect, useRef } from "react";
 
 /**
  * おすすめ曲を取得するカスタムフック (クライアントサイド)
+ *
+ * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  *
  * @param {Song[]} initialData - サーバーから取得した初期データ（Optional）
  * @param {number} limit - 取得する曲数の上限
@@ -16,7 +16,6 @@ import { useEffect, useRef } from "react";
  */
 const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
   const { isOnline } = useNetworkStatus();
-  const { saveToCache, loadFromCache } = useOfflineCache();
   const supabase = createClient();
   const { user } = useUser();
 
@@ -26,17 +25,9 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
     data: recommendations = [],
     isLoading,
     error,
-    refetch,
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      // オフラインの場合はキャッシュから取得を試みる
-      if (!isOnline) {
-        const cachedData = await loadFromCache<Song[]>(queryKey.join(":"));
-        if (cachedData) return cachedData;
-        return [];
-      }
-
       // ユーザーがログインしていない場合は空配列を返す
       if (!user?.id) {
         return [];
@@ -69,9 +60,6 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
           user_id: user.id,
         }));
 
-        // バックグラウンドでキャッシュに保存
-        saveToCache(queryKey.join(":"), result).catch(console.error);
-
         return result;
       } catch (e) {
         console.error("Exception in getRecommendations:", e);
@@ -79,21 +67,11 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
       }
     },
     initialData: initialData,
-    enabled: !!user?.id && isOnline, // オフライン時はクエリを無効化
+    enabled: !!user?.id && isOnline,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    retry: isOnline ? 1 : false,
+    retry: false,
   });
-
-  const prevIsOnline = useRef(isOnline);
-
-  // オンラインに戻ったときに再取得
-  useEffect(() => {
-    if (!prevIsOnline.current && isOnline && user?.id) {
-      refetch();
-    }
-    prevIsOnline.current = isOnline;
-  }, [isOnline, user?.id, refetch]);
 
   return { recommendations, isLoading, error };
 };

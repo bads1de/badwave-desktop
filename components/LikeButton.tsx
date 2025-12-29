@@ -1,7 +1,7 @@
 import useAuthModal from "@/hooks/auth/useAuthModal";
 import { useUser } from "@/hooks/auth/useUser";
 import useLikeStatus from "@/hooks/data/useLikeStatus";
-import useLikeMutation from "@/hooks/data/useLikeMutation";
+import useLikeMutation from "@/hooks/mutations/useLikeMutation";
 import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { memo, useCallback } from "react";
 

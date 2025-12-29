@@ -15,7 +15,7 @@ import Image from "next/image";
 
 import useUploadModal from "@/hooks/modal/useUploadModal";
 import { useUser } from "@/hooks/auth/useUser";
-import useUploadSongMutation from "@/hooks/data/useUploadSongMutation";
+import useUploadSongMutation from "@/hooks/mutations/useUploadSongMutation";
 
 import Modal from "./Modal";
 import Input from "../common/Input";

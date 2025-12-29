@@ -1,5 +1,5 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
-import useDeleteSongMutation from "@/hooks/data/useDeleteSongMutation";
+import useDeleteSongMutation from "@/hooks/mutations/useDeleteSongMutation";
 import { createClient } from "@/libs/supabase/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import toast from "react-hot-toast";

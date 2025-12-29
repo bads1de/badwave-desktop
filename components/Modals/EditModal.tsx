@@ -10,7 +10,7 @@ import Input from "../common/Input";
 import { Textarea } from "../ui/textarea";
 import GenreSelect from "../Genre/GenreSelect";
 import Button from "../common/Button";
-import useEditSongMutation from "@/hooks/data/useEditSongMutation";
+import useEditSongMutation from "@/hooks/mutations/useEditSongMutation";
 
 interface EditFormValues extends Partial<Song> {
   video?: FileList;

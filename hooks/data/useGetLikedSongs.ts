@@ -2,18 +2,17 @@ import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { electronAPI } from "@/libs/electron-utils";
-import { useEffect, useRef } from "react";
 
 /**
  * ユーザーがいいねした曲を取得するカスタムフック
  *
- * オフライン対応 (SQLiteキャッシュ使用)
+ * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  */
 const useGetLikedSongs = (userId?: string) => {
   const supabaseClient = createClient();
-  const { isOnline, isInitialized, checkOffline } = useOfflineCheck();
+  const { isOnline } = useNetworkStatus();
 
   const queryKey = [CACHED_QUERIES.likedSongs, userId];
 
@@ -21,29 +20,10 @@ const useGetLikedSongs = (userId?: string) => {
     data: likedSongs = [],
     isLoading,
     error,
-    refetch,
   } = useQuery({
     queryKey,
     queryFn: async () => {
       if (!userId) {
-        return [];
-      }
-
-      // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
-      const isCurrentlyOffline = await checkOffline();
-
-      // オフラインの場合は SQLite キャッシュから取得
-      if (isCurrentlyOffline) {
-        try {
-          const cachedData = await electronAPI.cache.getCachedLikedSongs(
-            userId
-          );
-          if (cachedData && cachedData.length > 0) {
-            return cachedData as Song[];
-          }
-        } catch (e) {
-          console.error("Failed to load liked songs from SQLite cache:", e);
-        }
         return [];
       }
 
@@ -66,7 +46,7 @@ const useGetLikedSongs = (userId?: string) => {
         songType: "regular" as const,
       })) as Song[];
 
-      // キャッシュ同期（バックグラウンド）
+      // オフラインライブラリ用に SQLite キャッシュを同期（バックグラウンド）
       if (electronAPI.isElectron()) {
         electronAPI.cache.syncLikedSongs(userId, songs).catch((e) => {
           console.error("Failed to sync liked songs with metadata:", e);
@@ -77,18 +57,9 @@ const useGetLikedSongs = (userId?: string) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!userId && isInitialized,
-    retry: isOnline ? 1 : false,
+    enabled: !!userId && isOnline,
+    retry: false,
   });
-
-  const prevIsOnline = useRef(isOnline);
-
-  useEffect(() => {
-    if (!prevIsOnline.current && isOnline && userId) {
-      refetch();
-    }
-    prevIsOnline.current = isOnline;
-  }, [isOnline, userId, refetch]);
 
   return { likedSongs, isLoading, error };
 };

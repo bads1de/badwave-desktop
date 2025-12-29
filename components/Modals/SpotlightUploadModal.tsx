@@ -11,7 +11,7 @@ import Input from "@/components/common/Input";
 import Button from "@/components/common/Button";
 
 import useSpotLightUploadModal from "@/hooks/modal/useSpotLightUpload";
-import useSpotlightUploadMutation from "@/hooks/data/useSpotlightUploadMutation";
+import useSpotlightUploadMutation from "@/hooks/mutations/useSpotlightUploadMutation";
 
 const SpotlightUploadModal: React.FC = memo(() => {
   const [videoPreview, setVideoPreview] = useState<string | null>(null);

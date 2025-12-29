@@ -37,58 +37,57 @@ export const MyUserContextProvider = (props: Props) => {
 
   /**
    * セッション状態を監視するエフェクト
-   * オンライン時: Supabase から取得
-   * オフライン時: ローカルキャッシュから取得
+   * キャッシュからの復元を最優先し、その後最新の状態を確認
    */
   useEffect(() => {
     const initializeSession = async () => {
-      // Electron 環境でオフラインの場合、キャッシュからユーザーを復元
-      if (electronAPI.isElectron() && !isOnline && isInitialized) {
+      // 1. まず Electron キャッシュからユーザーを復元 (最優先)
+      if (electronAPI.isElectron() && isInitialized) {
         try {
           const cachedUser = await electronAPI.auth.getCachedUser();
           if (cachedUser) {
-            // オフラインキャッシュから復元する部分的な User オブジェクト
-            // 注意: 完全な User 型ではないが、アプリで必要な最小限のプロパティのみを持つ
-            // 型安全性のため unknown を経由してキャスト
             const partialUser = {
               id: cachedUser.id,
               email: cachedUser.email,
               user_metadata: { avatar_url: cachedUser.avatarUrl },
             } as unknown as User;
             setUser(partialUser);
+            // キャッシュがあれば一旦ロード完了とする（後で getSession が更新する）
             setIsSessionLoading(false);
-            return;
           }
         } catch (e) {
           console.error("Failed to load cached user:", e);
         }
       }
 
-      // オンライン時: Supabase からセッションを取得
-      try {
-        const { data } = await supabase.auth.getSession();
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
+      // 2. オンライン時: Supabase から最新セッションを取得して同期
+      if (isOnline && isInitialized) {
+        try {
+          const { data } = await supabase.auth.getSession();
+          const session = data.session;
+          setSession(session);
+          setUser(session?.user ?? null);
 
-        // Electron 環境かつオンラインの場合、ユーザー情報をキャッシュ
-        if (electronAPI.isElectron() && data.session?.user) {
-          const u = data.session.user;
-          electronAPI.auth.saveCachedUser({
-            id: u.id,
-            email: u.email,
-            avatarUrl: u.user_metadata?.avatar_url,
-          });
+          // 最新情報をキャッシュに保存
+          if (electronAPI.isElectron() && session?.user) {
+            const u = session.user;
+            electronAPI.auth.saveCachedUser({
+              id: u.id,
+              email: u.email,
+              avatarUrl: u.user_metadata?.avatar_url,
+            });
+          }
+        } catch (e) {
+          console.error("Failed to get session:", e);
+        } finally {
+          setIsSessionLoading(false);
         }
-      } catch (e) {
-        console.error("Failed to get session:", e);
-      } finally {
+      } else if (!isOnline && isInitialized) {
         setIsSessionLoading(false);
       }
     };
 
-    if (isInitialized) {
-      initializeSession();
-    }
+    initializeSession();
 
     const {
       data: { subscription },
@@ -96,7 +95,6 @@ export const MyUserContextProvider = (props: Props) => {
       setSession(session);
       setUser(session?.user ?? null);
 
-      // オンラインでログインしたらキャッシュを更新
       if (electronAPI.isElectron() && session?.user) {
         const u = session.user;
         electronAPI.auth.saveCachedUser({
@@ -106,7 +104,6 @@ export const MyUserContextProvider = (props: Props) => {
         });
       }
 
-      // ログアウト時はキャッシュをクリア
       if (!session && electronAPI.isElectron()) {
         electronAPI.auth.clearCachedUser();
       }
@@ -128,7 +125,8 @@ export const MyUserContextProvider = (props: Props) => {
       const { data, error } = await supabase.from("users").select("*").single();
 
       if (error) {
-        throw new Error(`ユーザー情報の取得に失敗しました: ${error.message}`);
+        // オフラインなどで取得できない場合は null を返す（エラーを投げるとリトライが走る）
+        return null;
       }
 
       return data as UserDetails;
@@ -142,7 +140,8 @@ export const MyUserContextProvider = (props: Props) => {
     accessToken: session?.access_token ?? null,
     user,
     userDetails: userDetails ?? null,
-    isLoading: isSessionLoading || (isOnline && isLoadingUserDetails),
+    // userDetails のロードは UI をブロックしないように isLoading から外す
+    isLoading: isSessionLoading,
   };
 
   return <UserContext.Provider value={value} {...props} />;

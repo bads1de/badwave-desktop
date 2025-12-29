@@ -3,18 +3,18 @@ import { createClient } from "@/libs/supabase/client";
 import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
-import { useEffect, useRef } from "react";
 
 /**
  * タイトルでパブリックプレイリストを検索するカスタムフック (オフライン対応)
+ *
+ * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
+ *
  * @param title 検索するタイトル
  * @returns プレイリストの配列とローディング状態
  */
 const useGetPlaylistsByTitle = (title: string) => {
   const supabase = createClient();
   const { isOnline } = useNetworkStatus();
-  const { saveToCache, loadFromCache } = useOfflineCache();
 
   const queryKey = [CACHED_QUERIES.playlists, "search", title];
 
@@ -22,19 +22,11 @@ const useGetPlaylistsByTitle = (title: string) => {
     data: playlists = [],
     isLoading,
     error,
-    refetch,
   } = useQuery({
     queryKey,
     queryFn: async () => {
       // タイトルが空の場合は空の配列を返す
       if (!title) {
-        return [];
-      }
-
-      // オフラインの場合はキャッシュから取得を試みる
-      if (!isOnline) {
-        const cachedData = await loadFromCache<Playlist[]>(queryKey.join(":"));
-        if (cachedData) return cachedData;
         return [];
       }
 
@@ -50,28 +42,13 @@ const useGetPlaylistsByTitle = (title: string) => {
         throw error;
       }
 
-      const result = (data as Playlist[]) || [];
-
-      // バックグラウンドでキャッシュに保存
-      saveToCache(queryKey.join(":"), result).catch(console.error);
-
-      return result;
+      return (data as Playlist[]) || [];
     },
-    enabled: !!title,
+    enabled: !!title && isOnline,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    retry: isOnline ? 1 : false,
+    retry: false,
   });
-
-  const prevIsOnline = useRef(isOnline);
-
-  // オンラインに戻ったときに再取得
-  useEffect(() => {
-    if (!prevIsOnline.current && isOnline && title) {
-      refetch();
-    }
-    prevIsOnline.current = isOnline;
-  }, [isOnline, title, refetch]);
 
   return { playlists, isLoading, error };
 };

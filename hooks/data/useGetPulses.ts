@@ -1,23 +1,20 @@
-"use client";
-
 import { Pulse } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
-import { useEffect, useRef } from "react";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 /**
  * Pulseデータを取得するカスタムフック (オフライン対応)
+ *
+ * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  *
  * @param initialData - サーバーから取得した初期データ（オプション）
  * @returns Pulseのリストとローディング状態
  */
 const useGetPulses = (initialData?: Pulse[]) => {
   const supabaseClient = createClient();
-  const { isOnline, checkOffline } = useOfflineCheck();
-  const { saveToCache, loadFromCache } = useOfflineCache();
+  const { isOnline } = useNetworkStatus();
 
   const queryKey = [CACHED_QUERIES.pulse];
 
@@ -25,18 +22,9 @@ const useGetPulses = (initialData?: Pulse[]) => {
     data: pulses = [],
     isLoading,
     error,
-    refetch,
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      const isCurrentlyOffline = await checkOffline();
-      // オフラインの場合はキャッシュから取得を試みる
-      if (isCurrentlyOffline) {
-        const cachedData = await loadFromCache<Pulse[]>(queryKey.join(":"));
-        if (cachedData) return cachedData;
-        return [];
-      }
-
       const { data, error } = await supabaseClient
         .from("pulses")
         .select("*")
@@ -47,28 +35,14 @@ const useGetPulses = (initialData?: Pulse[]) => {
         throw new Error("Pulseの取得に失敗しました");
       }
 
-      const result = (data as Pulse[]) || [];
-
-      // バックグラウンドでキャッシュに保存
-      saveToCache(queryKey.join(":"), result).catch(console.error);
-
-      return result;
+      return (data as Pulse[]) || [];
     },
     initialData: initialData,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    retry: isOnline ? 1 : false,
+    enabled: isOnline,
+    retry: false,
   });
-
-  const prevIsOnline = useRef(isOnline);
-
-  // オンラインに戻ったときに再取得
-  useEffect(() => {
-    if (!prevIsOnline.current && isOnline) {
-      refetch();
-    }
-    prevIsOnline.current = isOnline;
-  }, [isOnline, refetch]);
 
   return {
     pulses,

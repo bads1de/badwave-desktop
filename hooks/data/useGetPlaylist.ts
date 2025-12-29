@@ -3,69 +3,26 @@ import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
-import { electronAPI } from "@/libs/electron-utils";
-import { useUser } from "@/hooks/auth/useUser";
-import { useEffect, useRef } from "react";
 
 /**
  * プレイリスト情報を取得するカスタムフック
  *
- * オフライン対応: SQLiteキャッシュから取得
+ * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  */
 const useGetPlaylist = (playlistId?: string) => {
   const supabaseClient = createClient();
   const { isOnline } = useNetworkStatus();
-  const { checkOffline } = useOfflineCheck();
-  const { user } = useUser();
 
-  const queryKey = [CACHED_QUERIES.playlists, playlistId, isOnline];
+  const queryKey = [CACHED_QUERIES.playlists, playlistId];
 
   const {
     data: playlist,
     isLoading,
     error,
-    refetch,
   } = useQuery({
     queryKey,
     queryFn: async () => {
       if (!playlistId) {
-        return null;
-      }
-
-      // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
-      // 直接オフライン状態を確認（クロージャのタイミング問題を回避）
-      const isCurrentlyOffline = await checkOffline();
-
-      // オフラインの場合はSQLiteキャッシュから取得
-      if (isCurrentlyOffline) {
-        // user.id がなくても、ローカルキャッシュからユーザーIDを取得して試す
-        let userId = user?.id;
-        if (!userId && electronAPI.isElectron()) {
-          try {
-            const cachedUser = await electronAPI.auth.getCachedUser();
-            userId = cachedUser?.id;
-          } catch {}
-        }
-
-        if (userId) {
-          try {
-            const cachedPlaylists = await electronAPI.cache.getCachedPlaylists(
-              userId
-            );
-            if (cachedPlaylists) {
-              const found = cachedPlaylists.find(
-                (p: Playlist) => String(p.id) === String(playlistId)
-              );
-              if (found) {
-                return found as Playlist;
-              }
-            }
-          } catch (e) {
-            console.error("Failed to load playlist from SQLite cache:", e);
-          }
-        }
-        // オフラインでキャッシュがない場合はnullを返す（エラーは投げない）
         return null;
       }
 
@@ -84,19 +41,9 @@ const useGetPlaylist = (playlistId?: string) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!playlistId,
-    retry: isOnline ? 1 : false,
+    enabled: !!playlistId && isOnline,
+    retry: false,
   });
-
-  const prevIsOnline = useRef(isOnline);
-
-  // オンラインに戻ったときに再取得
-  useEffect(() => {
-    if (!prevIsOnline.current && isOnline && playlistId) {
-      refetch();
-    }
-    prevIsOnline.current = isOnline;
-  }, [isOnline, playlistId, refetch]);
 
   return {
     playlist,

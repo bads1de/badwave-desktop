@@ -12,7 +12,7 @@ import { useUser } from "@/hooks/auth/useUser";
 import useAuthModal from "@/hooks/auth/useAuthModal";
 import useGetSongById from "@/hooks/data/useGetSongById";
 import usePlaylistSongStatus from "@/hooks/data/usePlaylistSongStatus";
-import useMutatePlaylistSong from "@/hooks/data/useMutatePlaylistSong";
+import useMutatePlaylistSong from "@/hooks/mutations/useMutatePlaylistSong";
 
 interface PlaylistMenuProps {
   playlists: Playlist[];

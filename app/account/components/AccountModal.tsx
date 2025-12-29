@@ -6,7 +6,7 @@ import { createClient } from "@/libs/supabase/client";
 import Image from "next/image";
 import Modal from "@/components/Modals/Modal";
 import { Camera, User, Lock } from "lucide-react";
-import useUpdateUserProfileMutation from "@/hooks/data/useUpdateUserProfileMutation";
+import useUpdateUserProfileMutation from "@/hooks/mutations/useUpdateUserProfileMutation";
 
 interface AccountModalProps {
   isOpen: boolean;

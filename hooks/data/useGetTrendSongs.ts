@@ -1,22 +1,21 @@
 import { Song } from "@/types";
 import { useQuery } from "@tanstack/react-query";
-import { CACHED_QUERIES } from "@/constants";
-import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
+import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
-import { useEffect, useRef } from "react";
 import dayjs from "dayjs";
 
 /**
  * トレンド曲を取得するカスタムフック
  *
- * オフライン時はローカルスキーマがないため、空配列を返します。
+ * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  */
 const useGetTrendSongs = (
   period: "all" | "month" | "week" | "day" = "all",
   initialData?: Song[]
 ) => {
+  const { isOnline } = useNetworkStatus();
   const supabase = createClient();
-  const { isOnline, checkOffline } = useOfflineCheck();
 
   const queryKey = [CACHED_QUERIES.trendSongs, period];
 
@@ -24,17 +23,9 @@ const useGetTrendSongs = (
     data: trends = [],
     isLoading,
     error,
-    refetch,
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      // 念のため実行時にもチェック
-      const isCurrentlyOffline = await checkOffline();
-      // オフライン時は何も取得しない
-      if (isCurrentlyOffline) {
-        return [];
-      }
-
       // オンラインの場合はSupabaseから取得
       let query = supabase.from("songs").select("*");
 
@@ -74,20 +65,11 @@ const useGetTrendSongs = (
       return (data as Song[]) || [];
     },
     initialData: initialData,
-    staleTime: 1000 * 60 * 60 * 24,
-    gcTime: 1000 * 60 * 60 * 24,
-    enabled: isOnline, // オフライン時はクエリを無効化
-    retry: isOnline ? 1 : false,
+    staleTime: CACHE_CONFIG.staleTime,
+    gcTime: CACHE_CONFIG.gcTime,
+    enabled: isOnline,
+    retry: false,
   });
-
-  const prevIsOnline = useRef(isOnline);
-
-  useEffect(() => {
-    if (!prevIsOnline.current && isOnline) {
-      refetch();
-    }
-    prevIsOnline.current = isOnline;
-  }, [isOnline, refetch]);
 
   return { trends, isLoading, error };
 };

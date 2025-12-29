@@ -1,13 +1,24 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import useGetPlaylist from "@/hooks/data/useGetPlaylist";
-import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { useUser } from "@/hooks/auth/useUser";
 import React from "react";
 
 // モックの設定
-jest.mock("@/hooks/utils/useOfflineCache");
 jest.mock("@/hooks/utils/useNetworkStatus");
+jest.mock("@/hooks/auth/useUser");
+jest.mock("@/libs/electron-utils", () => ({
+  electronAPI: {
+    isElectron: jest.fn(() => true),
+    auth: {
+      getCachedUser: jest.fn().mockResolvedValue(null),
+    },
+    cache: {
+      getCachedPlaylists: jest.fn().mockResolvedValue([]),
+    },
+  },
+}));
 
 // Supabaseクライアントのモック
 const mockSupabase = {
@@ -37,8 +48,6 @@ const createWrapper = () => {
 };
 
 describe("useGetPlaylist (Offline Support)", () => {
-  const mockSaveToCache = jest.fn().mockResolvedValue(undefined);
-  const mockLoadFromCache = jest.fn();
   const mockUseNetworkStatus = useNetworkStatus as jest.Mock;
 
   const mockPlaylistId = "test-playlist-id";
@@ -46,13 +55,14 @@ describe("useGetPlaylist (Offline Support)", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useOfflineCache as jest.Mock).mockReturnValue({
-      saveToCache: mockSaveToCache,
-      loadFromCache: mockLoadFromCache,
+    (useUser as jest.Mock).mockReturnValue({
+      user: { id: "test-user-id" },
+      userDetails: null,
+      isLoading: false,
     });
   });
 
-  it("オンライン時はAPIからプレイリスト情報を取得し、キャッシュに保存する", async () => {
+  it("オンライン時はAPIからプレイリスト情報を取得する", async () => {
     mockSupabase.single.mockResolvedValue({
       data: mockPlaylist,
       error: null,
@@ -70,35 +80,5 @@ describe("useGetPlaylist (Offline Support)", () => {
       },
       { timeout: 10000 }
     );
-
-    // キャッシュ保存が呼ばれたことを確認
-    await waitFor(
-      () => {
-        expect(mockSaveToCache).toHaveBeenCalledWith(
-          expect.stringContaining(`${mockPlaylistId}`),
-          mockPlaylist
-        );
-      },
-      { timeout: 10000 }
-    );
-  });
-
-  it("オフライン時はキャッシュからプレイリスト情報を取得する", async () => {
-    mockUseNetworkStatus.mockReturnValue({ isOnline: false });
-    mockLoadFromCache.mockResolvedValue(mockPlaylist);
-
-    const { result } = renderHook(() => useGetPlaylist(mockPlaylistId), {
-      wrapper: createWrapper(),
-    });
-
-    await waitFor(
-      () => {
-        expect(result.current.playlist).toEqual(mockPlaylist);
-      },
-      { timeout: 10000 }
-    );
-
-    // APIが呼ばれていないことを確認
-    expect(mockSupabase.from).not.toHaveBeenCalled();
   });
 });
