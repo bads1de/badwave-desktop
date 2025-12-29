@@ -1,18 +1,17 @@
 import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { electronAPI } from "@/libs/electron-utils";
 
 /**
  * プレイリストの曲を取得するカスタムフック
  *
- * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
+ * networkMode: "always" により、オフライン時でも queryFn が実行され、
+ * SQLite キャッシュからの取得が可能になります。
  */
 const useGetPlaylistSongs = (playlistId?: string) => {
   const supabaseClient = createClient();
-  const { isOnline } = useNetworkStatus();
 
   const queryKey = [CACHED_QUERIES.playlists, playlistId, "songs"];
 
@@ -20,12 +19,22 @@ const useGetPlaylistSongs = (playlistId?: string) => {
     data: songs = [],
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
       if (!playlistId) return [];
 
-      // オンラインの場合は Supabase から取得
+      // Electron環境かつオフラインの場合はSQLiteキャッシュから取得
+      if (electronAPI.isElectron() && !onlineManager.isOnline()) {
+        const cachedSongs = await electronAPI.cache.getCachedPlaylistSongs(
+          playlistId
+        );
+        if (cachedSongs && cachedSongs.length > 0) {
+          return cachedSongs as Song[];
+        }
+      }
+
       const { data, error } = await supabaseClient
         .from("playlist_songs")
         .select("*, songs(*)")
@@ -47,7 +56,7 @@ const useGetPlaylistSongs = (playlistId?: string) => {
       // オフラインライブラリ用に SQLite キャッシュを同期（バックグラウンド）
       if (electronAPI.isElectron()) {
         electronAPI.cache
-          .syncPlaylistSongs(playlistId, mappedSongs)
+          .syncPlaylistSongs({ playlistId, songs: mappedSongs })
           .catch((e) => {
             console.error("Failed to sync playlist songs with metadata:", e);
           });
@@ -57,11 +66,14 @@ const useGetPlaylistSongs = (playlistId?: string) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!playlistId && isOnline,
+    enabled: !!playlistId,
     retry: false,
+    networkMode: "always",
   });
 
-  return { songs, isLoading, error };
+  const isPaused = fetchStatus === "paused";
+
+  return { songs, isLoading, error, isPaused };
 };
 
 export default useGetPlaylistSongs;

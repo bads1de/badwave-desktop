@@ -1,12 +1,14 @@
-import { renderHook, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import {
+  QueryClient,
+  QueryClientProvider,
+  onlineManager,
+} from "@tanstack/react-query";
 import useGetLikedSongs from "@/hooks/data/useGetLikedSongs";
-import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { electronAPI } from "@/libs/electron-utils";
 import React from "react";
 
 // モックの設定
-jest.mock("@/hooks/utils/useOfflineCheck");
 jest.mock("@/libs/electron-utils", () => ({
   electronAPI: {
     isElectron: jest.fn(),
@@ -36,6 +38,7 @@ const createWrapper = () => {
     defaultOptions: {
       queries: {
         retry: false,
+        staleTime: 0,
       },
     },
   });
@@ -44,8 +47,10 @@ const createWrapper = () => {
   );
 };
 
+// タイムアウトを10秒に設定
+jest.setTimeout(10000);
+
 describe("useGetLikedSongs (Offline Support)", () => {
-  const mockUseOfflineCheck = useOfflineCheck as jest.Mock;
   const mockGetCachedLikedSongs = electronAPI.cache
     .getCachedLikedSongs as jest.Mock;
   const mockSyncLikedSongs = electronAPI.cache.syncLikedSongs as jest.Mock;
@@ -60,14 +65,14 @@ describe("useGetLikedSongs (Offline Support)", () => {
     jest.clearAllMocks();
     mockIsElectron.mockReturnValue(true);
     mockSyncLikedSongs.mockResolvedValue(undefined);
+    act(() => {
+      onlineManager.setOnline(true);
+    });
   });
 
   it("オンライン時はAPIからいいねした曲を取得し、キャッシュに保存する", async () => {
-    // オンライン設定
-    mockUseOfflineCheck.mockReturnValue({
-      isOnline: true,
-      isInitialized: true,
-      checkOffline: jest.fn().mockResolvedValue(false),
+    act(() => {
+      onlineManager.setOnline(true);
     });
 
     mockSupabase.order.mockResolvedValue({
@@ -84,7 +89,7 @@ describe("useGetLikedSongs (Offline Support)", () => {
         expect(result.current.likedSongs).toHaveLength(1);
         expect(result.current.likedSongs[0].title).toBe("Liked Offline Song");
       },
-      { timeout: 10000 }
+      { timeout: 8000 }
     );
 
     // APIが呼ばれたことを確認
@@ -93,21 +98,19 @@ describe("useGetLikedSongs (Offline Support)", () => {
     // キャッシュ保存（syncLikedSongs）が呼ばれたことを確認
     await waitFor(
       () => {
-        expect(mockSyncLikedSongs).toHaveBeenCalledWith(
-          mockUserId,
-          expect.anything() // Song object transform verification if needed
-        );
+        expect(mockSyncLikedSongs).toHaveBeenCalledWith({
+          userId: mockUserId,
+          songs: expect.anything(),
+        });
       },
-      { timeout: 10000 }
+      { timeout: 8000 }
     );
   });
 
   it("オフライン時はSQLiteキャッシュからいいねした曲を取得する", async () => {
     // オフライン設定
-    mockUseOfflineCheck.mockReturnValue({
-      isOnline: false,
-      isInitialized: true,
-      checkOffline: jest.fn().mockResolvedValue(true),
+    act(() => {
+      onlineManager.setOnline(false);
     });
 
     mockGetCachedLikedSongs.mockResolvedValue(mockSongs);
@@ -120,7 +123,7 @@ describe("useGetLikedSongs (Offline Support)", () => {
       () => {
         expect(result.current.likedSongs).toEqual(mockSongs);
       },
-      { timeout: 10000 }
+      { timeout: 8000 }
     );
 
     // APIが呼ばれていないことを確認

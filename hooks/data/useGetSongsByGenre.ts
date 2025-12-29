@@ -1,12 +1,12 @@
 import { Song } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
 
 /**
  * 指定したジャンルの曲一覧を取得するカスタムフック (オフライン対応)
  *
+ * onlineManager により、オフライン時はクエリが自動的に pause されます。
  * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  *
  * @param genre ジャンル名またはジャンル名の配列
@@ -14,7 +14,6 @@ import { createClient } from "@/libs/supabase/client";
  */
 const useGetSongsByGenre = (genre: string | string[]) => {
   const supabase = createClient();
-  const { isOnline } = useNetworkStatus();
 
   // ジャンルが文字列の場合は、カンマで分割して配列に変換
   const genreArray =
@@ -26,6 +25,7 @@ const useGetSongsByGenre = (genre: string | string[]) => {
     data: songs = [],
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
@@ -47,13 +47,15 @@ const useGetSongsByGenre = (genre: string | string[]) => {
 
       return (data as Song[]) || [];
     },
-    enabled: genreArray.length > 0 && isOnline,
+    enabled: genreArray.length > 0,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: false,
   });
 
-  return { songs, isLoading, error };
+  const isPaused = fetchStatus === "paused";
+
+  return { songs, isLoading, error, isPaused };
 };
 
 export default useGetSongsByGenre;

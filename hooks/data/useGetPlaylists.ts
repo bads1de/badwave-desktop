@@ -1,20 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { createClient } from "@/libs/supabase/client";
 import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useUser } from "@/hooks/auth/useUser";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { electronAPI } from "@/libs/electron-utils";
 
 /**
  * ユーザーのプレイリスト一覧を取得するカスタムフック
  *
- * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
+ * networkMode: "always" により、オフライン時でも queryFn が実行され、
+ * SQLite キャッシュからの取得が可能になります。
  */
 const useGetPlaylists = () => {
   const supabase = createClient();
   const { user } = useUser();
-  const { isOnline } = useNetworkStatus();
 
   const queryKey = [CACHED_QUERIES.playlists, "user", user?.id];
 
@@ -22,12 +21,22 @@ const useGetPlaylists = () => {
     data: playlists = [],
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // オンラインの場合は Supabase から取得
+      // Electron環境かつオフラインの場合はSQLiteキャッシュから取得
+      if (electronAPI.isElectron() && !onlineManager.isOnline()) {
+        const cachedPlaylists = await electronAPI.cache.getCachedPlaylists(
+          user.id
+        );
+        if (cachedPlaylists && cachedPlaylists.length > 0) {
+          return cachedPlaylists as Playlist[];
+        }
+      }
+
       const { data, error } = await supabase
         .from("playlists")
         .select("*")
@@ -50,13 +59,16 @@ const useGetPlaylists = () => {
 
       return result;
     },
-    enabled: !!user?.id && isOnline,
+    enabled: !!user?.id,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: false,
+    networkMode: "always",
   });
 
-  return { playlists, isLoading, error };
+  const isPaused = fetchStatus === "paused";
+
+  return { playlists, isLoading, error, isPaused };
 };
 
 export default useGetPlaylists;

@@ -1,12 +1,12 @@
 import { Playlist } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
 
 /**
  * パブリックプレイリストを取得するカスタムフック (クライアントサイド)
  *
+ * onlineManager により、オフライン時はクエリが自動的に pause されます。
  * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  *
  * @param {Playlist[]} initialData - サーバーから取得した初期データ（Optional）
@@ -14,7 +14,6 @@ import { createClient } from "@/libs/supabase/client";
  * @returns {Object} パブリックプレイリストの取得状態と結果
  */
 const useGetPublicPlaylists = (initialData?: Playlist[], limit: number = 6) => {
-  const { isOnline } = useNetworkStatus();
   const supabase = createClient();
 
   const queryKey = [CACHED_QUERIES.publicPlaylists, limit];
@@ -23,10 +22,10 @@ const useGetPublicPlaylists = (initialData?: Playlist[], limit: number = 6) => {
     data: playlists = [],
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      // オンラインの場合はSupabaseから取得
       const { data, error } = await supabase
         .from("playlists")
         .select("*")
@@ -44,11 +43,12 @@ const useGetPublicPlaylists = (initialData?: Playlist[], limit: number = 6) => {
     initialData: initialData,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: isOnline,
     retry: false,
   });
 
-  return { playlists, isLoading, error };
+  const isPaused = fetchStatus === "paused";
+
+  return { playlists, isLoading, error, isPaused };
 };
 
 export default useGetPublicPlaylists;

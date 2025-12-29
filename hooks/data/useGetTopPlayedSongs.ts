@@ -2,7 +2,6 @@ import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 interface TopPlayedSong extends Song {
   play_count: number;
@@ -13,11 +12,11 @@ type Period = "day" | "week" | "month" | "all";
 /**
  * ユーザーの再生数が多い曲を取得するカスタムフック
  *
+ * onlineManager により、オフライン時はクエリが自動的に pause されます。
  * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  */
 const useGetTopPlayedSongs = (userId?: string, period: Period = "day") => {
   const supabase = createClient();
-  const { isOnline } = useNetworkStatus();
 
   const queryKey = [CACHED_QUERIES.getTopSongs, userId, period];
 
@@ -25,6 +24,7 @@ const useGetTopPlayedSongs = (userId?: string, period: Period = "day") => {
     data: topSongs,
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
@@ -45,15 +45,18 @@ const useGetTopPlayedSongs = (userId?: string, period: Period = "day") => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!userId && isOnline,
+    enabled: !!userId,
     placeholderData: keepPreviousData,
     retry: false,
   });
+
+  const isPaused = fetchStatus === "paused";
 
   return {
     topSongs: topSongs ?? [],
     isLoading,
     error,
+    isPaused,
   };
 };
 

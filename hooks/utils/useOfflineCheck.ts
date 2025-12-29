@@ -1,20 +1,27 @@
 "use client";
 
 import { useCallback } from "react";
+import { onlineManager } from "@tanstack/react-query";
 import { electronAPI } from "@/libs/electron-utils";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 /**
  * ネットワーク状態とElectronのシミュレーション状態を考慮して
  * 現在の正確なオフライン状態をチェックするフック
- * （主にqueryFn内などの非同期処理で最新の状態を確認するために使用）
+ *
+ * onlineManager と連携しているため、TanStack Query と一貫した状態を提供します。
+ * 非同期処理内で最新の状態を確認するための checkOffline 関数も提供します。
  */
 export const useOfflineCheck = () => {
   const status = useNetworkStatus();
 
+  /**
+   * 最新のオフライン状態を非同期で確認
+   * queryFn 内など、リアルタイムの状態確認が必要な場合に使用
+   */
   const checkOffline = useCallback(async () => {
-    // まず状態ベースで判定
-    let isCurrentlyOffline = !status.isOnline;
+    // onlineManager から最新の状態を取得
+    let isCurrentlyOffline = !onlineManager.isOnline();
 
     // Electronの場合はメインプロセスに問い合わせて確実な状態を取得
     if (electronAPI.isElectron()) {
@@ -24,11 +31,11 @@ export const useOfflineCheck = () => {
           isCurrentlyOffline = true;
         }
       } catch (error) {
-        // エラー時は元の isOnline ベースの判定を維持
+        // エラー時は onlineManager ベースの判定を維持
       }
     }
     return isCurrentlyOffline;
-  }, [status.isOnline]);
+  }, []);
 
   return { ...status, checkOffline };
 };

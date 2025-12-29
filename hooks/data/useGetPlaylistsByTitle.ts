@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/libs/supabase/client";
 import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 /**
  * タイトルでパブリックプレイリストを検索するカスタムフック (オフライン対応)
  *
+ * onlineManager により、オフライン時はクエリが自動的に pause されます。
  * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  *
  * @param title 検索するタイトル
@@ -14,7 +14,6 @@ import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
  */
 const useGetPlaylistsByTitle = (title: string) => {
   const supabase = createClient();
-  const { isOnline } = useNetworkStatus();
 
   const queryKey = [CACHED_QUERIES.playlists, "search", title];
 
@@ -22,6 +21,7 @@ const useGetPlaylistsByTitle = (title: string) => {
     data: playlists = [],
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
@@ -44,13 +44,15 @@ const useGetPlaylistsByTitle = (title: string) => {
 
       return (data as Playlist[]) || [];
     },
-    enabled: !!title && isOnline,
+    enabled: !!title,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: false,
   });
 
-  return { playlists, isLoading, error };
+  const isPaused = fetchStatus === "paused";
+
+  return { playlists, isLoading, error, isPaused };
 };
 
 export default useGetPlaylistsByTitle;

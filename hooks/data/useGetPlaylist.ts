@@ -2,16 +2,15 @@ import { Playlist } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 /**
  * プレイリスト情報を取得するカスタムフック
  *
+ * onlineManager により、オフライン時はクエリが自動的に pause されます。
  * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  */
 const useGetPlaylist = (playlistId?: string) => {
   const supabaseClient = createClient();
-  const { isOnline } = useNetworkStatus();
 
   const queryKey = [CACHED_QUERIES.playlists, playlistId];
 
@@ -19,6 +18,7 @@ const useGetPlaylist = (playlistId?: string) => {
     data: playlist,
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
@@ -41,14 +41,17 @@ const useGetPlaylist = (playlistId?: string) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!playlistId && isOnline,
+    enabled: !!playlistId,
     retry: false,
   });
+
+  const isPaused = fetchStatus === "paused";
 
   return {
     playlist,
     isLoading,
     error,
+    isPaused,
   };
 };
 

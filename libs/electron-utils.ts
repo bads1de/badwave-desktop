@@ -330,15 +330,12 @@ export const electronAPI = {
     /**
      * プレイリスト内の曲をローカルDBにキャッシュ（メタデータも同期）
      */
-    syncPlaylistSongs: async (
-      playlistId: string,
-      songs: any[]
-    ): Promise<{ success: boolean; count: number; error?: string }> => {
+    syncPlaylistSongs: async (data: {
+      playlistId: string;
+      songs: any[];
+    }): Promise<{ success: boolean; count: number; error?: string }> => {
       if (isElectron()) {
-        return (window as any).electron.cache.syncPlaylistSongs({
-          playlistId,
-          songs,
-        });
+        return (window as any).electron.cache.syncPlaylistSongs(data);
       }
       return { success: false, count: 0, error: "Not in Electron environment" };
     },
@@ -346,12 +343,12 @@ export const electronAPI = {
     /**
      * いいねした曲をローカルDBにキャッシュ（メタデータも同期）
      */
-    syncLikedSongs: async (
-      userId: string,
-      songs: any[]
-    ): Promise<{ success: boolean; count: number; error?: string }> => {
+    syncLikedSongs: async (data: {
+      userId: string;
+      songs: any[];
+    }): Promise<{ success: boolean; count: number; error?: string }> => {
       if (isElectron()) {
-        return (window as any).electron.cache.syncLikedSongs({ userId, songs });
+        return (window as any).electron.cache.syncLikedSongs(data);
       }
       return { success: false, count: 0, error: "Not in Electron environment" };
     },

@@ -130,11 +130,10 @@ contextBridge.exposeInMainWorld("electron", {
     syncPlaylists: (playlists: any[]) =>
       ipcRenderer.invoke("sync-playlists", playlists),
     // プレイリスト内の曲をキャッシュ
-    syncPlaylistSongs: (playlistSongs: any[]) =>
-      ipcRenderer.invoke("sync-playlist-songs", playlistSongs),
+    syncPlaylistSongs: (data: any) =>
+      ipcRenderer.invoke("sync-playlist-songs", data),
     // いいねをキャッシュ
-    syncLikedSongs: (likedSongs: any[]) =>
-      ipcRenderer.invoke("sync-liked-songs", likedSongs),
+    syncLikedSongs: (data: any) => ipcRenderer.invoke("sync-liked-songs", data),
     // キャッシュからプレイリストを取得
     getCachedPlaylists: (userId: string) =>
       ipcRenderer.invoke("get-cached-playlists", userId),

@@ -22,5 +22,5 @@ export const getRandomColor = () => {
 };
 
 export const splitTags = (tagString?: string): string[] => {
-  return tagString?.split(/\s*,\s*/).filter(Boolean) || [];
+  return tagString?.split(/\s*,\s*/).map(tag => tag.trim()).filter(Boolean) || [];
 };

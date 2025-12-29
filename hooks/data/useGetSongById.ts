@@ -4,12 +4,12 @@ import { electronAPI } from "@/libs/electron-utils";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useEffect, useState } from "react";
 
 /**
  * 指定されたIDに基づいて曲を取得するカスタムフック
  *
+ * onlineManager により、オフライン時はクエリが自動的に pause されます。
  * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  *
  * @param {string|number|undefined} id - 取得する曲のID
@@ -17,7 +17,6 @@ import { useEffect, useState } from "react";
  */
 const useGetSongById = (id?: string | number) => {
   const supabaseClient = createClient();
-  const { isOnline } = useNetworkStatus();
 
   // IDを文字列に正規化
   const normalizedId = id != null ? String(id) : undefined;
@@ -28,6 +27,7 @@ const useGetSongById = (id?: string | number) => {
     isLoading,
     data: song,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async (): Promise<Song | null> => {
@@ -54,8 +54,7 @@ const useGetSongById = (id?: string | number) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    // オンライン時のみフェッチを実行
-    enabled: !!normalizedId && !normalizedId.startsWith("local_") && isOnline,
+    enabled: !!normalizedId && !normalizedId.startsWith("local_"),
     placeholderData: keepPreviousData,
     retry: false,
   });
@@ -99,12 +98,14 @@ const useGetSongById = (id?: string | number) => {
     };
   }, [song]);
 
-  // エラーハンドリング
-  if (error && isOnline) {
+  const isPaused = fetchStatus === "paused";
+
+  // エラーハンドリング（オフライン時を除く）
+  if (error && !isPaused) {
     toast.error(error.message);
   }
 
-  return { isLoading, song: finalSong };
+  return { isLoading, song: finalSong, isPaused };
 };
 
 export default useGetSongById;

@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { CACHE_CONFIG } from "@/constants";
 import { electronAPI } from "@/libs/electron-utils";
+import {
+  setupOnlineManager,
+  setupFocusManager,
+  setupMutationResume,
+} from "@/libs/query-online-manager";
 
 interface Props {
   children: React.ReactNode;
 }
+
+// 一度だけ実行するフラグ
+let isManagersSetup = false;
 
 const TanStackProvider = ({ children }: Props) => {
   const [queryClient] = useState(
@@ -21,6 +29,12 @@ const TanStackProvider = ({ children }: Props) => {
             gcTime: CACHE_CONFIG.gcTime,
             retry: false,
             refetchOnWindowFocus: false,
+            // オフライン時はキャッシュから取得、失敗時は pause
+            networkMode: "offlineFirst",
+          },
+          mutations: {
+            // オフライン時は mutation を pause し、オンライン復帰時に再開
+            networkMode: "offlineFirst",
           },
         },
       })
@@ -46,6 +60,20 @@ const TanStackProvider = ({ children }: Props) => {
       key: "BADWAVE_QUERY_CACHE",
     });
   });
+
+  // onlineManager と focusManager のセットアップ
+  useEffect(() => {
+    if (isManagersSetup) return;
+    isManagersSetup = true;
+
+    setupOnlineManager();
+    setupFocusManager();
+    const unsubscribe = setupMutationResume(queryClient);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [queryClient]);
 
   if (!persister) {
     return (

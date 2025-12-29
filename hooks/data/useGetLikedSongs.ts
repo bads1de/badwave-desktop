@@ -1,18 +1,17 @@
 import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { electronAPI } from "@/libs/electron-utils";
 
 /**
  * ユーザーがいいねした曲を取得するカスタムフック
  *
- * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
+ * networkMode: "always" により、オフライン時でも queryFn が実行され、
+ * SQLite キャッシュからの取得が可能になります。
  */
 const useGetLikedSongs = (userId?: string) => {
   const supabaseClient = createClient();
-  const { isOnline } = useNetworkStatus();
 
   const queryKey = [CACHED_QUERIES.likedSongs, userId];
 
@@ -20,6 +19,7 @@ const useGetLikedSongs = (userId?: string) => {
     data: likedSongs = [],
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
@@ -27,7 +27,14 @@ const useGetLikedSongs = (userId?: string) => {
         return [];
       }
 
-      // オンラインの場合は Supabase から取得
+      // Electron環境かつオフラインの場合はSQLiteキャッシュから取得
+      if (electronAPI.isElectron() && !onlineManager.isOnline()) {
+        const cachedSongs = await electronAPI.cache.getCachedLikedSongs(userId);
+        if (cachedSongs && cachedSongs.length > 0) {
+          return cachedSongs as Song[];
+        }
+      }
+
       const { data, error } = await supabaseClient
         .from("liked_songs_regular")
         .select("*, songs(*)")
@@ -48,7 +55,7 @@ const useGetLikedSongs = (userId?: string) => {
 
       // オフラインライブラリ用に SQLite キャッシュを同期（バックグラウンド）
       if (electronAPI.isElectron()) {
-        electronAPI.cache.syncLikedSongs(userId, songs).catch((e) => {
+        electronAPI.cache.syncLikedSongs({ userId, songs }).catch((e) => {
           console.error("Failed to sync liked songs with metadata:", e);
         });
       }
@@ -57,11 +64,14 @@ const useGetLikedSongs = (userId?: string) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: !!userId && isOnline,
+    enabled: !!userId,
     retry: false,
+    networkMode: "always", // オフライン時も queryFn を実行するために必要
   });
 
-  return { likedSongs, isLoading, error };
+  const isPaused = fetchStatus === "paused";
+
+  return { likedSongs, isLoading, error, isPaused };
 };
 
 export default useGetLikedSongs;

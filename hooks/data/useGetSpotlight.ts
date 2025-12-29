@@ -1,16 +1,15 @@
 import { Spotlight } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
 
 /**
  * スポットライトデータを取得するカスタムフック (クライアントサイド)
  *
+ * onlineManager により、オフライン時はクエリが自動的に pause されます。
  * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  */
 const useGetSpotlight = (initialData?: Spotlight[]) => {
-  const { isOnline } = useNetworkStatus();
   const supabase = createClient();
 
   const queryKey = [CACHED_QUERIES.spotlight];
@@ -19,10 +18,10 @@ const useGetSpotlight = (initialData?: Spotlight[]) => {
     data: spotlightData = [],
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      // オンラインの場合はSupabaseから取得
       const { data, error } = await supabase
         .from("spotlights")
         .select("*")
@@ -38,11 +37,12 @@ const useGetSpotlight = (initialData?: Spotlight[]) => {
     initialData: initialData,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: isOnline,
     retry: false,
   });
 
-  return { spotlightData, isLoading, error };
+  const isPaused = fetchStatus === "paused";
+
+  return { spotlightData, isLoading, error, isPaused };
 };
 
 export default useGetSpotlight;

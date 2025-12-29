@@ -146,13 +146,15 @@ interface ElectronAPI {
       playlists: any[]
     ) => Promise<{ success: boolean; count: number; error?: string }>;
     // プレイリスト内の曲をキャッシュ
-    syncPlaylistSongs: (
-      playlistSongs: any[]
-    ) => Promise<{ success: boolean; count: number; error?: string }>;
+    syncPlaylistSongs: (data: {
+      playlistId: string;
+      songs: any[];
+    }) => Promise<{ success: boolean; count: number; error?: string }>;
     // いいねをキャッシュ
-    syncLikedSongs: (
-      likedSongs: any[]
-    ) => Promise<{ success: boolean; count: number; error?: string }>;
+    syncLikedSongs: (data: {
+      userId: string;
+      songs: any[];
+    }) => Promise<{ success: boolean; count: number; error?: string }>;
     // キャッシュからプレイリストを取得
     getCachedPlaylists: (userId: string) => Promise<any[]>;
     // キャッシュからいいね曲を取得

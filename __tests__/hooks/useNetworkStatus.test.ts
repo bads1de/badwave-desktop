@@ -1,138 +1,59 @@
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
+import { onlineManager } from "@tanstack/react-query";
 
-describe("useNetworkStatus", () => {
-  // オリジナルの navigator.onLine を保存
-  const originalOnLine = navigator.onLine;
-
-  // イベントリスナーを追跡
-  let onlineHandler: EventListener | null = null;
-  let offlineHandler: EventListener | null = null;
-
+describe("useNetworkStatus (Refactored with onlineManager)", () => {
   beforeEach(() => {
-    // navigator.onLine をモック可能にする
-    Object.defineProperty(navigator, "onLine", {
-      writable: true,
-      configurable: true,
-      value: true,
-    });
-
-    // addEventListener をモック
-    jest
-      .spyOn(window, "addEventListener")
-      .mockImplementation((event, handler) => {
-        if (event === "online") {
-          onlineHandler = handler as EventListener;
-        } else if (event === "offline") {
-          offlineHandler = handler as EventListener;
-        }
-      });
-
-    // removeEventListener をモック
-    jest.spyOn(window, "removeEventListener").mockImplementation(() => {});
+    // 初期状態をオンラインに設定
+    onlineManager.setOnline(true);
   });
 
   afterEach(() => {
-    // navigator.onLine を復元
-    Object.defineProperty(navigator, "onLine", {
-      writable: true,
-      configurable: true,
-      value: originalOnLine,
-    });
-
-    onlineHandler = null;
-    offlineHandler = null;
     jest.restoreAllMocks();
   });
 
-  it("初期状態でオンラインの場合、isOnline は true を返す", () => {
-    Object.defineProperty(navigator, "onLine", { value: true });
-
+  it("should reflect online state from onlineManager", async () => {
     const { result } = renderHook(() => useNetworkStatus());
 
-    expect(result.current.isOnline).toBe(true);
-  });
-
-  it("初期状態でオフラインの場合、isOnline は false を返す", () => {
-    Object.defineProperty(navigator, "onLine", { value: false });
-
-    const { result } = renderHook(() => useNetworkStatus());
-
-    expect(result.current.isOnline).toBe(false);
-  });
-
-  it("オフラインイベントが発生すると isOnline が false になる", () => {
-    Object.defineProperty(navigator, "onLine", { value: true });
-
-    const { result } = renderHook(() => useNetworkStatus());
-
-    expect(result.current.isOnline).toBe(true);
-
-    // オフラインイベントをシミュレート
-    act(() => {
-      if (offlineHandler) {
-        offlineHandler(new Event("offline"));
-      }
-    });
-
-    expect(result.current.isOnline).toBe(false);
-  });
-
-  it("オンラインイベントが発生すると isOnline が true になる", () => {
-    Object.defineProperty(navigator, "onLine", { value: false });
-
-    const { result } = renderHook(() => useNetworkStatus());
-
-    expect(result.current.isOnline).toBe(false);
-
-    // オンラインイベントをシミュレート
-    act(() => {
-      if (onlineHandler) {
-        onlineHandler(new Event("online"));
-      }
+    // 初期化を待つ
+    await waitFor(() => {
+      expect(result.current.isInitialized).toBe(true);
     });
 
     expect(result.current.isOnline).toBe(true);
+
+    // オフラインに切り替え
+    act(() => {
+      onlineManager.setOnline(false);
+    });
+    expect(result.current.isOnline).toBe(false);
+
+    // オンラインに切り替え
+    act(() => {
+      onlineManager.setOnline(true);
+    });
+    expect(result.current.isOnline).toBe(true);
   });
 
-  it("アンマウント時にイベントリスナーが削除される", () => {
-    const { unmount } = renderHook(() => useNetworkStatus());
-
-    unmount();
-
-    expect(window.removeEventListener).toHaveBeenCalledWith(
-      "online",
-      expect.any(Function)
-    );
-    expect(window.removeEventListener).toHaveBeenCalledWith(
-      "offline",
-      expect.any(Function)
-    );
-  });
-
-  it("wasOffline は一度オフラインになった場合に true になる", () => {
-    Object.defineProperty(navigator, "onLine", { value: true });
-
+  it("should track wasOffline", async () => {
     const { result } = renderHook(() => useNetworkStatus());
+
+    await waitFor(() => {
+      expect(result.current.isInitialized).toBe(true);
+    });
 
     expect(result.current.wasOffline).toBe(false);
 
-    // オフラインイベントをシミュレート
+    // オフラインにする
     act(() => {
-      if (offlineHandler) {
-        offlineHandler(new Event("offline"));
-      }
+      onlineManager.setOnline(false);
     });
-
     expect(result.current.wasOffline).toBe(true);
 
-    // オンラインに戻っても wasOffline は true のまま
+    // オンラインに戻しても wasOffline は true のまま
     act(() => {
-      if (onlineHandler) {
-        onlineHandler(new Event("online"));
-      }
+      onlineManager.setOnline(true);
     });
-
     expect(result.current.isOnline).toBe(true);
     expect(result.current.wasOffline).toBe(true);
   });

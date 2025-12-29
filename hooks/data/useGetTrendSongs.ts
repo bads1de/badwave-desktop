@@ -1,20 +1,19 @@
 import { Song } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
 import dayjs from "dayjs";
 
 /**
  * トレンド曲を取得するカスタムフック
  *
+ * onlineManager により、オフライン時はクエリが自動的に pause されます。
  * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  */
 const useGetTrendSongs = (
   period: "all" | "month" | "week" | "day" = "all",
   initialData?: Song[]
 ) => {
-  const { isOnline } = useNetworkStatus();
   const supabase = createClient();
 
   const queryKey = [CACHED_QUERIES.trendSongs, period];
@@ -23,10 +22,10 @@ const useGetTrendSongs = (
     data: trends = [],
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      // オンラインの場合はSupabaseから取得
       let query = supabase.from("songs").select("*");
 
       switch (period) {
@@ -67,11 +66,13 @@ const useGetTrendSongs = (
     initialData: initialData,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    enabled: isOnline,
     retry: false,
   });
 
-  return { trends, isLoading, error };
+  // fetchStatus: 'paused' はオフライン状態を示す
+  const isPaused = fetchStatus === "paused";
+
+  return { trends, isLoading, error, isPaused };
 };
 
 export default useGetTrendSongs;

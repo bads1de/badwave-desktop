@@ -58,6 +58,13 @@ export const ELECTRON_STORE_KEYS = {
   MUSIC_LIBRARY_LAST_SCAN: "music_library_last_scan",
 } as const;
 
+/**
+ * TanStack Query のキャッシュ設定
+ *
+ * networkMode: "offlineFirst" は TanStackProvider で設定されています。
+ * これにより、オフライン時はまずキャッシュから表示し、
+ * ネットワークリクエストが失敗した場合は retry を pause します。
+ */
 export const CACHE_CONFIG = {
   staleTime: 1000 * 60 * 10, // 10分間
   gcTime: 1000 * 60 * 30, // 30分間

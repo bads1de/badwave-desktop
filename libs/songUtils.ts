@@ -114,6 +114,9 @@ export function extractFilePathFromLocalId(localId: string): string | null {
  */
 export function getDownloadFilename(song: Song): string {
   // ファイルシステムで使用できない文字を置換
-  const safeTitle = song.title.replace(/[<>:"/\\|?*]/g, "");
+  const safeTitle = song.title
+    .replace(/[<>:"/\\|?*]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
   return `${safeTitle}-${song.id}.mp3`;
 }

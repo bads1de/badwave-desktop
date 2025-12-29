@@ -1,16 +1,27 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Song } from "@/types";
 import { electronAPI } from "@/libs/electron-utils";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import SongItem from "@/components/Song/SongItem";
 import Header from "@/components/Header/Header";
 import usePlayer from "@/hooks/player/usePlayer";
 
 const OfflinePage = () => {
+  const router = useRouter();
+  const { isOnline } = useNetworkStatus();
   const player = usePlayer();
   const [offlineSongs, setOfflineSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // オンライン時はホームにリダイレクト
+  useEffect(() => {
+    if (isOnline) {
+      router.push("/");
+    }
+  }, [isOnline, router]);
 
   // オフライン曲の取得
   useEffect(() => {

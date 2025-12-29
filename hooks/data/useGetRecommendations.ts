@@ -1,13 +1,13 @@
 import { Song, SongWithRecommendation } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
 import { useUser } from "@/hooks/auth/useUser";
 
 /**
  * おすすめ曲を取得するカスタムフック (クライアントサイド)
  *
+ * onlineManager により、オフライン時はクエリが自動的に pause されます。
  * PersistQueryClient により、オフライン時や起動時は即座にキャッシュから表示されます。
  *
  * @param {Song[]} initialData - サーバーから取得した初期データ（Optional）
@@ -15,7 +15,6 @@ import { useUser } from "@/hooks/auth/useUser";
  * @returns {Object} おすすめ曲の取得状態と結果
  */
 const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
-  const { isOnline } = useNetworkStatus();
   const supabase = createClient();
   const { user } = useUser();
 
@@ -25,6 +24,7 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
     data: recommendations = [],
     isLoading,
     error,
+    fetchStatus,
   } = useQuery({
     queryKey,
     queryFn: async () => {
@@ -33,7 +33,6 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
         return [];
       }
 
-      // オンラインの場合はSupabaseから取得
       try {
         const { data, error } = await supabase.rpc("get_recommendations", {
           p_user_id: user.id,
@@ -67,13 +66,15 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
       }
     },
     initialData: initialData,
-    enabled: !!user?.id && isOnline,
+    enabled: !!user?.id,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: false,
   });
 
-  return { recommendations, isLoading, error };
+  const isPaused = fetchStatus === "paused";
+
+  return { recommendations, isLoading, error, isPaused };
 };
 
 export default useGetRecommendations;

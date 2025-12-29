@@ -131,7 +131,7 @@ export const MyUserContextProvider = (props: Props) => {
 
       return data as UserDetails;
     },
-    enabled: !!user && isOnline,
+    enabled: !!user,
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
   });
