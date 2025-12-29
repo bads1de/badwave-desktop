@@ -3,6 +3,9 @@ import usePlayer from "@/hooks/player/usePlayer";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
 import useVolumeStore from "@/hooks/stores/useVolumeStore";
+import usePlaybackStateStore, {
+  POSITION_SAVE_INTERVAL_MS,
+} from "@/hooks/stores/usePlaybackStateStore";
 import { isLocalFilePath, toFileUrl } from "@/libs/songUtils";
 import { Song } from "@/types";
 
@@ -50,19 +53,44 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
   // ボリューム管理のカスタムフックを使用
   const { volume, setVolume } = useVolumeStore();
 
+  // 再生状態の保存用
+  const {
+    savePlaybackState,
+    updatePosition,
+    songId: savedSongId,
+    position: savedPosition,
+    hasHydrated: playbackStateHydrated,
+    isRestoring,
+    setIsRestoring,
+  } = usePlaybackStateStore();
+  const lastSaveTimeRef = useRef<number>(0);
+  const hasRestoredRef = useRef<boolean>(false);
+
   const Icon = isPlaying ? BsPauseFill : BsPlayFill;
   const VolumeIcon = volume === 0 ? HiSpeakerXMark : HiSpeakerWave;
 
   const handlePlay = useCallback(() => {
-    setIsPlaying((prev) => !prev);
-  }, []);
-
-  const handleSeek = useCallback((time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
+    // 復元中フラグをクリア（以降は通常の自動再生を許可）
+    if (isRestoring) {
+      setIsRestoring(false);
     }
-  }, []);
+    setIsPlaying((prev) => !prev);
+  }, [isRestoring, setIsRestoring]);
+
+  const handleSeek = useCallback(
+    (time: number) => {
+      if (audioRef.current) {
+        audioRef.current.currentTime = time;
+        setCurrentTime(time);
+        // シーク時に再生位置を保存
+        const activeId = player.activeId;
+        if (activeId) {
+          savePlaybackState(activeId, time, player.ids);
+        }
+      }
+    },
+    [player.activeId, player.ids, savePlaybackState]
+  );
 
   // 次の曲を再生する関数
   const onPlayNext = useCallback(() => {
@@ -117,6 +145,11 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
 
     // ローカルファイルの場合は自動再生を制御
     const handleCanPlayThrough = () => {
+      // 復元中は自動再生しない（ユーザーが手動で再生ボタンを押すまで待つ）
+      if (isRestoring) {
+        return;
+      }
+
       if (isLocalFile) {
         // ローカルファイルの場合は明示的に再生状態をチェック
         if (isPlaying) {
@@ -132,7 +165,14 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
     };
 
     const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handlePause = () => {
+      setIsPlaying(false);
+      // 一時停止時に再生位置を保存
+      const activeId = player.activeId;
+      if (activeId) {
+        savePlaybackState(activeId, audio.currentTime, player.ids);
+      }
+    };
 
     // ローカルファイルの場合のエラーハンドリング
     const handleError = (e: Event) => {
@@ -157,7 +197,17 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
       audio.removeEventListener("pause", handlePause);
       audio.removeEventListener("error", handleError);
     };
-  }, [songUrl, isLocalFile, isPlaying, onPlayNext, isRepeating]);
+  }, [
+    songUrl,
+    isLocalFile,
+    isPlaying,
+    onPlayNext,
+    isRepeating,
+    isRestoring,
+    player.activeId,
+    player.ids,
+    savePlaybackState,
+  ]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -191,6 +241,66 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
       audio.src = songUrl;
     }
   }, [songUrl, isLocalFile]);
+
+  // 定期的な再生位置の保存（5秒ごと、デバウンス）
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const interval = setInterval(() => {
+      const audio = audioRef.current;
+      const activeId = player.activeId;
+      if (audio && activeId) {
+        const now = Date.now();
+        if (now - lastSaveTimeRef.current >= POSITION_SAVE_INTERVAL_MS) {
+          updatePosition(audio.currentTime);
+          lastSaveTimeRef.current = now;
+        }
+      }
+    }, POSITION_SAVE_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, player.activeId, updatePosition]);
+
+  // ページ離脱時に再生位置を保存
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const audio = audioRef.current;
+      const activeId = player.activeId;
+      if (audio && activeId) {
+        savePlaybackState(activeId, audio.currentTime, player.ids);
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [player.activeId, player.ids, savePlaybackState]);
+
+  // 保存された再生位置から復元
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (
+      !audio ||
+      !playbackStateHydrated ||
+      hasRestoredRef.current ||
+      !savedSongId ||
+      !player.activeId
+    ) {
+      return;
+    }
+
+    // 保存された曲と現在の曲が一致する場合のみ復元
+    if (savedSongId === player.activeId && savedPosition > 0) {
+      const handleCanPlay = () => {
+        if (!hasRestoredRef.current && savedPosition > 0) {
+          audio.currentTime = savedPosition;
+          hasRestoredRef.current = true;
+        }
+      };
+
+      audio.addEventListener("canplay", handleCanPlay, { once: true });
+      return () => audio.removeEventListener("canplay", handleCanPlay);
+    }
+  }, [playbackStateHydrated, savedSongId, savedPosition, player.activeId]);
 
   const formatTime = useMemo(() => {
     return (time: number) => {

@@ -1,6 +1,8 @@
-import React from "react";
-import GenreContent from "./components/GenreContent";
-import GenreHeader from "./components/GenreHeader";
+"use client";
+
+import React, { use } from "react";
+import GenreHeader from "@/components/Genre/GenreHeader";
+import GenreContent from "@/components/Genre/GenreContent";
 
 interface genreProps {
   params: Promise<{
@@ -8,12 +10,11 @@ interface genreProps {
   }>;
 }
 
-const page = async (props: genreProps) => {
-  const params = await props.params;
+const GenrePage = (props: genreProps) => {
+  const params = use(props.params);
   const { genre } = params;
   const decodedGenre = decodeURIComponent(genre);
 
-  // SSRでのデータフェッチを廃止し、クライアントサイドで取得
   return (
     <div className="bg-[#0d0d0d] rounded-lg w-full h-full overflow-hidden overflow-y-auto custom-scrollbar">
       <GenreHeader genre={decodedGenre} />
@@ -22,4 +23,4 @@ const page = async (props: genreProps) => {
   );
 };
 
-export default page;
+export default GenrePage;

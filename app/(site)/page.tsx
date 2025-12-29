@@ -10,13 +10,13 @@ import useGetSongs from "@/hooks/data/useGetSongs";
 import useGetPublicPlaylists from "@/hooks/data/useGetPublicPlaylists";
 
 // セクションコンポーネント
-import TrendSection from "./components/sections/TrendSection";
-import SpotlightSection from "./components/sections/SpotlightSection";
-import LatestReleasesSection from "./components/sections/LatestSection";
-import ForYouSection from "./components/sections/ForYouSection";
-import PlaylistsSection from "./components/sections/PlaylistsSection";
-import GenreSection from "./components/sections/GenreSection";
-import SectionSkeleton from "./components/sections/SectionSkeleton";
+import TrendSection from "@/components/Home/TrendSection";
+import SpotlightSection from "@/components/Home/SpotlightSection";
+import LatestReleasesSection from "@/components/Home/LatestSection";
+import ForYouSection from "@/components/Home/ForYouSection";
+import PlaylistsSection from "@/components/Home/PlaylistsSection";
+import GenreSection from "@/components/Home/GenreSection";
+import SectionSkeleton from "@/components/Home/SectionSkeleton";
 
 /**
  * ホームページ

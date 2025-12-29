@@ -10,6 +10,7 @@ import OfflineRedirector from "@/components/common/OfflineRedirector";
 
 import ModalProvider from "@/providers/ModalProvider";
 import ThemeProvider from "@/providers/ThemeProvider";
+import PlaybackStateProvider from "@/providers/PlaybackStateProvider";
 
 import ToasterProvider from "@/providers/ToasterProvider";
 import UserProvider from "@/providers/UserProvider";
@@ -37,14 +38,16 @@ export default function RootLayout({
           <UserProvider>
             <SyncProvider>
               <ThemeProvider>
-                <ModalProvider />
-                <WindowControls />
-                <Sidebar>
-                  <RightSidebar>{children}</RightSidebar>
-                </Sidebar>
-                <Player />
-                <OfflineIndicator />
-                <OfflineRedirector />
+                <PlaybackStateProvider>
+                  <ModalProvider />
+                  <WindowControls />
+                  <Sidebar>
+                    <RightSidebar>{children}</RightSidebar>
+                  </Sidebar>
+                  <Player />
+                  <OfflineIndicator />
+                  <OfflineRedirector />
+                </PlaybackStateProvider>
               </ThemeProvider>
             </SyncProvider>
           </UserProvider>

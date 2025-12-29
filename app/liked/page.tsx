@@ -1,5 +1,7 @@
+"use client";
+
 import Header from "@/components/Header/Header";
-import LikedContent from "./components/LikedContent";
+import SongListContent from "@/components/Song/SongListContent";
 
 const Liked = () => {
   return (
@@ -15,7 +17,7 @@ const Liked = () => {
           </div>
         </div>
       </Header>
-      <LikedContent />
+      <SongListContent />
     </div>
   );
 };

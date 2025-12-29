@@ -135,13 +135,11 @@ electron_1.contextBridge.exposeInMainWorld("electron", {
             return electron_1.ipcRenderer.invoke("sync-playlists", playlists);
         },
         // プレイリスト内の曲をキャッシュ
-        syncPlaylistSongs: function (playlistSongs) {
-            return electron_1.ipcRenderer.invoke("sync-playlist-songs", playlistSongs);
+        syncPlaylistSongs: function (data) {
+            return electron_1.ipcRenderer.invoke("sync-playlist-songs", data);
         },
         // いいねをキャッシュ
-        syncLikedSongs: function (likedSongs) {
-            return electron_1.ipcRenderer.invoke("sync-liked-songs", likedSongs);
-        },
+        syncLikedSongs: function (data) { return electron_1.ipcRenderer.invoke("sync-liked-songs", data); },
         // キャッシュからプレイリストを取得
         getCachedPlaylists: function (userId) {
             return electron_1.ipcRenderer.invoke("get-cached-playlists", userId);

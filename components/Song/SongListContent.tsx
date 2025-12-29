@@ -9,14 +9,14 @@ import { memo, useCallback } from "react";
 import useGetLikedSongs from "@/hooks/data/useGetLikedSongs";
 import { useUser } from "@/hooks/auth/useUser";
 
-interface LikedContentProps {
+interface SongListContentProps {
   songs?: Song[];
   playlistId?: string;
   playlistUserId?: string;
   showDownloadButton?: boolean;
 }
 
-const LikedContent: React.FC<LikedContentProps> = memo(
+const SongListContent: React.FC<SongListContentProps> = memo(
   ({
     songs: propSongs,
     playlistId,
@@ -25,7 +25,6 @@ const LikedContent: React.FC<LikedContentProps> = memo(
   }) => {
     const { user } = useUser();
     // クライアントサイドでデータを取得（オフライン対応付き）
-    // propsでsongsが渡された場合はそれを使用（プレイリストページからの利用）
     const { likedSongs, isLoading } = useGetLikedSongs(
       propSongs ? undefined : user?.id
     );
@@ -97,7 +96,6 @@ const LikedContent: React.FC<LikedContentProps> = memo(
   }
 );
 
-// displayName を設定
-LikedContent.displayName = "LikedContent";
+SongListContent.displayName = "SongListContent";
 
-export default LikedContent;
+export default SongListContent;

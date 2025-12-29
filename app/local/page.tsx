@@ -1,25 +1,203 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Header from "@/components/Header/Header";
 import { Button } from "@/components/ui/button";
-import LocalFileTable, {
-  ElectronApi,
-  LocalFile,
-} from "@/app/local/components/LocalFileTable";
 import { mapFileToSong } from "@/libs/localFileMappers";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import {
+  AlertCircle,
+  RefreshCw,
+  Music,
+  Clock,
+  Disc,
+  User,
+  Play,
+} from "lucide-react";
 import usePlayer from "@/hooks/player/usePlayer";
 import useGetLocalFiles from "@/hooks/data/useGetLocalFiles";
 import useGetSavedLibraryInfo from "@/hooks/data/useGetSavedLibraryInfo";
+
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { formatTime } from "@/libs/helpers";
+
+// --- Types ---
+
+export interface ElectronApi {
+  ipc: {
+    invoke: (channel: string, ...args: any[]) => Promise<any>;
+  };
+}
+
+export interface LocalFile {
+  path: string;
+  metadata?: any;
+  error?: string;
+}
 
 declare global {
   interface Window {
     electron: ElectronApi;
   }
 }
+
+// --- Sub-components ---
+
+interface LocalFileTableProps {
+  mp3Files: LocalFile[];
+  onPlayFile: (file: LocalFile) => void;
+}
+
+const LocalFileTable: React.FC<LocalFileTableProps> = ({
+  mp3Files,
+  onPlayFile,
+}) => {
+  const columns = useMemo<ColumnDef<LocalFile>[]>(
+    () => [
+      {
+        id: "title",
+        accessorFn: (row) => {
+          return (
+            row.metadata?.common?.title ||
+            (row.path ? row.path.split(/[\\/]/).pop() : "")
+          );
+        },
+        header: () => (
+          <div className="flex items-center gap-2">
+            <Music className="h-4 w-4 text-theme-400" />
+            <span>タイトル</span>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const file = row.original;
+          const title =
+            file.metadata?.common?.title ||
+            (file.path ? file.path.split(/[\\/]/).pop() : "読み込み中...");
+
+          return (
+            <div className="flex items-center gap-2 group">
+              <div className="w-8 h-8 bg-[#202020] rounded-lg flex items-center justify-center mr-2 group-hover:bg-theme-900/30 transition-all duration-300">
+                <Play className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-medium text-white truncate max-w-[300px] group-hover:text-theme-300 transition-colors duration-300">
+                  {title}
+                </span>
+                {file.error && (
+                  <span className="text-red-400 text-xs">メタデータエラー</span>
+                )}
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        id: "artist",
+        accessorFn: (row) => {
+          return row.metadata?.common?.artist || "不明なアーティスト";
+        },
+        header: () => (
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-theme-400" />
+            <span>アーティスト</span>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const artist =
+            row.original.metadata?.common?.artist || "不明なアーティスト";
+          return (
+            <div className="flex items-center">
+              <span className="text-neutral-300 group-hover:text-white transition-colors duration-300">
+                {artist}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "album",
+        accessorFn: (row) => {
+          return row.metadata?.common?.album || "不明なアルバム";
+        },
+        header: () => (
+          <div className="flex items-center gap-2">
+            <Disc className="h-4 w-4 text-theme-400" />
+            <span>アルバム</span>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const album =
+            row.original.metadata?.common?.album || "不明なアルバム";
+          return (
+            <div className="flex items-center">
+              <span className="text-neutral-300 group-hover:text-white transition-colors duration-300 truncate max-w-[200px]">
+                {album}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "duration",
+        accessorFn: (row) => {
+          return row.metadata?.format?.duration || 0;
+        },
+        header: () => (
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-theme-400" />
+            <span>長さ</span>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const duration = row.original.metadata?.format?.duration || 0;
+          return (
+            <div className="flex items-center">
+              <span className="text-neutral-300 group-hover:text-white transition-colors duration-300 font-mono">
+                {formatTime(duration)}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "genre",
+        accessorFn: (row) => row.metadata?.common?.genre?.[0] || "",
+        header: () => (
+          <div className="flex items-center gap-2">
+            <span className="text-theme-400 text-xs">#</span>
+            <span>ジャンル</span>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const genre = row.original.metadata?.common?.genre?.[0] || "不明";
+          return genre !== "不明" ? (
+            <div className="flex items-center">
+              <span className="px-3 py-1 rounded-full text-xs bg-theme-900/20 text-theme-300 border border-theme-800/30 hover:bg-theme-800/30 transition-colors duration-300">
+                {genre}
+              </span>
+            </div>
+          ) : (
+            <span className="text-neutral-500 text-xs">-</span>
+          );
+        },
+      },
+    ],
+    []
+  );
+
+  return (
+    <DataTable
+      columns={columns}
+      data={mp3Files}
+      searchKey="title"
+      onRowClick={onPlayFile}
+    />
+  );
+};
+
+// --- Main Page Component ---
 
 const LocalPage = () => {
   const [selectedDirectory, setSelectedDirectory] = useState<string | null>(
@@ -322,8 +500,6 @@ const LocalPage = () => {
           </div>
         )}
       </div>
-
-      {/* 統合プレイヤーシステムを使用するため、ここでのプレイヤー表示は不要 */}
     </div>
   );
 };

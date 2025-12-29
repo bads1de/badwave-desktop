@@ -69,10 +69,10 @@ export const useBackgroundSync = () => {
                   songType: "regular",
                 })) as Song[];
 
-                await electronAPI.cache.syncPlaylistSongs(
-                  String(playlist.id),
-                  songs
-                );
+                await electronAPI.cache.syncPlaylistSongs({
+                  playlistId: String(playlist.id),
+                  songs,
+                });
                 console.log(
                   `[Sync] Synced ${songs.length} songs for playlist "${playlist.title}"`
                 );
@@ -103,7 +103,7 @@ export const useBackgroundSync = () => {
             songType: "regular",
           })) as Song[];
 
-          await electronAPI.cache.syncLikedSongs(user.id, songs);
+          await electronAPI.cache.syncLikedSongs({ userId: user.id, songs });
           console.log(`[Sync] Synced ${songs.length} liked songs`);
 
           // キャッシュが更新されたことを TanStack Query に通知
