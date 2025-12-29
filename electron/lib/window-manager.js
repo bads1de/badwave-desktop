@@ -99,6 +99,7 @@ function createMainWindow() {
                             contextIsolation: true,
                             preload: path.join(__dirname, "../preload/index.js"),
                             webSecurity: false, // ローカルファイルの読み込みを許可
+                            backgroundThrottling: false, // バックグラウンドでのスロットリングを無効化（オーディオ再生を維持）
                         },
                         // macOSでは背景色を設定しないとタイトルバーが白くなる
                         backgroundColor: "#121212",
