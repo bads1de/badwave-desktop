@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Playlist } from "@/types";
+import { Playlist, Song } from "@/types";
 import { RiPlayListAddFill, RiPlayListFill } from "react-icons/ri";
 import toast from "react-hot-toast";
 import { useUser } from "@/hooks/auth/useUser";
@@ -20,6 +20,8 @@ interface PlaylistMenuProps {
   songType: "regular";
   children?: React.ReactNode;
   disabled?: boolean;
+  /** 曲データ（渡されれば useGetSongById をスキップ） */
+  song?: Song;
 }
 
 /**
@@ -29,6 +31,7 @@ interface PlaylistMenuProps {
  * @param songId 曲のID
  * @param songType 曲のタイプ ("regular")
  * @param children ドロップダウンのトリガーとなる要素
+ * @param song 曲データ（オプション - 渡されれば useGetSongById をスキップ）
  */
 const AddPlaylist: React.FC<PlaylistMenuProps> = ({
   playlists,
@@ -36,10 +39,14 @@ const AddPlaylist: React.FC<PlaylistMenuProps> = ({
   songType = "regular",
   children,
   disabled = false,
+  song: propSong,
 }) => {
   const { user } = useUser();
   const authModal = useAuthModal();
-  const { song } = useGetSongById(songId);
+
+  // propSong が渡されれば useGetSongById をスキップ
+  const { song: fetchedSong } = useGetSongById(propSong ? undefined : songId);
+  const song = propSong || fetchedSong;
 
   // プレイリストに曲が含まれているかどうかを取得
   const { isInPlaylist } = usePlaylistSongStatus(songId, playlists);

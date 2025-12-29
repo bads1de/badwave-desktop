@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import usePlayer from "@/hooks/player/usePlayer";
 import useGetSongById from "@/hooks/data/useGetSongById";
 import FullScreenLayout from "./FullScreenLayout";
@@ -17,11 +17,30 @@ interface RightSidebarProps {
 
 const RightSidebar: React.FC<RightSidebarProps> = ({ children }) => {
   const player = usePlayer();
-  const { song } = useGetSongById(player.activeId);
-  const { song: nextSong } = useGetSongById(player.getNextSongId());
 
-  const currentSong = song;
-  const nextTrack = nextSong;
+  // まずローカルストアから曲を取得
+  const localCurrentSong = useMemo(() => {
+    if (!player.activeId) return null;
+    return player.getLocalSong(player.activeId);
+  }, [player.activeId, player.getLocalSong]);
+
+  const nextSongId = player.getNextSongId();
+  const localNextSong = useMemo(() => {
+    if (!nextSongId) return null;
+    return player.getLocalSong(nextSongId);
+  }, [nextSongId, player.getLocalSong]);
+
+  // ローカルストアになければ useGetSongById でフェッチ（オンライン時のみ実行される）
+  const { song: fetchedCurrentSong } = useGetSongById(
+    localCurrentSong ? undefined : player.activeId
+  );
+  const { song: fetchedNextSong } = useGetSongById(
+    localNextSong ? undefined : nextSongId
+  );
+
+  // 最終的な曲を決定（ローカル優先）
+  const currentSong = localCurrentSong || fetchedCurrentSong;
+  const nextTrack = localNextSong || fetchedNextSong;
 
   const showRightSidebar = currentSong && nextTrack;
 
@@ -171,8 +190,8 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ children }) => {
             {!isClosed && (
               <FullScreenLayout
                 song={currentSong!}
-                videoPath={song?.video_path}
-                imagePath={song?.image_path}
+                videoPath={currentSong?.video_path}
+                imagePath={currentSong?.image_path}
                 nextSong={nextTrack}
                 nextImagePath={nextTrack?.image_path}
               />

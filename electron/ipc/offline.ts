@@ -173,6 +173,7 @@ export const setupDownloadHandlers = () => {
         where: eq(songs.id, songId),
         columns: {
           songPath: true,
+          imagePath: true,
         },
       });
 
@@ -181,6 +182,7 @@ export const setupDownloadHandlers = () => {
       return {
         isDownloaded,
         localPath: result?.songPath || undefined,
+        localImagePath: result?.imagePath || undefined,
       };
     } catch (error) {
       console.error("Failed to check offline status:", error);

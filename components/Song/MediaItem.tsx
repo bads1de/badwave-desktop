@@ -5,10 +5,11 @@ import { Song } from "@/types";
 import usePlayer from "@/hooks/player/usePlayer";
 import { twMerge } from "tailwind-merge";
 import ScrollingText from "../common/ScrollingText";
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import useDownloadSong from "@/hooks/utils/useDownloadSong";
 import { IoCloudDone, IoCloudOffline } from "react-icons/io5";
+import { getPlayableImagePath } from "@/libs/songUtils";
 
 interface MediaItemProps {
   data: Song;
@@ -23,11 +24,18 @@ const MediaItem: React.FC<MediaItemProps> = memo(
   ({ data, onClick, isCollapsed, className, forcePlayable }) => {
     const player = usePlayer();
     const { isOnline } = useNetworkStatus();
-    const { isDownloaded } = useDownloadSong(data);
+
+    // まずプロパティを確認、なければフックにフォールバック
+    // is_downloaded が既に true なら、フックは IPC をスキップする
+    const { isDownloaded: hookIsDownloaded } = useDownloadSong(data);
+    const isDownloaded = data.is_downloaded ?? hookIsDownloaded;
 
     // オフラインかつダウンロードされていない場合は再生不可
     // forcePlayable が true の場合は常に再生可能
     const isPlayable = forcePlayable ?? (isOnline || isDownloaded);
+
+    // 画像パス（ダウンロード済みならローカルパスを優先）
+    const imagePath = useMemo(() => getPlayableImagePath(data), [data]);
 
     // クリックハンドラーをメモ化
     const handleClick = useCallback(() => {
@@ -73,10 +81,10 @@ const MediaItem: React.FC<MediaItemProps> = memo(
           `
           )}
         >
-          {data.image_path && (
+          {imagePath && (
             <Image
               fill
-              src={data.image_path!}
+              src={imagePath}
               alt="MediaItem"
               className={`object-cover rounded-xl transition-all duration-500 ${
                 isPlayable ? "group-hover:scale-110" : "grayscale"

@@ -237,7 +237,11 @@ export const electronAPI = {
     },
     checkStatus: async (
       songId: string
-    ): Promise<{ isDownloaded: boolean; localPath?: string }> => {
+    ): Promise<{
+      isDownloaded: boolean;
+      localPath?: string;
+      localImagePath?: string;
+    }> => {
       if (isElectron()) {
         return (window as any).electron.offline.checkStatus(songId);
       }

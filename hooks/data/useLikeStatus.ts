@@ -1,6 +1,7 @@
 import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 /**
  * 曲のいいね状態を取得するカスタムフック
@@ -11,6 +12,7 @@ import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
  */
 const useLikeStatus = (songId: string, userId?: string) => {
   const supabaseClient = createClient();
+  const { isOnline } = useNetworkStatus();
 
   const {
     data: isLiked = false,
@@ -39,8 +41,11 @@ const useLikeStatus = (songId: string, userId?: string) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
+    // オフライン時はフェッチをスキップ
     enabled:
-      !!userId && !(typeof songId === "string" && songId.startsWith("local_")),
+      isOnline &&
+      !!userId &&
+      !(typeof songId === "string" && songId.startsWith("local_")),
   });
 
   return {

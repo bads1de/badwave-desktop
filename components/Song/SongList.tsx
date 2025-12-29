@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useCallback } from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { Song } from "@/types";
 import usePlayer from "@/hooks/player/usePlayer";
@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import useDownloadSong from "@/hooks/utils/useDownloadSong";
 import { IoCloudDone, IoCloudOffline } from "react-icons/io5";
+import { getPlayableImagePath } from "@/libs/songUtils";
 
 interface SongListProps {
   data: Song;
@@ -22,10 +23,17 @@ const SongList: React.FC<SongListProps> = memo(
   ({ data, onClick, className }) => {
     const player = usePlayer();
     const { isOnline } = useNetworkStatus();
-    const { isDownloaded } = useDownloadSong(data);
+
+    // まずプロパティを確認、なければフックにフォールバック
+    // is_downloaded が既に true なら、フックは IPC をスキップする
+    const { isDownloaded: hookIsDownloaded } = useDownloadSong(data);
+    const isDownloaded = data.is_downloaded ?? hookIsDownloaded;
 
     // オフラインかつダウンロードされていない場合は再生不可
     const isPlayable = isOnline || isDownloaded;
+
+    // 画像パス（ダウンロード済みならローカルパスを優先）
+    const imagePath = useMemo(() => getPlayableImagePath(data), [data]);
 
     // クリックハンドラーをメモ化
     const handleClick = useCallback(() => {
@@ -80,10 +88,10 @@ const SongList: React.FC<SongListProps> = memo(
               : ""
           }`}
         >
-          {data.image_path && (
+          {imagePath && (
             <Image
               fill
-              src={data.image_path}
+              src={imagePath}
               alt={data.title}
               className={`object-cover transition-all duration-500 ${
                 isPlayable ? "group-hover:scale-110" : "grayscale"

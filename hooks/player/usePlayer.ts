@@ -15,6 +15,8 @@ interface PlayerStore {
   setIds: (ids: string[]) => void;
   setLocalSong: (song: Song) => void;
   getLocalSong: (id: string) => Song | undefined;
+  /** 曲データ、アクティブID、IDリストを同時に設定（オフライン再生用） */
+  playSongWithData: (song: Song, ids: string[]) => void;
   toggleRepeat: () => void;
   toggleShuffle: () => void;
   reset: () => void;
@@ -68,6 +70,16 @@ const usePlayer = create<PlayerStore>()(
         const state = get();
         return state.localSongs.get(id);
       },
+      playSongWithData: (song: Song, ids: string[]) =>
+        set((state) => {
+          const newLocalSongs = new Map(state.localSongs);
+          newLocalSongs.set(song.id, song);
+          return {
+            localSongs: newLocalSongs,
+            activeId: song.id,
+            ids,
+          };
+        }),
       toggleRepeat: () => set((state) => ({ isRepeating: !state.isRepeating })),
       toggleShuffle: () =>
         set((state) => {

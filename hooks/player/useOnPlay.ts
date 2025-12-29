@@ -24,16 +24,31 @@ const useOnPlay = (songs: Song[]) => {
   const pendingPlayRef = useRef<string | null>(null);
   const playHistory = usePlayHistory();
 
+  // 最新の isOnline を取得するための ref
+  const isOnlineRef = useRef(isOnline);
+  isOnlineRef.current = isOnline;
+
   // 再生処理のメイン関数
   const processPlay = useCallback(
     async (id: string) => {
       try {
-        // プレイヤーの状態を設定
-        player.setId(id);
-        player.setIds(songs.map((song) => song.id));
+        // 再生対象の曲を取得
+        const targetSong = songs.find((song) => song.id === id);
+        const allIds = songs.map((song) => song.id);
+
+        // 曲データ、activeId、idsを同時に設定
+        // これによりPlayer.tsxがレンダリングされる際にlocalSongが必ず利用可能になる
+        if (targetSong) {
+          player.playSongWithData(targetSong, allIds);
+        } else {
+          // 曲データがない場合は従来の方法でIDのみ設定
+          player.setId(id);
+          player.setIds(allIds);
+        }
 
         // オフライン時はプレイカウント更新をスキップ
-        if (isOnline) {
+        // ref から最新の状態を取得
+        if (isOnlineRef.current) {
           // songデータを取得
           const { data: songData, error: selectError } = await supabase
             .from("songs")
@@ -70,7 +85,7 @@ const useOnPlay = (songs: Song[]) => {
         console.error("エラーが発生しました:", error);
       }
     },
-    [player, songs, supabase, playHistory, isOnline]
+    [player, songs, supabase, playHistory]
   );
 
   const onPlay = useCallback(

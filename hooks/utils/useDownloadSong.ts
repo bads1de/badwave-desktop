@@ -32,9 +32,14 @@ const useDownloadSong = (song: Song | null): UseDownloadSongResult => {
   /**
    * ダウンロード済みかどうかを確認
    * 新しいオフラインIPCを使用してDBからステータスを取得
+   *
+   * 注意: song.is_downloaded が既に true の場合は、キャッシュからの情報を信頼し、
+   * 非同期チェックをスキップする。これにより不要なIPCコールを回避し、
+   * オフライン時の表示を高速化する。
    */
   const checkStatus = useCallback(async () => {
-    if (!song || !electronAPI.isElectron()) return;
+    // song が null、または is_downloaded が既に true なら IPC 不要
+    if (!song || song.is_downloaded || !electronAPI.isElectron()) return;
 
     try {
       const { isDownloaded } = await electronAPI.offline.checkStatus(song.id);
@@ -45,9 +50,15 @@ const useDownloadSong = (song: Song | null): UseDownloadSongResult => {
   }, [song]);
 
   // マウント時と曲変更時にステータスを確認
+  // is_downloaded が既に true の場合は初期値を維持（スキップ）
   useEffect(() => {
+    // 初期値として is_downloaded を反映
+    if (song?.is_downloaded) {
+      setIsDownloaded(true);
+      return;
+    }
     checkStatus();
-  }, [checkStatus]);
+  }, [song?.is_downloaded, checkStatus]);
 
   /**
    * ダウンロードを実行

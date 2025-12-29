@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { CiHeart, CiPlay1 } from "react-icons/ci";
 import ScrollingText from "../common/ScrollingText";
-import { memo, useCallback, useState, useEffect } from "react";
+import { memo, useCallback, useState, useEffect, useMemo } from "react";
 import useDownloadSong from "@/hooks/utils/useDownloadSong";
 import { IoCloudDone, IoCloudOffline } from "react-icons/io5";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { getPlayableImagePath } from "@/libs/songUtils";
 
 interface SongItemProps {
   onClick: (id: string) => void;
@@ -17,7 +18,11 @@ interface SongItemProps {
 
 const SongItem: React.FC<SongItemProps> = memo(({ onClick, data }) => {
   const { isOnline, isInitialized } = useNetworkStatus();
-  const { isDownloaded } = useDownloadSong(data);
+
+  // まずプロパティを確認、なければフックにフォールバック
+  // is_downloaded が既に true なら、フックは IPC をスキップする
+  const { isDownloaded: hookIsDownloaded } = useDownloadSong(data);
+  const isDownloaded = data.is_downloaded ?? hookIsDownloaded;
 
   // Hydrationエラー回避: 初回レンダリングは常に再生可能として表示
   // クライアントマウント後に実際の状態を反映
@@ -29,6 +34,9 @@ const SongItem: React.FC<SongItemProps> = memo(({ onClick, data }) => {
 
   // Hydration完了かつネットワーク状態が初期化されるまでは再生可能として表示
   const isPlayable = !isHydrated || !isInitialized || isOnline || isDownloaded;
+
+  // 画像パス（ダウンロード済みならローカルパスを優先）
+  const imagePath = useMemo(() => getPlayableImagePath(data), [data]);
 
   // クリックハンドラーをメモ化
   const handleClick = useCallback(() => {
@@ -61,12 +69,12 @@ const SongItem: React.FC<SongItemProps> = memo(({ onClick, data }) => {
       `}
     >
       <div className="relative w-full h-full">
-        {data.image_path && (
+        {imagePath && (
           <Image
             className={`object-cover w-full h-full transition-all duration-500 ${
               isPlayable ? "group-hover:scale-110" : "grayscale opacity-50"
             }`}
-            src={data.image_path}
+            src={imagePath}
             fill
             alt="Image"
             onClick={handleClick}
@@ -149,7 +157,9 @@ const SongItem: React.FC<SongItemProps> = memo(({ onClick, data }) => {
 });
 
 const DownloadIndicator = ({ song }: { song: Song }) => {
-  const { isDownloaded } = useDownloadSong(song);
+  // まずプロパティを確認、なければフックにフォールバック
+  const { isDownloaded: hookIsDownloaded } = useDownloadSong(song);
+  const isDownloaded = song.is_downloaded ?? hookIsDownloaded;
 
   if (!isDownloaded) return null;
 

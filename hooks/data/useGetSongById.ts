@@ -4,7 +4,8 @@ import { electronAPI } from "@/libs/electron-utils";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 /**
  * 指定されたIDに基づいて曲を取得するカスタムフック
@@ -17,6 +18,7 @@ import { useEffect, useState } from "react";
  */
 const useGetSongById = (id?: string | number) => {
   const supabaseClient = createClient();
+  const { isOnline } = useNetworkStatus();
 
   // IDを文字列に正規化
   const normalizedId = id != null ? String(id) : undefined;
@@ -54,6 +56,9 @@ const useGetSongById = (id?: string | number) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
+    // IDが有効でローカル曲でない場合に有効化
+    // オフライン時もクエリは有効だが、networkMode: offlineFirst により
+    // キャッシュがあればそれを使い、なければ pause される
     enabled: !!normalizedId && !normalizedId.startsWith("local_"),
     placeholderData: keepPreviousData,
     retry: false,
@@ -72,7 +77,7 @@ const useGetSongById = (id?: string | number) => {
       }
 
       try {
-        const { isDownloaded, localPath } =
+        const { isDownloaded, localPath, localImagePath } =
           await electronAPI.offline.checkStatus(song.id);
 
         if (isDownloaded && localPath) {
@@ -80,6 +85,9 @@ const useGetSongById = (id?: string | number) => {
             setFinalSong({
               ...song,
               song_path: localPath,
+              is_downloaded: true,
+              local_song_path: localPath,
+              local_image_path: localImagePath,
             });
           }
         } else {
@@ -100,10 +108,23 @@ const useGetSongById = (id?: string | number) => {
 
   const isPaused = fetchStatus === "paused";
 
-  // エラーハンドリング（オフライン時を除く）
-  if (error && !isPaused) {
-    toast.error(error.message);
-  }
+  // エラー表示用のref（重複表示を防ぐ）
+  const errorShownRef = useRef<string | null>(null);
+
+  // エラーハンドリング（オフライン時を除く）- useEffect内で実行
+  useEffect(() => {
+    // オフライン時はエラーを表示しない
+    if (!isOnline) return;
+
+    if (error && !isPaused && errorShownRef.current !== error.message) {
+      errorShownRef.current = error.message;
+      toast.error(error.message);
+    }
+    // エラーがクリアされたらrefもリセット
+    if (!error) {
+      errorShownRef.current = null;
+    }
+  }, [error, isPaused, isOnline]);
 
   return { isLoading, song: finalSong, isPaused };
 };

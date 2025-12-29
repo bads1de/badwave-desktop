@@ -182,6 +182,7 @@ var setupDownloadHandlers = function () {
                             where: (0, drizzle_orm_1.eq)(schema_1.songs.id, songId),
                             columns: {
                                 songPath: true,
+                                imagePath: true,
                             },
                         })];
                 case 1:
@@ -190,6 +191,7 @@ var setupDownloadHandlers = function () {
                     return [2 /*return*/, {
                             isDownloaded: isDownloaded,
                             localPath: (result === null || result === void 0 ? void 0 : result.songPath) || undefined,
+                            localImagePath: (result === null || result === void 0 ? void 0 : result.imagePath) || undefined,
                         }];
                 case 2:
                     error_2 = _a.sent();

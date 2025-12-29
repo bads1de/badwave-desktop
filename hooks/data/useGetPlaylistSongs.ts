@@ -25,14 +25,15 @@ const useGetPlaylistSongs = (playlistId?: string) => {
     queryFn: async () => {
       if (!playlistId) return [];
 
+      const isOnline = onlineManager.isOnline();
+
       // Electron環境かつオフラインの場合はSQLiteキャッシュから取得
-      if (electronAPI.isElectron() && !onlineManager.isOnline()) {
+      if (electronAPI.isElectron() && !isOnline) {
         const cachedSongs = await electronAPI.cache.getCachedPlaylistSongs(
           playlistId
         );
-        if (cachedSongs && cachedSongs.length > 0) {
-          return cachedSongs as Song[];
-        }
+        // オフライン時はキャッシュを返す（空でも返す）
+        return (cachedSongs as Song[]) || [];
       }
 
       const { data, error } = await supabaseClient

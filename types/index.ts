@@ -8,6 +8,7 @@ export interface Song {
   song_path: string;
   image_path: string;
   local_song_path?: string;
+  local_image_path?: string;
   is_downloaded?: boolean;
   video_path?: string;
   genre?: string;

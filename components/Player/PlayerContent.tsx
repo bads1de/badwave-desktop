@@ -12,7 +12,7 @@ import AddPlaylist from "../Playlist/AddPlaylist";
 import useAudioPlayer from "@/hooks/audio/useAudioPlayer";
 import useLyricsStore from "@/hooks/stores/useLyricsStore";
 import { mediaControls } from "@/libs/electron-utils";
-import { isLocalSong } from "@/libs/songUtils";
+import { isLocalSong, getPlayablePath } from "@/libs/songUtils";
 import DisabledOverlay from "../common/DisabledOverlay";
 
 interface PlayerContentProps {
@@ -24,6 +24,9 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
   ({ song, playlists }) => {
     // ローカル曲かどうかを判定
     const isLocalFile = isLocalSong(song);
+
+    // ダウンロード済みの場合はローカルパスを優先
+    const playablePath = getPlayablePath(song);
 
     const {
       Icon,
@@ -47,7 +50,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
       handleVolumeClick,
       showVolumeSlider,
       setShowVolumeSlider,
-    } = useAudioPlayer(song?.song_path, song);
+    } = useAudioPlayer(playablePath, song);
     const { toggleLyrics } = useLyricsStore();
 
     useEffect(() => {
@@ -164,6 +167,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
                   songId={song.id}
                   songType="regular"
                   disabled={isLocalFile}
+                  song={song}
                 />
               </DisabledOverlay>
 

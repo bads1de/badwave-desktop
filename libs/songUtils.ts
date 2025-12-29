@@ -120,3 +120,51 @@ export function getDownloadFilename(song: Song): string {
     .trim();
   return `${safeTitle}-${song.id}.mp3`;
 }
+
+/**
+ * 曲の再生可能なパスを取得する
+ *
+ * ダウンロード済みの場合はローカルパスを優先し、
+ * そうでなければリモートURLを返す。
+ * オフライン時に通信を発生させないための重要な関数。
+ *
+ * @param song - 曲オブジェクト
+ * @returns 再生可能なパス（ローカルまたはリモート）
+ */
+export function getPlayablePath(song: Song | null | undefined): string {
+  if (!song) {
+    return "";
+  }
+
+  // ダウンロード済みかつローカルパスが存在する場合はローカルパスを使用
+  if (song.is_downloaded && song.local_song_path) {
+    return song.local_song_path;
+  }
+
+  // それ以外の場合はリモートURLを使用
+  return song.song_path || "";
+}
+
+/**
+ * 曲の画像パスを取得する
+ *
+ * ダウンロード済みの場合はローカル画像パスを優先し、
+ * そうでなければリモートURLを返す。
+ * オフライン時に通信を発生させないための重要な関数。
+ *
+ * @param song - 曲オブジェクト
+ * @returns 画像パス（ローカルまたはリモート）
+ */
+export function getPlayableImagePath(song: Song | null | undefined): string {
+  if (!song) {
+    return "";
+  }
+
+  // ダウンロード済みかつローカル画像パスが存在する場合はそれを使用
+  if (song.is_downloaded && song.local_image_path) {
+    return song.local_image_path;
+  }
+
+  // それ以外の場合はリモートURLを使用
+  return song.image_path || "";
+}

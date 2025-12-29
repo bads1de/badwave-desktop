@@ -2,6 +2,7 @@ import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG } from "@/constants";
 import { useUser } from "@/hooks/auth/useUser";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 /**
  * 曲がプレイリストに含まれているかどうかを確認するカスタムフック
@@ -13,6 +14,7 @@ import { useUser } from "@/hooks/auth/useUser";
 const usePlaylistSongStatus = (songId: string, playlists: { id: string }[]) => {
   const supabaseClient = createClient();
   const { user } = useUser();
+  const { isOnline } = useNetworkStatus();
   const playlistIds = playlists.map((playlist) => playlist.id);
 
   const {
@@ -53,7 +55,9 @@ const usePlaylistSongStatus = (songId: string, playlists: { id: string }[]) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
+    // オフライン時はフェッチをスキップ
     enabled:
+      isOnline &&
       !!user?.id &&
       !!songId &&
       playlistIds.length > 0 &&
