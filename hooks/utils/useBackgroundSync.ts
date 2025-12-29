@@ -126,5 +126,5 @@ export const useBackgroundSync = () => {
     // 1時間ごとに定期実行
     const interval = setInterval(syncLibrary, 1000 * 60 * 60);
     return () => clearInterval(interval);
-  }, [isOnline, user?.id, queryClient]);
+  }, [isOnline, user?.id, queryClient, supabase]);
 };

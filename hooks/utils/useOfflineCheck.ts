@@ -19,10 +19,10 @@ export const useOfflineCheck = () => {
     // Electronの場合はメインプロセスに問い合わせて確実な状態を取得
     if (electronAPI.isElectron()) {
       try {
-        const simStatus = await (
-          window as any
-        ).electron.dev.getOfflineSimulationStatus();
-        isCurrentlyOffline = simStatus.isOffline;
+        const simStatus = await electronAPI.dev.getOfflineSimulationStatus();
+        if (simStatus.isOffline) {
+          isCurrentlyOffline = true;
+        }
       } catch (error) {
         // エラー時は元の isOnline ベースの判定を維持
       }

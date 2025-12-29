@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CACHED_QUERIES } from "@/constants";
 import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { createClient } from "@/libs/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import dayjs from "dayjs";
 
 /**
@@ -79,10 +79,13 @@ const useGetTrendSongs = (
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   useEffect(() => {
-    if (isOnline) {
+    if (!prevIsOnline.current && isOnline) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, refetch]);
 
   return { trends, isLoading, error };

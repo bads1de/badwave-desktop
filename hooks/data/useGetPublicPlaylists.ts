@@ -4,7 +4,7 @@ import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { createClient } from "@/libs/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * パブリックプレイリストを取得するカスタムフック (クライアントサイド)
@@ -61,11 +61,14 @@ const useGetPublicPlaylists = (initialData?: Playlist[], limit: number = 6) => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline) {
+    if (!prevIsOnline.current && isOnline) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, refetch]);
 
   return { playlists, isLoading, error };

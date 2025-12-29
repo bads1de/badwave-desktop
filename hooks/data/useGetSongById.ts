@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 /**
  * 指定されたIDに基づいて曲を取得するカスタムフック
@@ -74,11 +74,19 @@ const useGetSongById = (id?: string | number) => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline && normalizedId && !normalizedId.startsWith("local_")) {
+    if (
+      !prevIsOnline.current &&
+      isOnline &&
+      normalizedId &&
+      !normalizedId.startsWith("local_")
+    ) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, normalizedId, refetch]);
 
   // ローカルファイルの確認とパスの差し替え

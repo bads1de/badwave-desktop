@@ -4,7 +4,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface TopPlayedSong extends Song {
   play_count: number;
@@ -63,11 +63,14 @@ const useGetTopPlayedSongs = (userId?: string, period: Period = "day") => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline && userId) {
+    if (!prevIsOnline.current && isOnline && userId) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, userId, refetch]);
 
   return {

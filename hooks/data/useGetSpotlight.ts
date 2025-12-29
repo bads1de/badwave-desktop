@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * スポットライトデータを取得するカスタムフック (クライアントサイド)
@@ -49,11 +49,14 @@ const useGetSpotlight = (initialData?: Spotlight[]) => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline) {
+    if (!prevIsOnline.current && isOnline) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, refetch]);
 
   return { spotlightData, isLoading, error };

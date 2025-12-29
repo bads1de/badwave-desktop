@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * Pulseデータを取得するカスタムフック (オフライン対応)
@@ -60,11 +60,14 @@ const useGetPulses = (initialData?: Pulse[]) => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline) {
+    if (!prevIsOnline.current && isOnline) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, refetch]);
 
   return {

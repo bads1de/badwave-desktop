@@ -4,7 +4,7 @@ import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * タイトルでパブリックプレイリストを検索するカスタムフック (オフライン対応)
@@ -63,11 +63,14 @@ const useGetPlaylistsByTitle = (title: string) => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline && title) {
+    if (!prevIsOnline.current && isOnline && title) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, title, refetch]);
 
   return { playlists, isLoading, error };

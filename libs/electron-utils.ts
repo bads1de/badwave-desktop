@@ -5,6 +5,39 @@
  * ヘルパー関数を提供します。Electronの環境でない場合は代替の実装を提供します。
  */
 
+import { Song } from "@/types";
+
+// オフライン曲の型定義
+export interface OfflineSong {
+  id: string;
+  user_id: string;
+  title: string;
+  author: string;
+  song_path: string; // ローカルファイルパス (file://...)
+  image_path: string | null;
+  original_song_path: string | null;
+  original_image_path: string | null;
+  duration: number | null;
+  genre: string | null;
+  lyrics: string | null;
+  created_at: string | null;
+  downloaded_at: Date | null;
+}
+
+// ダウンロード時に渡される曲データの型定義
+export interface SongDownloadPayload {
+  id: string;
+  userId: string;
+  title: string;
+  author: string;
+  song_path: string; // リモートURL
+  image_path: string; // リモートURL
+  duration?: number;
+  genre?: string;
+  lyrics?: string;
+  created_at: string;
+}
+
 /**
  * 現在の実行環境がElectronかどうかを判定
  *

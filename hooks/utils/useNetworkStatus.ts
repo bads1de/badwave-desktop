@@ -39,7 +39,7 @@ export function useNetworkStatus(): NetworkStatus {
 
     // Electron の場合: シミュレーション状態を取得してから初期化完了
     if (electronAPI.isElectron()) {
-      (window as any).electron.dev
+      electronAPI.dev
         .getOfflineSimulationStatus()
         .then(({ isOffline }: { isOffline: boolean }) => {
           if (isOffline) {
@@ -62,7 +62,11 @@ export function useNetworkStatus(): NetworkStatus {
           if (isSimulatingOffline) {
             handleOffline();
           } else {
-            handleOnline();
+            if (navigator.onLine) {
+              handleOnline();
+            } else {
+              handleOffline();
+            }
           }
         }
       );

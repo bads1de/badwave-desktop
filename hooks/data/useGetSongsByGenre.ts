@@ -4,7 +4,7 @@ import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { createClient } from "@/libs/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * 指定したジャンルの曲一覧を取得するカスタムフック (オフライン対応)
@@ -67,11 +67,14 @@ const useGetSongsByGenre = (genre: string | string[]) => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline && genreArray.length > 0) {
+    if (!prevIsOnline.current && isOnline && genreArray.length > 0) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, genreArray, refetch]);
 
   return { songs, isLoading, error };

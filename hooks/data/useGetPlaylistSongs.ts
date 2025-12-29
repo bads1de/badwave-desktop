@@ -5,7 +5,7 @@ import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { electronAPI } from "@/libs/electron-utils";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * プレイリストの曲を取得するカスタムフック
@@ -83,10 +83,13 @@ const useGetPlaylistSongs = (playlistId?: string) => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   useEffect(() => {
-    if (isOnline && playlistId) {
+    if (!prevIsOnline.current && isOnline && playlistId) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, playlistId, refetch]);
 
   return { songs, isLoading, error };

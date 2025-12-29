@@ -6,7 +6,7 @@ import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { electronAPI } from "@/libs/electron-utils";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * ユーザーのプレイリスト一覧を取得するカスタムフック
@@ -76,11 +76,14 @@ const useGetPlaylists = () => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline && user?.id) {
+    if (!prevIsOnline.current && isOnline && user?.id) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, user?.id, refetch]);
 
   return { playlists, isLoading, error };

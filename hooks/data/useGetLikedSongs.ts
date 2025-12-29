@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useOfflineCheck } from "@/hooks/utils/useOfflineCheck";
 import { electronAPI } from "@/libs/electron-utils";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * ユーザーがいいねした曲を取得するカスタムフック
@@ -81,10 +81,13 @@ const useGetLikedSongs = (userId?: string) => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   useEffect(() => {
-    if (isOnline && userId) {
+    if (!prevIsOnline.current && isOnline && userId) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, userId, refetch]);
 
   return { likedSongs, isLoading, error };

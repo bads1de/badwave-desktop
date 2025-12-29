@@ -4,7 +4,7 @@ import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { createClient } from "@/libs/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * タイトルで曲を検索するカスタムフック (オフライン対応)
@@ -62,11 +62,14 @@ const useGetSongsByTitle = (title: string) => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline && title) {
+    if (!prevIsOnline.current && isOnline && title) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, title, refetch]);
 
   return { songs, isLoading, error };

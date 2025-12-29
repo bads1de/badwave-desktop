@@ -5,7 +5,7 @@ import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useOfflineCache } from "@/hooks/utils/useOfflineCache";
 import { createClient } from "@/libs/supabase/client";
 import { useUser } from "@/hooks/auth/useUser";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * おすすめ曲を取得するカスタムフック (クライアントサイド)
@@ -85,11 +85,14 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
     retry: isOnline ? 1 : false,
   });
 
+  const prevIsOnline = useRef(isOnline);
+
   // オンラインに戻ったときに再取得
   useEffect(() => {
-    if (isOnline && user?.id) {
+    if (!prevIsOnline.current && isOnline && user?.id) {
       refetch();
     }
+    prevIsOnline.current = isOnline;
   }, [isOnline, user?.id, refetch]);
 
   return { recommendations, isLoading, error };
