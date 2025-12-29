@@ -53,6 +53,8 @@ export async function createMainWindow() {
 
     try {
       // 開発サーバーが起動しているか確認
+      // 注: wait-on パッケージが npm スクリプトでサーバーの準備を待機するので、
+      // ここでは単純に loadURL を呼び出すだけでOK
       debugLog(
         "ローカル開発サーバー(http://localhost:3000)に接続を試みます..."
       );

@@ -124,6 +124,8 @@ function createMainWindow() {
                 case 1:
                     _a.trys.push([1, 3, , 5]);
                     // 開発サーバーが起動しているか確認
+                    // 注: wait-on パッケージが npm スクリプトでサーバーの準備を待機するので、
+                    // ここでは単純に loadURL を呼び出すだけでOK
                     (0, utils_1.debugLog)("ローカル開発サーバー(http://localhost:3000)に接続を試みます...");
                     return [4 /*yield*/, mainWindow.loadURL("http://localhost:3000")];
                 case 2:

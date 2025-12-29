@@ -12,7 +12,7 @@
     "lint": "next lint",
     "test": "jest",
     "create-icons": "node scripts/create-icons.js",
-    "dev:electron": "npm run build:electron && concurrently \"next dev\" \"electron .\"",
+    "dev:electron": "npm run build:electron && concurrently \"next dev\" \"wait-on http-get://localhost:3000 && electron .\"",
     "build:electron": "tsc -p electron",
     "package:electron": "electron-builder",
     "dist:electron": "npm run build && npm run build:electron && npm run create-icons && npm run package:electron",
