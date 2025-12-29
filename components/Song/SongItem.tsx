@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CiHeart, CiPlay1 } from "react-icons/ci";
 import ScrollingText from "../common/ScrollingText";
-import { memo, useCallback } from "react";
+import { memo, useCallback, useState, useEffect } from "react";
 import useDownloadSong from "@/hooks/utils/useDownloadSong";
 import { IoCloudDone, IoCloudOffline } from "react-icons/io5";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
@@ -16,11 +16,19 @@ interface SongItemProps {
 }
 
 const SongItem: React.FC<SongItemProps> = memo(({ onClick, data }) => {
-  const { isOnline } = useNetworkStatus();
+  const { isOnline, isInitialized } = useNetworkStatus();
   const { isDownloaded } = useDownloadSong(data);
 
-  // オフラインかつダウンロードされていない場合は再生不可
-  const isPlayable = isOnline || isDownloaded;
+  // Hydrationエラー回避: 初回レンダリングは常に再生可能として表示
+  // クライアントマウント後に実際の状態を反映
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  // Hydration完了かつネットワーク状態が初期化されるまでは再生可能として表示
+  const isPlayable = !isHydrated || !isInitialized || isOnline || isDownloaded;
 
   // クリックハンドラーをメモ化
   const handleClick = useCallback(() => {

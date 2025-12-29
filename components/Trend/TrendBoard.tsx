@@ -3,7 +3,6 @@
 import { useState, memo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import useGetTrendSongs from "@/hooks/data/useGetTrendSongs";
 import { motion } from "framer-motion";
 import useOnPlay from "@/hooks/player/useOnPlay";
 import ScrollableContainer from "@/components/common/ScrollableContainer";
@@ -11,19 +10,15 @@ import { Song } from "@/types";
 
 interface TrendBoardProps {
   className?: string;
-  selectedPeriod: "all" | "month" | "week" | "day";
-  onPeriodChange: (period: "all" | "month" | "week" | "day") => void;
-  initialSongs?: Song[];
+  songs: Song[];
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
 const TrendBoard: React.FC<TrendBoardProps> = memo(
-  ({ className = "", selectedPeriod, initialSongs = [] }) => {
+  ({ className = "", songs = [], isLoading = false, error = null }) => {
     const [showArrows, setShowArrows] = useState(false);
-    const { trends, isLoading, error } = useGetTrendSongs(
-      selectedPeriod,
-      initialSongs
-    );
-    const onPlay = useOnPlay(trends || []);
+    const onPlay = useOnPlay(songs);
 
     // マウスイベントハンドラをメモ化
     const handleMouseEnter = useCallback(() => setShowArrows(true), []);
@@ -56,7 +51,7 @@ const TrendBoard: React.FC<TrendBoardProps> = memo(
           <p className="text-red-500 text-center">{error.message}</p>
         ) : (
           <ScrollableContainer showArrows={showArrows}>
-            {trends?.map((song, index) => (
+            {songs.map((song: Song, index: number) => (
               <motion.div
                 key={song.id}
                 variants={itemVariants}

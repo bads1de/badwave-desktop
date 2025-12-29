@@ -40,6 +40,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runMigrations = runMigrations;
+var electron_1 = require("electron");
 var path_1 = __importDefault(require("path"));
 var migrator_1 = require("drizzle-orm/better-sqlite3/migrator");
 var client_1 = require("./client");
@@ -52,7 +53,9 @@ function runMigrations() {
         var migrationsFolder, db;
         return __generator(this, function (_a) {
             try {
-                migrationsFolder = path_1.default.join(__dirname, "../../drizzle");
+                migrationsFolder = electron_1.app.isPackaged
+                    ? path_1.default.join(process.resourcesPath, "drizzle")
+                    : path_1.default.join(__dirname, "../../drizzle");
                 db = (0, client_1.getDb)();
                 (0, migrator_1.migrate)(db, {
                     migrationsFolder: migrationsFolder,
