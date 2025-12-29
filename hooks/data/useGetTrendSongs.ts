@@ -2,7 +2,7 @@ import { Song } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
-import dayjs from "dayjs";
+import { subMonths, subWeeks, subDays } from "date-fns";
 
 /**
  * トレンド曲を取得するカスタムフック
@@ -33,21 +33,21 @@ const useGetTrendSongs = (
           query = query.filter(
             "created_at",
             "gte",
-            dayjs().subtract(1, "month").toISOString()
+            subMonths(new Date(), 1).toISOString()
           );
           break;
         case "week":
           query = query.filter(
             "created_at",
             "gte",
-            dayjs().subtract(1, "week").toISOString()
+            subWeeks(new Date(), 1).toISOString()
           );
           break;
         case "day":
           query = query.filter(
             "created_at",
             "gte",
-            dayjs().subtract(1, "day").toISOString()
+            subDays(new Date(), 1).toISOString()
           );
           break;
       }

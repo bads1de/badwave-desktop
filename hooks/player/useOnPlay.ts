@@ -4,19 +4,9 @@ import usePlayer from "./usePlayer";
 import { createClient } from "@/libs/supabase/client";
 import usePlayHistory from "./usePlayHistory";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { useDebouncedCallback } from "use-debounce";
 
 const DEFAULT_COOLDOWN = 1000;
-
-// デバウンス関数を定義
-const createDebounce = (wait: number) => {
-  return (func: (...args: any[]) => void) => {
-    let timeout: NodeJS.Timeout;
-    return (...args: any[]) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
-    };
-  };
-};
 
 /**
  * 曲の再生を管理するカスタムフック
@@ -117,14 +107,11 @@ const useOnPlay = (songs: Song[]) => {
         }
       }, DEFAULT_COOLDOWN);
     },
-    [lastPlayTime, player, songs, supabase]
+    [lastPlayTime, player, songs, supabase, processPlay]
   );
 
-  // デバウンス関数をメモ化
-  const debounce = useMemo(() => createDebounce(DEFAULT_COOLDOWN), []);
-
   // デバウンスされた再生関数を返す
-  return useMemo(() => debounce(onPlay), [debounce, onPlay]);
+  return useDebouncedCallback(onPlay, DEFAULT_COOLDOWN);
 };
 
 export default useOnPlay;

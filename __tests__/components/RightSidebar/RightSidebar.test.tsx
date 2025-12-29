@@ -28,23 +28,6 @@ jest.mock("@/libs/electron-utils", () => ({
   },
 }));
 
-// react-springのモック
-jest.mock("@react-spring/web", () => ({
-  animated: {
-    div: ({ children, style, className }: any) => (
-      <div className={className} style={style}>
-        {children}
-      </div>
-    ),
-  },
-  useSpring: jest.fn(() => [
-    { width: 384 },
-    {
-      start: jest.fn(),
-    },
-  ]),
-}));
-
 // use-gestureのモック
 jest.mock("@use-gesture/react", () => ({
   useDrag: jest.fn(() => () => ({})),

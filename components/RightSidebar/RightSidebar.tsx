@@ -5,7 +5,7 @@ import usePlayer from "@/hooks/player/usePlayer";
 import useGetSongById from "@/hooks/data/useGetSongById";
 import FullScreenLayout from "./FullScreenLayout";
 import { twMerge } from "tailwind-merge";
-import { animated, useSpring } from "@react-spring/web";
+import { motion, useSpring } from "framer-motion";
 import { useDrag } from "@use-gesture/react";
 import { BsGripVertical, BsChevronLeft } from "react-icons/bs";
 import { store } from "@/libs/electron-utils";
@@ -82,16 +82,16 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ children }) => {
     saveClosedState();
   }, [isClosed]);
 
-  // react-springでアニメーション用のスタイルを設定
-  const [{ width }, api] = useSpring(() => ({
-    width: isClosed ? 0 : sidebarWidth,
-    config: { tension: 300, friction: 30 },
-  }));
+  // framer-motion の useSpring でアニメーション用の幅を管理
+  const width = useSpring(isClosed ? 0 : sidebarWidth, {
+    stiffness: 300,
+    damping: 30,
+  });
 
-  // サイドバーの開閉状態が変わったときにアニメーションを更新
+  // 状態が変化したときに幅を更新
   useEffect(() => {
-    api.start({ width: isClosed ? 0 : sidebarWidth });
-  }, [isClosed, sidebarWidth, api]);
+    width.set(isClosed ? 0 : sidebarWidth);
+  }, [isClosed, sidebarWidth, width]);
 
   // サイドバーを開く関数
   const openSidebar = () => {
@@ -100,30 +100,25 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ children }) => {
 
   // ドラッグ操作の設定
   const bind = useDrag(
-    ({ movement: [mx], first, last }) => {
+    ({ movement: [mx], last }) => {
       // サイドバーが閉じている場合はドラッグ操作を無効化
       if (isClosed) return;
 
-      // ドラッグ開始時の幅を記録
-      if (first) {
-        api.start({ width: sidebarWidth });
-      }
-
       // ドラッグ中は幅を更新
       const newWidth = Math.max(0, Math.min(MAX_WIDTH, sidebarWidth - mx));
-      api.start({ width: newWidth, immediate: true });
+      // ドラッグ中はバネをスキップして即時追従させるために set を直接呼ぶ
+      // (useSpring の戻り値は MotionValue なので jump: true で即時移動可能)
+      width.jump(newWidth);
 
       // ドラッグ終了時に状態を更新
       if (last) {
         // 閾値以下になったら閉じる
         if (newWidth < CLOSE_THRESHOLD) {
           setIsClosed(true);
-          api.start({ width: 0 });
         } else {
           // 最小幅以下にならないように調整
           const adjustedWidth = Math.max(MIN_WIDTH, newWidth);
           setSidebarWidth(adjustedWidth);
-          api.start({ width: adjustedWidth });
         }
       }
     },
@@ -163,7 +158,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ children }) => {
           )}
 
           {/* リサイズ可能なサイドバー */}
-          <animated.div
+          <motion.div
             style={{ width }}
             className={twMerge(
               "h-full overflow-hidden",
@@ -182,7 +177,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ children }) => {
                 nextImagePath={nextTrack?.image_path}
               />
             )}
-          </animated.div>
+          </motion.div>
         </div>
       )}
     </div>

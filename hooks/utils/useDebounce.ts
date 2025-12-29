@@ -1,19 +1,15 @@
-import { useEffect, useState } from "react";
+import { useDebounce as useDebounceLib } from "use-debounce";
 
-// 値のデバウンスを行うカスタムフック
-function useDebounce<T>(value: T, delay?: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    // タイマーを設定し、指定された遅延時間後に値を更新する
-    const timer = setTimeout(() => setDebouncedValue(value), delay || 500);
-
-    // クリーンアップ関数を返し、コンポーネントがアンマウントされるときにタイマーをクリアする
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
+/**
+ * 値のデバウンスを行うカスタムフック
+ * use-debounce ライブラリを使用して実装を統一
+ *
+ * @param value デバウンスする値
+ * @param delay 遅延時間 (ms)
+ * @returns デバウンスされた値
+ */
+function useDebounce<T>(value: T, delay: number = 500): T {
+  const [debouncedValue] = useDebounceLib(value, delay);
   return debouncedValue;
 }
 
