@@ -5,11 +5,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import * as RadixSlider from "@radix-ui/react-slider";
+import { HelpCircle } from "lucide-react";
 import usePlaybackRateStore from "@/hooks/stores/usePlaybackRateStore";
 
 const PlaybackSpeedButton: React.FC = () => {
   const playbackRate = usePlaybackRateStore((state) => state.rate);
   const setPlaybackRate = usePlaybackRateStore((state) => state.setRate);
+  const isSlowedReverb = usePlaybackRateStore((state) => state.isSlowedReverb);
+  const setIsSlowedReverb = usePlaybackRateStore(
+    (state) => state.setIsSlowedReverb
+  );
 
   const rates = [0.9, 0.95, 1, 1.05, 1.1, 1.25];
 
@@ -81,6 +86,39 @@ const PlaybackSpeedButton: React.FC = () => {
               {rate}x
             </button>
           ))}
+        </div>
+
+        <div className="h-[1px] bg-neutral-800 w-full" />
+
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-neutral-400">Slowed + Reverb</span>
+            <div className="group relative flex items-center justify-center">
+              <HelpCircle
+                size={12}
+                className="text-neutral-500 cursor-help hover:text-neutral-300 transition-colors"
+              />
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-[#252525] border border-[#404040] rounded shadow-xl text-[10px] leading-relaxed text-neutral-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                ピッチを下げて再生速度を0.85倍にし、残響音(リバーブ)を追加して、独特の雰囲気を作り出します。
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#252525] border-b border-r border-[#404040] rotate-45"></div>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsSlowedReverb(!isSlowedReverb)}
+            className={`w-8 h-4 rounded-full transition-colors relative ${
+              isSlowedReverb ? "bg-theme-500" : "bg-neutral-600"
+            }`}
+          >
+            <div
+              className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform ${
+                isSlowedReverb ? "left-4.5 translate-x-0" : "left-0.5"
+              }`}
+              style={{
+                left: isSlowedReverb ? "calc(100% - 3px - 12px)" : "2px",
+              }}
+            />
+          </button>
         </div>
       </PopoverContent>
     </Popover>

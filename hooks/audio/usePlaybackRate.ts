@@ -9,20 +9,38 @@ const usePlaybackRate = (
   audioRef: React.RefObject<HTMLAudioElement | null>
 ) => {
   const rate = usePlaybackRateStore((state) => state.rate);
+  const isSlowedReverb = usePlaybackRateStore((state) => state.isSlowedReverb);
   const audio = audioRef.current;
 
   // 再生速度が変更された、またはオーディオ要素が利用可能になったときに適用します
   useEffect(() => {
     if (audio) {
-      audio.playbackRate = rate;
+      const targetRate = isSlowedReverb ? 0.85 : rate;
+      audio.playbackRate = targetRate;
+
+      // preservesPitch プロパティの設定（ベンダープレフィックス対応）
+      // @ts-ignore
+      audio.preservesPitch = !isSlowedReverb;
+      // @ts-ignore
+      audio.mozPreservesPitch = !isSlowedReverb;
+      // @ts-ignore
+      audio.webkitPreservesPitch = !isSlowedReverb;
     }
-  }, [audio, rate]);
+  }, [audio, rate, isSlowedReverb]);
 
   // ソースが変更された場合に再生速度が再適用されるようにします（一部のブラウザではリセットされるため）
   useEffect(() => {
     const handleDurationChange = () => {
       if (audio) {
-        audio.playbackRate = rate;
+        const targetRate = isSlowedReverb ? 0.85 : rate;
+        audio.playbackRate = targetRate;
+
+        // @ts-ignore
+        audio.preservesPitch = !isSlowedReverb;
+        // @ts-ignore
+        audio.mozPreservesPitch = !isSlowedReverb;
+        // @ts-ignore
+        audio.webkitPreservesPitch = !isSlowedReverb;
       }
     };
 
@@ -32,7 +50,7 @@ const usePlaybackRate = (
         audio.removeEventListener("durationchange", handleDurationChange);
       };
     }
-  }, [audio, rate]);
+  }, [audio, rate, isSlowedReverb]);
 
   return { rate };
 };
