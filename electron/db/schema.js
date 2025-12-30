@@ -13,9 +13,11 @@ exports.songs = (0, sqlite_core_1.sqliteTable)("songs", {
     // nullの場合、メタデータのみが存在し、ファイルは未ダウンロードであることを意味します。
     songPath: (0, sqlite_core_1.text)("song_path"),
     imagePath: (0, sqlite_core_1.text)("image_path"),
+    videoPath: (0, sqlite_core_1.text)("video_path"),
     // 元のリモートURL (再ダウンロードやオンライン時のストリーミング用)
     originalSongPath: (0, sqlite_core_1.text)("original_song_path"),
     originalImagePath: (0, sqlite_core_1.text)("original_image_path"),
+    originalVideoPath: (0, sqlite_core_1.text)("original_video_path"),
     duration: (0, sqlite_core_1.real)("duration"),
     genre: (0, sqlite_core_1.text)("genre"),
     lyrics: (0, sqlite_core_1.text)("lyrics"),

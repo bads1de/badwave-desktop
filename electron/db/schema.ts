@@ -18,10 +18,12 @@ export const songs = sqliteTable("songs", {
   // nullの場合、メタデータのみが存在し、ファイルは未ダウンロードであることを意味します。
   songPath: text("song_path"),
   imagePath: text("image_path"),
+  videoPath: text("video_path"),
 
   // 元のリモートURL (再ダウンロードやオンライン時のストリーミング用)
   originalSongPath: text("original_song_path"),
   originalImagePath: text("original_image_path"),
+  originalVideoPath: text("original_video_path"),
 
   duration: real("duration"),
   genre: text("genre"),

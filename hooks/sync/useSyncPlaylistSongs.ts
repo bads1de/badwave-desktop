@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
 import { electronAPI } from "@/libs/electron-utils";
@@ -25,6 +25,7 @@ export const useSyncPlaylistSongs = (
   const { autoSync = true } = options ?? {};
   const { isOnline } = useNetworkStatus();
   const queryClient = useQueryClient();
+  const [isSyncing, setIsSyncing] = useState(false);
   const syncInProgress = useRef(false);
   const hasInitialSynced = useRef(false);
 
@@ -46,6 +47,7 @@ export const useSyncPlaylistSongs = (
     }
 
     syncInProgress.current = true;
+    setIsSyncing(true);
 
     try {
       const supabase = createClient();
@@ -87,6 +89,7 @@ export const useSyncPlaylistSongs = (
       return { success: false, reason: "error", error };
     } finally {
       syncInProgress.current = false;
+      setIsSyncing(false);
     }
   }, [playlistId, queryClient]);
 
@@ -121,6 +124,6 @@ export const useSyncPlaylistSongs = (
 
   return {
     sync,
-    isSyncing: syncInProgress.current,
+    isSyncing,
   };
 };

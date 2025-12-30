@@ -25,7 +25,12 @@ export function setupCacheHandlers() {
 
       const existing = await db.query.songs.findFirst({
         where: eq(songs.id, songId),
-        columns: { songPath: true, imagePath: true, downloadedAt: true },
+        columns: {
+          songPath: true,
+          imagePath: true,
+          videoPath: true,
+          downloadedAt: true,
+        },
       });
 
       const record = {
@@ -35,8 +40,10 @@ export function setupCacheHandlers() {
         author: String(song.author || "Unknown Author"),
         songPath: existing?.songPath ?? null,
         imagePath: existing?.imagePath ?? null,
+        videoPath: existing?.videoPath ?? null,
         originalSongPath: song.song_path,
         originalImagePath: song.image_path,
+        originalVideoPath: song.video_path,
         duration: song.duration ? Number(song.duration) : null,
         genre: song.genre,
         lyrics: song.lyrics,
@@ -54,6 +61,7 @@ export function setupCacheHandlers() {
             author: record.author,
             originalSongPath: record.originalSongPath,
             originalImagePath: record.originalImagePath,
+            originalVideoPath: record.originalVideoPath,
             duration: record.duration,
             genre: record.genre,
             lyrics: record.lyrics,
@@ -181,9 +189,11 @@ export function setupCacheHandlers() {
           author: song?.author || "Unknown Author",
           song_path: song?.originalSongPath || null,
           image_path: song?.originalImagePath || null,
+          video_path: song?.originalVideoPath || null,
           is_downloaded: !!song?.songPath,
           local_song_path: song?.songPath || null,
           local_image_path: song?.imagePath || null,
+          local_video_path: song?.videoPath || null,
           created_at: liked_songs.likedAt,
         };
       });
@@ -232,9 +242,11 @@ export function setupCacheHandlers() {
           author: song?.author || "Unknown Author",
           song_path: song?.originalSongPath || null,
           image_path: song?.originalImagePath || null,
+          video_path: song?.originalVideoPath || null,
           is_downloaded: !!song?.songPath,
           local_song_path: song?.songPath || null,
           local_image_path: song?.imagePath || null,
+          local_video_path: song?.videoPath || null,
           created_at: playlist_songs.addedAt,
         };
       });

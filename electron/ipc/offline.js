@@ -151,6 +151,7 @@ var setupDownloadHandlers = function () {
                         // 元のリモートURL (再ダウンロードなどの参照用)
                         originalSongPath: song.song_path,
                         originalImagePath: song.image_path,
+                        originalVideoPath: song.video_path,
                         duration: song.duration,
                         genre: song.genre,
                         lyrics: song.lyrics,
@@ -183,6 +184,7 @@ var setupDownloadHandlers = function () {
                             columns: {
                                 songPath: true,
                                 imagePath: true,
+                                videoPath: true,
                             },
                         })];
                 case 1:
@@ -192,6 +194,7 @@ var setupDownloadHandlers = function () {
                             isDownloaded: isDownloaded,
                             localPath: (result === null || result === void 0 ? void 0 : result.songPath) || undefined,
                             localImagePath: (result === null || result === void 0 ? void 0 : result.imagePath) || undefined,
+                            localVideoPath: (result === null || result === void 0 ? void 0 : result.videoPath) || undefined,
                         }];
                 case 2:
                     error_2 = _a.sent();
@@ -221,8 +224,13 @@ var setupDownloadHandlers = function () {
                             author: song.author,
                             song_path: song.songPath,
                             image_path: song.imagePath,
+                            video_path: song.originalVideoPath,
                             original_song_path: song.originalSongPath,
                             original_image_path: song.originalImagePath,
+                            original_video_path: song.originalVideoPath,
+                            local_song_path: song.songPath,
+                            local_image_path: song.imagePath,
+                            local_video_path: song.videoPath,
                             duration: song.duration,
                             genre: song.genre,
                             lyrics: song.lyrics,
@@ -258,6 +266,9 @@ var setupDownloadHandlers = function () {
                     }
                     if (songRecord.imagePath) {
                         filesToDelete.push((0, utils_1.toLocalPath)(songRecord.imagePath));
+                    }
+                    if (songRecord.videoPath) {
+                        filesToDelete.push((0, utils_1.toLocalPath)(songRecord.videoPath));
                     }
                     _i = 0, filesToDelete_1 = filesToDelete;
                     _a.label = 2;

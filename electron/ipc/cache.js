@@ -63,23 +63,28 @@ function setupCacheHandlers() {
     function internalSyncSongs(songsData) {
         return __awaiter(this, void 0, void 0, function () {
             var count, _i, songsData_1, song, songId, existing, record;
-            var _a, _b, _c;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var _a, _b, _c, _d;
+            return __generator(this, function (_e) {
+                switch (_e.label) {
                     case 0:
                         count = 0;
                         _i = 0, songsData_1 = songsData;
-                        _d.label = 1;
+                        _e.label = 1;
                     case 1:
                         if (!(_i < songsData_1.length)) return [3 /*break*/, 5];
                         song = songsData_1[_i];
                         songId = normalizeId(song.id);
                         return [4 /*yield*/, db.query.songs.findFirst({
                                 where: (0, drizzle_orm_1.eq)(schema_1.songs.id, songId),
-                                columns: { songPath: true, imagePath: true, downloadedAt: true },
+                                columns: {
+                                    songPath: true,
+                                    imagePath: true,
+                                    videoPath: true,
+                                    downloadedAt: true,
+                                },
                             })];
                     case 2:
-                        existing = _d.sent();
+                        existing = _e.sent();
                         record = {
                             id: songId,
                             userId: String(song.user_id || ""),
@@ -87,13 +92,15 @@ function setupCacheHandlers() {
                             author: String(song.author || "Unknown Author"),
                             songPath: (_a = existing === null || existing === void 0 ? void 0 : existing.songPath) !== null && _a !== void 0 ? _a : null,
                             imagePath: (_b = existing === null || existing === void 0 ? void 0 : existing.imagePath) !== null && _b !== void 0 ? _b : null,
+                            videoPath: (_c = existing === null || existing === void 0 ? void 0 : existing.videoPath) !== null && _c !== void 0 ? _c : null,
                             originalSongPath: song.song_path,
                             originalImagePath: song.image_path,
+                            originalVideoPath: song.video_path,
                             duration: song.duration ? Number(song.duration) : null,
                             genre: song.genre,
                             lyrics: song.lyrics,
                             createdAt: song.created_at,
-                            downloadedAt: (_c = existing === null || existing === void 0 ? void 0 : existing.downloadedAt) !== null && _c !== void 0 ? _c : null,
+                            downloadedAt: (_d = existing === null || existing === void 0 ? void 0 : existing.downloadedAt) !== null && _d !== void 0 ? _d : null,
                         };
                         return [4 /*yield*/, db
                                 .insert(schema_1.songs)
@@ -105,6 +112,7 @@ function setupCacheHandlers() {
                                     author: record.author,
                                     originalSongPath: record.originalSongPath,
                                     originalImagePath: record.originalImagePath,
+                                    originalVideoPath: record.originalVideoPath,
                                     duration: record.duration,
                                     genre: record.genre,
                                     lyrics: record.lyrics,
@@ -112,9 +120,9 @@ function setupCacheHandlers() {
                                 },
                             })];
                     case 3:
-                        _d.sent();
+                        _e.sent();
                         count++;
-                        _d.label = 4;
+                        _e.label = 4;
                     case 4:
                         _i++;
                         return [3 /*break*/, 1];
@@ -285,9 +293,11 @@ function setupCacheHandlers() {
                                 author: (song === null || song === void 0 ? void 0 : song.author) || "Unknown Author",
                                 song_path: (song === null || song === void 0 ? void 0 : song.originalSongPath) || null,
                                 image_path: (song === null || song === void 0 ? void 0 : song.originalImagePath) || null,
+                                video_path: (song === null || song === void 0 ? void 0 : song.originalVideoPath) || null,
                                 is_downloaded: !!(song === null || song === void 0 ? void 0 : song.songPath),
                                 local_song_path: (song === null || song === void 0 ? void 0 : song.songPath) || null,
                                 local_image_path: (song === null || song === void 0 ? void 0 : song.imagePath) || null,
+                                local_video_path: (song === null || song === void 0 ? void 0 : song.videoPath) || null,
                                 created_at: liked_songs.likedAt,
                             };
                         })];
@@ -348,9 +358,11 @@ function setupCacheHandlers() {
                                 author: (song === null || song === void 0 ? void 0 : song.author) || "Unknown Author",
                                 song_path: (song === null || song === void 0 ? void 0 : song.originalSongPath) || null,
                                 image_path: (song === null || song === void 0 ? void 0 : song.originalImagePath) || null,
+                                video_path: (song === null || song === void 0 ? void 0 : song.originalVideoPath) || null,
                                 is_downloaded: !!(song === null || song === void 0 ? void 0 : song.songPath),
                                 local_song_path: (song === null || song === void 0 ? void 0 : song.songPath) || null,
                                 local_image_path: (song === null || song === void 0 ? void 0 : song.imagePath) || null,
+                                local_video_path: (song === null || song === void 0 ? void 0 : song.videoPath) || null,
                                 created_at: playlist_songs.addedAt,
                             };
                         })];

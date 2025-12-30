@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
@@ -23,6 +23,7 @@ export const useSyncLikedSongs = (options?: { autoSync?: boolean }) => {
   const { user } = useUser();
   const { isOnline } = useNetworkStatus();
   const queryClient = useQueryClient();
+  const [isSyncing, setIsSyncing] = useState(false);
   const syncInProgress = useRef(false);
   const hasInitialSynced = useRef(false);
 
@@ -44,6 +45,7 @@ export const useSyncLikedSongs = (options?: { autoSync?: boolean }) => {
     }
 
     syncInProgress.current = true;
+    setIsSyncing(true);
 
     try {
       const supabase = createClient();
@@ -80,6 +82,7 @@ export const useSyncLikedSongs = (options?: { autoSync?: boolean }) => {
       return { success: false, reason: "error", error };
     } finally {
       syncInProgress.current = false;
+      setIsSyncing(false);
     }
   }, [user?.id, queryClient]);
 
@@ -109,6 +112,6 @@ export const useSyncLikedSongs = (options?: { autoSync?: boolean }) => {
 
   return {
     sync,
-    isSyncing: syncInProgress.current,
+    isSyncing,
   };
 };

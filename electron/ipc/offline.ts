@@ -23,6 +23,7 @@ interface SongDownloadPayload {
   duration?: number;
   genre?: string;
   lyrics?: string;
+  video_path?: string;
   created_at: string;
 }
 
@@ -146,6 +147,7 @@ export const setupDownloadHandlers = () => {
         // 元のリモートURL (再ダウンロードなどの参照用)
         originalSongPath: song.song_path,
         originalImagePath: song.image_path,
+        originalVideoPath: song.video_path,
 
         duration: song.duration,
         genre: song.genre,
@@ -174,6 +176,7 @@ export const setupDownloadHandlers = () => {
         columns: {
           songPath: true,
           imagePath: true,
+          videoPath: true,
         },
       });
 
@@ -183,6 +186,7 @@ export const setupDownloadHandlers = () => {
         isDownloaded,
         localPath: result?.songPath || undefined,
         localImagePath: result?.imagePath || undefined,
+        localVideoPath: result?.videoPath || undefined,
       };
     } catch (error) {
       console.error("Failed to check offline status:", error);
@@ -206,8 +210,13 @@ export const setupDownloadHandlers = () => {
         author: song.author,
         song_path: song.songPath,
         image_path: song.imagePath,
+        video_path: song.originalVideoPath,
         original_song_path: song.originalSongPath,
         original_image_path: song.originalImagePath,
+        original_video_path: song.originalVideoPath,
+        local_song_path: song.songPath,
+        local_image_path: song.imagePath,
+        local_video_path: song.videoPath,
         duration: song.duration,
         genre: song.genre,
         lyrics: song.lyrics,
@@ -241,6 +250,9 @@ export const setupDownloadHandlers = () => {
 
       if (songRecord.imagePath) {
         filesToDelete.push(toLocalPath(songRecord.imagePath));
+      }
+      if (songRecord.videoPath) {
+        filesToDelete.push(toLocalPath(songRecord.videoPath));
       }
 
       // 実際のファイルを削除 (存在しない場合はスキップ)
