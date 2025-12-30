@@ -58,10 +58,14 @@ export interface PlaylistSong {
 export interface Spotlight {
   id: string;
   video_path: string;
+  thumbnail_path?: string;
   title: string;
   author: string;
   genre?: string;
   description?: string;
+  local_video_path?: string;
+  local_thumbnail_path?: string;
+  created_at?: string;
 }
 
 export interface Pulse {

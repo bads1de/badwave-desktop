@@ -46,6 +46,9 @@ var ALLOWED_INVOKE_CHANNELS = [
     "sync-playlists",
     "sync-playlist-songs",
     "sync-liked-songs",
+    "sync-spotlights-metadata",
+    "sync-section",
+    "get-section-data",
     "get-cached-playlists",
     "get-cached-liked-songs",
     "get-cached-playlist-songs",
@@ -140,6 +143,18 @@ electron_1.contextBridge.exposeInMainWorld("electron", {
         },
         // いいねをキャッシュ
         syncLikedSongs: function (data) { return electron_1.ipcRenderer.invoke("sync-liked-songs", data); },
+        // スポットライトをキャッシュ
+        syncSpotlightsMetadata: function (data) {
+            return electron_1.ipcRenderer.invoke("sync-spotlights-metadata", data);
+        },
+        // セクションをキャッシュ
+        syncSection: function (data) {
+            return electron_1.ipcRenderer.invoke("sync-section", data);
+        },
+        // キャッシュからセクションデータを取得
+        getSectionData: function (key, type) {
+            return electron_1.ipcRenderer.invoke("get-section-data", { key: key, type: type });
+        },
         // キャッシュからプレイリストを取得
         getCachedPlaylists: function (userId) {
             return electron_1.ipcRenderer.invoke("get-cached-playlists", userId);

@@ -3,7 +3,7 @@ import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
 import { useUser } from "@/hooks/auth/useUser";
-import { isNetworkError } from "@/libs/electron-utils";
+import { isNetworkError, electronAPI } from "@/libs/electron-utils";
 
 /**
  * おすすめ曲を取得するカスタムフック (クライアントサイド)
@@ -32,6 +32,17 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
       // ユーザーがログインしていない場合は空配列を返す
       if (!user?.id) {
         return [];
+      }
+
+      // Electron環境: ローカルキャッシュから取得
+      if (electronAPI.isElectron()) {
+        const cacheKey = `home_recommendations_${user.id}`;
+        const cachedSongs = await electronAPI.cache.getSectionData(
+          cacheKey,
+          "songs"
+        );
+        // ローカルDBのSong型をUIのSong型（ローカルパス付き）として返す
+        return (cachedSongs as Song[]) || [];
       }
 
       // オフライン時はフェッチをスキップ
@@ -82,6 +93,7 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: false,
+    networkMode: "always",
   });
 
   const isPaused = fetchStatus === "paused";

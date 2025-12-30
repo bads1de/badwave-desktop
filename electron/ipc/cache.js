@@ -373,8 +373,201 @@ function setupCacheHandlers() {
             }
         });
     }); });
+    // --- Section Cache Handlers ---
+    electron_1.ipcMain.handle("sync-spotlights-metadata", function (_, data) { return __awaiter(_this, void 0, void 0, function () {
+        var count, _i, data_2, item, id, record, error_8;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 5, , 6]);
+                    count = 0;
+                    _i = 0, data_2 = data;
+                    _a.label = 1;
+                case 1:
+                    if (!(_i < data_2.length)) return [3 /*break*/, 4];
+                    item = data_2[_i];
+                    id = normalizeId(item.id);
+                    record = {
+                        id: id,
+                        title: String(item.title || "Unknown Title"),
+                        author: String(item.author || "Unknown Author"),
+                        description: item.description,
+                        genre: item.genre,
+                        originalVideoPath: item.video_path,
+                        originalThumbnailPath: item.thumbnail_path,
+                        // videoPath, thumbnailPath はローカルパスなので上書きしない
+                        createdAt: item.created_at,
+                    };
+                    return [4 /*yield*/, db
+                            .insert(schema_1.spotlights)
+                            .values(record)
+                            .onConflictDoUpdate({
+                            target: schema_1.spotlights.id,
+                            set: {
+                                title: record.title,
+                                author: record.author,
+                                description: record.description,
+                                genre: record.genre,
+                                originalVideoPath: record.originalVideoPath,
+                                originalThumbnailPath: record.originalThumbnailPath,
+                                createdAt: record.createdAt,
+                            },
+                        })];
+                case 2:
+                    _a.sent();
+                    count++;
+                    _a.label = 3;
+                case 3:
+                    _i++;
+                    return [3 /*break*/, 1];
+                case 4: return [2 /*return*/, { success: true, count: count }];
+                case 5:
+                    error_8 = _a.sent();
+                    return [2 /*return*/, { success: false, error: error_8.message }];
+                case 6: return [2 /*return*/];
+            }
+        });
+    }); });
+    electron_1.ipcMain.handle("sync-section", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
+        var itemIds, error_9;
+        var key = _b.key, data = _b.data;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    itemIds = data.map(function (item) { return normalizeId(item.id); });
+                    // 2. セクションキャッシュを更新
+                    return [4 /*yield*/, db
+                            .insert(schema_1.sectionCache)
+                            .values({
+                            key: key,
+                            itemIds: itemIds,
+                            updatedAt: new Date(),
+                        })
+                            .onConflictDoUpdate({
+                            target: schema_1.sectionCache.key,
+                            set: {
+                                itemIds: itemIds,
+                                updatedAt: new Date(),
+                            },
+                        })];
+                case 1:
+                    // 2. セクションキャッシュを更新
+                    _c.sent();
+                    return [2 /*return*/, { success: true, count: itemIds.length }];
+                case 2:
+                    error_9 = _c.sent();
+                    console.error("[Sync] Section ".concat(key, " Error:"), error_9);
+                    return [2 /*return*/, { success: false, error: error_9.message }];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
+    electron_1.ipcMain.handle("get-section-data", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
+        var cache, itemIds, results, idMap_1, error_10;
+        var key = _b.key, type = _b.type;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 8, , 9]);
+                    return [4 /*yield*/, db.query.sectionCache.findFirst({
+                            where: (0, drizzle_orm_1.eq)(schema_1.sectionCache.key, key),
+                        })];
+                case 1:
+                    cache = _c.sent();
+                    if (!cache || !cache.itemIds) {
+                        return [2 /*return*/, []];
+                    }
+                    itemIds = cache.itemIds;
+                    if (itemIds.length === 0)
+                        return [2 /*return*/, []];
+                    results = [];
+                    idMap_1 = new Map();
+                    if (!(type === "spotlights")) return [3 /*break*/, 3];
+                    return [4 /*yield*/, db
+                            .select()
+                            .from(schema_1.spotlights)
+                            .where((0, drizzle_orm_1.inArray)(schema_1.spotlights.id, itemIds))];
+                case 2:
+                    results = _c.sent();
+                    results.forEach(function (item) {
+                        return idMap_1.set(item.id, {
+                            id: item.id,
+                            title: item.title,
+                            author: item.author,
+                            description: item.description,
+                            genre: item.genre,
+                            video_path: item.originalVideoPath, // フロントエンドの型に合わせる
+                            thumbnail_path: item.originalThumbnailPath,
+                            local_video_path: item.videoPath || null,
+                            local_thumbnail_path: item.thumbnailPath || null,
+                            created_at: item.createdAt,
+                        });
+                    });
+                    return [3 /*break*/, 7];
+                case 3:
+                    if (!(type === "playlists")) return [3 /*break*/, 5];
+                    return [4 /*yield*/, db
+                            .select()
+                            .from(schema_1.playlists)
+                            .where((0, drizzle_orm_1.inArray)(schema_1.playlists.id, itemIds))];
+                case 4:
+                    results = _c.sent();
+                    results.forEach(function (p) {
+                        return idMap_1.set(p.id, {
+                            id: p.id,
+                            user_id: p.userId,
+                            title: p.title,
+                            image_path: p.imagePath,
+                            is_public: !!p.isPublic,
+                            created_at: p.createdAt,
+                        });
+                    });
+                    return [3 /*break*/, 7];
+                case 5: return [4 /*yield*/, db
+                        .select()
+                        .from(schema_1.songs)
+                        .where((0, drizzle_orm_1.inArray)(schema_1.songs.id, itemIds))];
+                case 6:
+                    // songs
+                    results = _c.sent();
+                    results.forEach(function (s) {
+                        return idMap_1.set(s.id, {
+                            id: s.id,
+                            user_id: s.userId,
+                            title: s.title,
+                            author: s.author,
+                            song_path: s.originalSongPath || null,
+                            image_path: s.originalImagePath || null,
+                            video_path: s.originalVideoPath || null,
+                            is_downloaded: !!s.songPath,
+                            local_song_path: s.songPath || null,
+                            local_image_path: s.imagePath || null,
+                            local_video_path: s.videoPath || null,
+                            duration: s.duration,
+                            genre: s.genre,
+                            count: "0",
+                            like_count: "0",
+                            lyrics: s.lyrics,
+                            created_at: s.createdAt || new Date().toISOString(),
+                        });
+                    });
+                    _c.label = 7;
+                case 7: 
+                // 3. 元のリスト順に並べ替え
+                return [2 /*return*/, itemIds
+                        .map(function (id) { return idMap_1.get(id); })
+                        .filter(function (item) { return item !== undefined; })];
+                case 8:
+                    error_10 = _c.sent();
+                    console.error("[IPC] get-section-data(".concat(key, ") error:"), error_10);
+                    return [2 /*return*/, []];
+                case 9: return [2 /*return*/];
+            }
+        });
+    }); });
     electron_1.ipcMain.handle("debug-dump-db", function () { return __awaiter(_this, void 0, void 0, function () {
-        var liked, allSongs, joined, error_8;
+        var liked, allSongs, joined, error_11;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -394,8 +587,8 @@ function setupCacheHandlers() {
                     joined = _a.sent();
                     return [2 /*return*/, { liked: liked, allSongs: allSongs, joined: joined }];
                 case 4:
-                    error_8 = _a.sent();
-                    return [2 /*return*/, { error: error_8.message }];
+                    error_11 = _a.sent();
+                    return [2 /*return*/, { error: error_11.message }];
                 case 5: return [2 /*return*/];
             }
         });

@@ -404,6 +404,33 @@ export const electronAPI = {
     },
 
     /**
+     * スポットライトのメタデータをローカルDBにキャッシュ
+     */
+    syncSpotlightsMetadata: async (
+      spotlights: any[]
+    ): Promise<{ success: boolean; count: number; error?: string }> => {
+      if (isElectron()) {
+        return (window as any).electron.cache.syncSpotlightsMetadata(
+          spotlights
+        );
+      }
+      return { success: false, count: 0, error: "Not in Electron environment" };
+    },
+
+    /**
+     * セクション情報をローカルDBにキャッシュ (itemIdsの保存)
+     */
+    syncSection: async (data: {
+      key: string;
+      data: any[];
+    }): Promise<{ success: boolean; count: number; error?: string }> => {
+      if (isElectron()) {
+        return (window as any).electron.cache.syncSection(data);
+      }
+      return { success: false, count: 0, error: "Not in Electron environment" };
+    },
+
+    /**
      * キャッシュからプレイリスト内の曲を取得（ダウンロード状態付き）
      */
     getCachedPlaylistSongs: async (playlistId: string): Promise<any[]> => {
@@ -411,6 +438,19 @@ export const electronAPI = {
         return (window as any).electron.cache.getCachedPlaylistSongs(
           playlistId
         );
+      }
+      return [];
+    },
+
+    /**
+     * キャッシュからセクションデータを取得
+     */
+    getSectionData: async (
+      key: string,
+      type: "songs" | "spotlights" | "playlists"
+    ): Promise<any[]> => {
+      if (isElectron()) {
+        return (window as any).electron.cache.getSectionData(key, type);
       }
       return [];
     },

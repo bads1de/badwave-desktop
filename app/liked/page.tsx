@@ -5,19 +5,29 @@ import SongListContent from "@/components/Song/SongListContent";
 
 const Liked = () => {
   return (
-    <div className="bg-[#0d0d0d] rounded-lg h-full w-full overflow-hidden overflow-y-auto custom-scrollbar">
+    <div className="bg-neutral-950 rounded-lg h-full w-full overflow-hidden overflow-y-auto custom-scrollbar">
       <Header>
-        <div className="mt-20">
-          <div className="flex flex-col md:flex-row items-center gap-x-5">
-            <div className="flex flex-col gap-y-2 mt-4 md:mt-0">
-              <h1 className="text-white text-4xl sm:text-5xl lg:text-7xl font-bold">
-                お気に入り
+        <div className="mt-24 mb-8">
+          <div className="flex flex-col md:flex-row items-end gap-x-6">
+            <div className="flex flex-col gap-y-3">
+              <h1 className="text-white text-5xl sm:text-6xl lg:text-8xl font-black tracking-tighter drop-shadow-2xl">
+                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40">
+                  お気に入り
+                </span>
               </h1>
+              <div className="flex items-center gap-x-2 text-neutral-400 font-medium ml-1">
+                <span className="w-8 h-[2px] bg-theme-500 rounded-full"></span>
+                <span className="text-sm tracking-widest uppercase opacity-70">
+                  Your Collection
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </Header>
-      <SongListContent />
+      <div className="px-2 sm:px-4">
+        <SongListContent />
+      </div>
     </div>
   );
 };

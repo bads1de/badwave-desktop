@@ -9,6 +9,13 @@ import useGetSpotlight from "@/hooks/data/useGetSpotlight";
 import useGetSongs from "@/hooks/data/useGetSongs";
 import useGetPublicPlaylists from "@/hooks/data/useGetPublicPlaylists";
 
+// 背景同期フック
+import { useSyncTrends } from "@/hooks/sync/useSyncTrends";
+import { useSyncSpotlight } from "@/hooks/sync/useSyncSpotlight";
+import { useSyncLatestSongs } from "@/hooks/sync/useSyncLatestSongs";
+import { useSyncRecommendations } from "@/hooks/sync/useSyncRecommendations";
+import { useSyncPublicPlaylists } from "@/hooks/sync/useSyncPublicPlaylists";
+
 // セクションコンポーネント
 import TrendSection from "@/components/Home/TrendSection";
 import SpotlightSection from "@/components/Home/SpotlightSection";
@@ -47,6 +54,13 @@ export default function Home() {
     useGetPublicPlaylists();
   const { recommendations, isLoading: recommendationsLoading } =
     useGetRecommendations();
+
+  // 背景同期の実行 (Electron環境下でのみ動作)
+  useSyncTrends(selectedPeriod);
+  useSyncSpotlight();
+  useSyncLatestSongs();
+  useSyncRecommendations();
+  useSyncPublicPlaylists();
 
   return (
     <div className="flex bg-[#0d0d0d] h-full overflow-hidden">

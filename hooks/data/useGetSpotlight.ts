@@ -2,7 +2,7 @@ import { Spotlight } from "@/types";
 import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
-import { isNetworkError } from "@/libs/electron-utils";
+import { isNetworkError, electronAPI } from "@/libs/electron-utils";
 
 /**
  * スポットライトデータを取得するカスタムフック (クライアントサイド)
@@ -23,6 +23,16 @@ const useGetSpotlight = (initialData?: Spotlight[]) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      // Electron環境: ローカルキャッシュから取得
+      if (electronAPI.isElectron()) {
+        const cacheKey = "home_spotlight";
+        const cachedSpots = await electronAPI.cache.getSectionData(
+          cacheKey,
+          "spotlights"
+        );
+        return (cachedSpots as Spotlight[]) || [];
+      }
+
       // オフライン時はフェッチをスキップ
       if (!onlineManager.isOnline()) {
         return undefined;
@@ -48,6 +58,7 @@ const useGetSpotlight = (initialData?: Spotlight[]) => {
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: false,
+    networkMode: "always",
   });
 
   const isPaused = fetchStatus === "paused";

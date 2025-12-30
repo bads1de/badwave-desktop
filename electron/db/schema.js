@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.likedSongs = exports.playlistSongs = exports.playlists = exports.songs = void 0;
+exports.sectionCache = exports.spotlights = exports.likedSongs = exports.playlistSongs = exports.playlists = exports.songs = void 0;
 var sqlite_core_1 = require("drizzle-orm/sqlite-core");
 // 1. Songs: 楽曲のマスターデータ
 // ダウンロード済みの楽曲と、ライブラリ上のメタデータのみの楽曲の両方を含みます。
@@ -56,4 +56,27 @@ exports.likedSongs = (0, sqlite_core_1.sqliteTable)("liked_songs", {
 }, function (table) { return ({
     pk: (0, sqlite_core_1.primaryKey)({ columns: [table.userId, table.songId] }),
 }); });
+// 5. Spotlights: スポットライト（動画）データ
+exports.spotlights = (0, sqlite_core_1.sqliteTable)("spotlights", {
+    id: (0, sqlite_core_1.text)("id").primaryKey(),
+    title: (0, sqlite_core_1.text)("title").notNull(),
+    author: (0, sqlite_core_1.text)("author").notNull(),
+    description: (0, sqlite_core_1.text)("description"),
+    genre: (0, sqlite_core_1.text)("genre"),
+    // リモートURL
+    originalVideoPath: (0, sqlite_core_1.text)("original_video_path"),
+    originalThumbnailPath: (0, sqlite_core_1.text)("original_thumbnail_path"),
+    // ローカルパス（ダウンロード機能用）
+    videoPath: (0, sqlite_core_1.text)("video_path"),
+    thumbnailPath: (0, sqlite_core_1.text)("thumbnail_path"),
+    createdAt: (0, sqlite_core_1.text)("created_at"),
+    downloadedAt: (0, sqlite_core_1.integer)("downloaded_at", { mode: "timestamp" }),
+});
+// 6. Section Cache: ホーム画面等のセクションデータ（順序付きリスト）
+// 例: トレンド、スポットライト、For Youなど
+exports.sectionCache = (0, sqlite_core_1.sqliteTable)("section_cache", {
+    key: (0, sqlite_core_1.text)("key").primaryKey(), // 例: "home_trends_all", "home_spotlight"
+    itemIds: (0, sqlite_core_1.text)("item_ids", { mode: "json" }), // IDの順序付き配列 string[]
+    updatedAt: (0, sqlite_core_1.integer)("updated_at", { mode: "timestamp" }).default(new Date()),
+});
 //# sourceMappingURL=schema.js.map

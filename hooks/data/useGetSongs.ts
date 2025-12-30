@@ -2,7 +2,7 @@ import { Song } from "@/types";
 import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
-import { isNetworkError } from "@/libs/electron-utils";
+import { isNetworkError, electronAPI } from "@/libs/electron-utils";
 
 /**
  * 最新曲を取得するカスタムフック (クライアントサイド)
@@ -27,6 +27,17 @@ const useGetSongs = (initialData?: Song[], limit: number = 12) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      // Electron環境: ローカルキャッシュから取得
+      // Latest Songs (id: home_latest_songs) として取得
+      if (electronAPI.isElectron()) {
+        const cacheKey = "home_latest_songs";
+        const cachedSongs = await electronAPI.cache.getSectionData(
+          cacheKey,
+          "songs"
+        );
+        return (cachedSongs as Song[]) || [];
+      }
+
       // オフライン時はフェッチをスキップしてundefinedを返す（キャッシュがあればそれを使用）
       if (!onlineManager.isOnline()) {
         return undefined;
@@ -54,6 +65,7 @@ const useGetSongs = (initialData?: Song[], limit: number = 12) => {
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: false,
+    networkMode: "always",
   });
 
   const isPaused = fetchStatus === "paused";

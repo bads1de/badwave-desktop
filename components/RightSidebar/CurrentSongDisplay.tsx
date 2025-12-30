@@ -53,29 +53,33 @@ const CurrentSongDisplay: React.FC<CurrentSongDisplayProps> = React.memo(
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-60 pointer-events-none" />
 
         {/* Current Song Info */}
-        <div className="absolute bottom-28 left-0 right-0 px-6 pb-2 flex flex-col justify-end">
-          <div className="mb-4">
-            <h1 className="text-3xl font-bold tracking-tight text-white mb-1 drop-shadow-md">
+        <div className="absolute bottom-28 left-0 right-0 px-8 pb-4 flex flex-col justify-end">
+          <div className="mb-6">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white mb-2 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
               <Link
-                className="cursor-pointer hover:underline decoration-2 underline-offset-4 decoration-white/50"
+                className="cursor-pointer hover:text-theme-400 transition-colors"
                 href={`/songs/${song.id}`}
               >
                 <ScrollingText text={song.title} />
               </Link>
             </h1>
-            <p className="text-neutral-300 text-lg font-medium drop-shadow-sm flex items-center gap-2">
-              <span className="opacity-80">by</span>
-              <span className="text-white">{song.author}</span>
+            <p className="text-neutral-200 text-xl font-bold drop-shadow-lg flex items-center gap-2 tracking-tight">
+              <span className="opacity-60 text-sm uppercase tracking-widest font-black">
+                by
+              </span>
+              <span className="text-white hover:text-theme-300 transition-colors cursor-pointer">
+                {song.author}
+              </span>
             </p>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-2 text-sm">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-wrap items-center gap-2.5">
               {visibleGenres.map((genre, index) => (
                 <Link
                   key={index}
                   href={`/genre/${genre}`}
-                  className="bg-white/10 backdrop-blur-sm border border-white/5 px-3 py-1 rounded-full text-neutral-200 hover:bg-white/20 hover:text-white transition-all shadow-sm"
+                  className="bg-white/10 backdrop-blur-xl border border-white/10 px-4 py-1.5 rounded-full text-xs font-bold text-neutral-200 hover:bg-theme-500 hover:text-white hover:border-theme-400 transition-all shadow-xl tracking-wide uppercase"
                 >
                   {genre}
                 </Link>
@@ -83,26 +87,54 @@ const CurrentSongDisplay: React.FC<CurrentSongDisplayProps> = React.memo(
               {hasMoreGenres && !showAllGenres && (
                 <button
                   onClick={() => setShowAllGenres(true)}
-                  className="flex items-center justify-center bg-white/10 backdrop-blur-sm border border-white/5 px-2 py-1 h-[28px] rounded-full hover:bg-white/20 text-neutral-200 transition-all"
+                  className="flex items-center justify-center bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full hover:bg-white/20 text-neutral-300 transition-all font-bold"
                 >
-                  <span className="text-xs">
+                  <span className="text-[10px]">
                     +{tags.length - MAX_VISIBLE_TAGS}
                   </span>
-                  <BiChevronRight className="ml-0.5" size={16} />
+                  <BiChevronRight className="ml-0.5" size={14} />
                 </button>
               )}
             </div>
 
-            <div className="flex items-center gap-5 pt-2 border-t border-white/10">
-              <div className="flex items-center gap-2 text-neutral-300">
-                <CiPlay1 size={20} className="text-white" />
-                <span className="text-sm font-medium">{song.count}</span>
+            <div className="flex items-center gap-8 pt-6 border-t border-white/5">
+              <div className="flex items-center gap-2.5 group/metric">
+                <div className="bg-white/5 p-2 rounded-xl border border-white/5 group-hover/metric:border-theme-500/50 transition-colors">
+                  <CiPlay1
+                    size={22}
+                    className="text-white group-hover/metric:text-theme-400 transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest leading-none mb-1">
+                    Plays
+                  </span>
+                  <span className="text-base font-black tabular-nums text-white leading-none">
+                    {song.count}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-neutral-300">
-                <AiOutlineHeart size={20} className="text-white" />
-                <span className="text-sm font-medium">{song.like_count}</span>
+
+              <div className="flex items-center gap-2.5 group/metric">
+                <div className="bg-white/5 p-2 rounded-xl border border-white/5 group-hover/metric:border-theme-500/50 transition-colors">
+                  <AiOutlineHeart
+                    size={22}
+                    className="text-white group-hover/metric:text-theme-400 transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest leading-none mb-1">
+                    Likes
+                  </span>
+                  <span className="text-base font-black tabular-nums text-white leading-none">
+                    {song.like_count}
+                  </span>
+                </div>
               </div>
-              <DownloadIndicator song={song} />
+
+              <div className="ml-auto">
+                <DownloadIndicator song={song} />
+              </div>
             </div>
           </div>
         </div>

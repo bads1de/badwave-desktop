@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { RefreshCw, Database } from "lucide-react";
+import { RefreshCw, Database, LayoutGrid } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { isElectron } from "@/libs/electron-utils";
 import { useSyncLikedSongs } from "@/hooks/sync/useSyncLikedSongs";
 import { useSyncPlaylists } from "@/hooks/sync/useSyncPlaylists";
+import { useSyncHomeAll } from "@/hooks/sync/useSyncHomeAll";
 
 export const SyncSection = () => {
   const { sync: syncLiked, isSyncing: isSyncingLiked } = useSyncLikedSongs({
@@ -13,6 +14,7 @@ export const SyncSection = () => {
   });
   const { sync: syncPlaylists, isSyncing: isSyncingPlaylists } =
     useSyncPlaylists({ autoSync: false });
+  const { sync: syncHome, isSyncing: isSyncingHome } = useSyncHomeAll();
 
   const handleSyncLiked = async () => {
     const result = await syncLiked();
@@ -29,6 +31,15 @@ export const SyncSection = () => {
       toast.success("プレイリストを同期しました");
     } else {
       toast.error("同期に失敗しました");
+    }
+  };
+
+  const handleSyncHome = async () => {
+    const result = await syncHome();
+    if (result.success) {
+      toast.success("ホーム画面のデータを更新しました");
+    } else {
+      toast.error("ホーム同期に失敗しました");
     }
   };
 
@@ -113,6 +124,40 @@ export const SyncSection = () => {
                 <p className="font-medium text-white">プレイリストを同期</p>
                 <p className="text-xs text-neutral-400">
                   {isSyncingPlaylists ? "同期中..." : "最新の状態に更新"}
+                </p>
+              </div>
+            </div>
+          </motion.button>
+
+          <motion.button
+            onClick={handleSyncHome}
+            disabled={isSyncingHome}
+            className={`
+              flex items-center justify-between p-4 rounded-xl transition-all duration-300
+              ${
+                isSyncingHome
+                  ? "bg-neutral-800/30 border-white/5 opacity-50 cursor-not-allowed"
+                  : "bg-neutral-800/50 hover:bg-neutral-700/50 border border-white/5 active:scale-95"
+              }
+            `}
+            whileHover={!isSyncingHome ? { scale: 1.02 } : {}}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`p-2 rounded-lg bg-green-500/10 ${
+                  isSyncingHome ? "animate-spin" : ""
+                }`}
+              >
+                <LayoutGrid
+                  className={`w-5 h-5 text-green-500 ${
+                    isSyncingHome ? "animate-spin" : ""
+                  }`}
+                />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-white">ホーム画面を同期</p>
+                <p className="text-xs text-neutral-400">
+                  {isSyncingHome ? "同期中..." : "トレンド・おすすめ等を更新"}
                 </p>
               </div>
             </div>

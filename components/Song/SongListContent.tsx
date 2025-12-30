@@ -65,38 +65,45 @@ const SongListContent: React.FC<SongListContentProps> = memo(
     }
 
     return (
-      <div className="flex flex-col gap-y-2 w-full p-6">
-        {/* 一括ダウンロードボタン */}
+      <div className="flex flex-col w-full px-4 sm:px-6 pb-24">
+        {/* ツールバー / アクションエリア */}
         {showDownloadButton && songs.length > 0 && (
-          <div className="flex justify-end mb-4">
+          <div className="flex items-center justify-between py-6 px-2 sticky top-0 z-20 bg-transparent backdrop-blur-sm -mx-2 mb-2">
+            <div className="flex items-center gap-x-3">
+              <span className="text-neutral-400 text-sm font-bold tracking-widest uppercase opacity-60">
+                {songs.length} Tracks
+              </span>
+            </div>
             <BulkDownloadButton
               songs={songs}
               downloadLabel={
-                playlistId
-                  ? "プレイリストをダウンロード"
-                  : "お気に入りをダウンロード"
+                playlistId ? "Download Playlist" : "Download Liked"
               }
-              deleteLabel={
-                playlistId
-                  ? "プレイリストのダウンロードを削除"
-                  : "お気に入りのダウンロードを削除"
-              }
+              deleteLabel={playlistId ? "Clear Downloads" : "Clear Downloads"}
             />
           </div>
         )}
 
-        {displayedSongs.map((song: Song) => (
-          <div key={song.id} className="flex items-center gap-x-4 w-full">
-            <div className="flex-1 min-w-0">
-              <SongList data={song} onClick={handlePlay} />
+        <div className="grid grid-cols-1 gap-y-3">
+          {displayedSongs.map((song: Song) => (
+            <div
+              key={song.id}
+              className="flex items-center gap-x-4 w-full animate-fade-in"
+              style={{
+                animationDelay: `${displayedSongs.indexOf(song) * 50}ms`,
+              }}
+            >
+              <div className="flex-1 min-w-0">
+                <SongList data={song} onClick={handlePlay} />
+              </div>
+              <SongOptionsPopover
+                song={song}
+                playlistId={playlistId}
+                playlistUserId={playlistUserId}
+              />
             </div>
-            <SongOptionsPopover
-              song={song}
-              playlistId={playlistId}
-              playlistUserId={playlistUserId}
-            />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }

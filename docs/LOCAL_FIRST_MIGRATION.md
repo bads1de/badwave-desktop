@@ -93,25 +93,91 @@ _注: 検索やホーム画面（トレンドなど）は当面「オンライ�
 
 ### Step 1: Liked Songs (実証実験)
 
-- [ ] `hooks/sync/useSyncLikedSongs.ts` を作成。
-- [ ] `hooks/data/useGetLikedSongs.ts` を読み込み専用にリファクタリング。
-- [ ] `components/Song/SongListContent.tsx` に統合。
-- [ ] 「いいね」の切り替えやオンライン/オフライン切り替えで再生が壊れないことを検証。
+- [x] `hooks/sync/useSyncLikedSongs.ts` を作成。
+- [x] `hooks/data/useGetLikedSongs.ts` を読み込み専用にリファクタリング。
+- [x] `components/Song/SongListContent.tsx` に統合。
+- [x] 「いいね」の切り替えやオンライン/オフライン切り替えで再生が壊れないことを検証。
 
 ### Step 2: Playlists
 
-- [ ] `hooks/sync/useSyncPlaylists.ts` を作成。
-- [ ] `hooks/data/useGetPlaylists.ts` をリファクタリング。
-- [ ] `Sidebar` や `AddPlaylistModal` に統合。
+- [x] `hooks/sync/useSyncPlaylists.ts` を作成。
+- [x] `hooks/data/useGetPlaylists.ts` をリファクタリング。
+- [x] `Sidebar` や `AddPlaylistModal` に統合。
 
 ### Step 3: Playlist Songs
 
-- [ ] `hooks/sync/useSyncPlaylistSongs.ts` を作成。
-- [ ] `hooks/data/useGetPlaylistSongs.ts` をリファクタリング。
-- [ ] `app/playlist/[id]/page.tsx` (または相当箇所) に統合。
+- [x] `hooks/sync/useSyncPlaylistSongs.ts` を作成。
+- [x] `hooks/data/useGetPlaylistSongs.ts` をリファクタリング。
+- [x] `app/playlist/[id]/page.tsx` (または相当箇所) に統合。
 
 ## 6. エッジケースと考慮事項
 
 - **初回起動**: ローカル DB は空です。UI は一瞬「空」を表示し、同期が開始されると数秒後にパッと表示されます（ネイティブアプリによくある挙動で、許容範囲内です）。
 - **画像**: オンライン時はローカル DB 内のリモート URL を使用。オフライン時、ダウンロード済みの曲についてはキャッシュされた画像パスを使用します。
 - **競合**: `better-sqlite3` は同期的であり、フック側でも `useRef` フラグで多重実行を防ぐため、大きな問題にはなりません。
+
+## 7. Phase 2: ホーム画面のローカルファースト化 (計画中)
+
+### 概要
+
+トレンド、スポットライト、レコメンデーションなどの「検索・発見」系データもローカルキャッシュし、オフライン閲覧と高速表示を実現します。これにより、ホーム画面も「まずローカルを表示し、裏で更新」という挙動に統一されます。
+
+### アーキテクチャ変更
+
+1. **スキーマ追加 (`section_cache`)**:
+   順序情報を持つリスト（どの曲が、どの順番で表示されるか）を保存するための汎用的なキャッシュテーブルを追加します。
+
+   ```typescript
+   // electron/db/schema.ts (案)
+   export const sectionCache = sqliteTable("section_cache", {
+     key: text("key").primaryKey(), // 例: "home_trends_all", "home_spotlight", "home_foryou"
+     songIds: text("song_ids", { mode: "json" }), // 曲IDの順序付き配列
+     updatedAt: integer("updated_at", { mode: "timestamp" }),
+   });
+   ```
+
+2. **データフロー**:
+   - **Sync (Background)**:
+     1. Supabase から最新リスト（楽曲データ含む）を取得。
+     2. 含まれる楽曲データを `songs` テーブルに Upsert (メタデータをローカルに確保)。
+     3. 曲 ID のリストを `section_cache` に保存。
+   - **Read (UI)**:
+     1. `section_cache` から指定された Key の ID リストを取得。
+     2. `songs` テーブルから詳細情報を `IN` クエリで一括取得し、ID リスト順にソートして返却。
+     3. これにより、`songs` テーブルにある `is_downloaded` や `local_song_path` がホーム画面のデータにも自動的に適用されます。
+
+### 実装ステップ
+
+#### Step 1: Schema & IPC
+
+- [ ] `electron/db/schema.ts` に `section_cache` を追加。
+- [ ] `drizzle-kit generate:sqlite` でマイグレーションファイル作成。
+- [ ] IPC ハンドラ `get-section-songs` (Key -> Song[]) を `electron/ipc/cache.ts` に実装。
+- [ ] IPC ハンドラ `sync-section` (Key, Song[]) を実装。
+
+#### Step 2: Trends (トレンド)
+
+- [ ] `hooks/sync/useSyncTrends.ts` 作成。
+- [ ] `hooks/data/useGetTrendSongs.ts` を IPC 経由で取得するように修正。
+- [ ] `app/(site)/page.tsx` で Sync フックを呼び出し。
+
+#### Step 3: Spotlight & Latest
+
+- [ ] `hooks/sync/useSyncSpotlight.ts` 作成。
+- [ ] `hooks/sync/useSyncLatest.ts` 作成。
+- [ ] 各取得フック (`useGetSpotlight`, `useGetSongs`) を修正。
+
+#### Step 4: For You (Personalized)
+
+- [ ] `hooks/sync/useSyncRecommendations.ts` 作成。
+- [ ] `useGetRecommendations` をローカル対応。
+
+### 考慮事項 (Garbage Collection)
+
+「検索・発見」系のデータが `songs` テーブルに追加され続けると、ユーザーが「いいね」しておらず、かつ現在のトレンド等からも消えた「ゴミ」楽曲データが `songs` テーブルに蓄積していきます。
+将来的には、以下の条件をすべて満たす `songs` レコードを定期削除するクリーンアップ処理（GC）が必要になります。
+
+1. `liked_songs` テーブルに存在しない。
+2. `playlist_songs` テーブルに存在しない。
+3. `is_downloaded` が false（ファイル実体を持たない）。
+4. `section_cache` のいずれのリストにも含まれていない。

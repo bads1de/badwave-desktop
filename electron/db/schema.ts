@@ -71,3 +71,31 @@ export const likedSongs = sqliteTable(
     pk: primaryKey({ columns: [table.userId, table.songId] }),
   })
 );
+
+// 5. Spotlights: スポットライト（動画）データ
+export const spotlights = sqliteTable("spotlights", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  author: text("author").notNull(),
+  description: text("description"),
+  genre: text("genre"),
+
+  // リモートURL
+  originalVideoPath: text("original_video_path"),
+  originalThumbnailPath: text("original_thumbnail_path"),
+
+  // ローカルパス（ダウンロード機能用）
+  videoPath: text("video_path"),
+  thumbnailPath: text("thumbnail_path"),
+
+  createdAt: text("created_at"),
+  downloadedAt: integer("downloaded_at", { mode: "timestamp" }),
+});
+
+// 6. Section Cache: ホーム画面等のセクションデータ（順序付きリスト）
+// 例: トレンド、スポットライト、For Youなど
+export const sectionCache = sqliteTable("section_cache", {
+  key: text("key").primaryKey(), // 例: "home_trends_all", "home_spotlight"
+  itemIds: text("item_ids", { mode: "json" }), // IDの順序付き配列 string[]
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+});

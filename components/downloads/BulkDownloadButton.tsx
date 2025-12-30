@@ -101,19 +101,19 @@ const BulkDownloadButton: React.FC<BulkDownloadButtonProps> = ({
 
   // ボタンのスタイルを状態に応じて変更
   const buttonStyle = isAllDownloaded
-    ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500"
-    : "bg-gradient-to-r from-theme-500 to-theme-600 hover:from-theme-400 hover:to-theme-500";
+    ? "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.1)] hover:shadow-[0_0_25px_rgba(239,68,68,0.2)]"
+    : "bg-theme-500 text-white shadow-[0_0_20px_rgba(var(--theme-500),0.3)] hover:shadow-[0_0_30px_rgba(var(--theme-500),0.5)] hover:bg-theme-400 border border-theme-400/20";
 
   return (
     <button
       onClick={handleClick}
       disabled={songs.length === 0}
       className={`
-        flex items-center gap-2 px-4 py-2 rounded-full
+        flex items-center justify-center gap-2.5 px-6 py-2.5 rounded-full
         ${buttonStyle}
         disabled:opacity-50 disabled:cursor-not-allowed
-        transition-all duration-200
-        text-white font-medium text-sm
+        transition-all duration-300
+        font-bold text-sm tracking-wide
         ${isProcessing ? "animate-pulse" : ""}
         ${className}
       `}
@@ -128,7 +128,7 @@ const BulkDownloadButton: React.FC<BulkDownloadButtonProps> = ({
                 cy="12"
                 r="10"
                 stroke="currentColor"
-                strokeWidth="4"
+                strokeWidth="3"
                 fill="none"
               />
               <path
@@ -141,24 +141,26 @@ const BulkDownloadButton: React.FC<BulkDownloadButtonProps> = ({
           <span className="truncate max-w-[150px]">
             {currentSong || `${progress}%`}
           </span>
-          <span className="text-xs opacity-70">
-            ({isDownloading ? downloadedCount : progress}%/
+          <span className="text-[10px] opacity-60 font-medium">
+            ({isDownloading ? downloadedCount : progress}% /{" "}
             {totalCount || songs.length})
           </span>
         </>
       ) : isAllDownloaded ? (
         <>
-          <HiTrash className="w-5 h-5" />
+          <HiTrash className="w-4 h-4 transition-transform group-hover:scale-110" />
           <span>{deleteLabel}</span>
-          <span className="text-xs opacity-70">({songs.length}曲)</span>
+          <span className="text-[10px] opacity-60 font-medium">
+            ({songs.length}曲)
+          </span>
         </>
       ) : (
         <>
-          <HiDownload className="w-5 h-5" />
+          <HiDownload className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
           <span>{downloadLabel}</span>
           {songs.length > 0 && (
-            <span className="text-xs opacity-70">
-              ({downloadedSongsCount}/{songs.length}曲)
+            <span className="text-[10px] opacity-60 font-medium">
+              ({downloadedSongsCount} / {songs.length}曲)
             </span>
           )}
         </>

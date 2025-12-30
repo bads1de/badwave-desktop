@@ -39,6 +39,9 @@ const ALLOWED_INVOKE_CHANNELS = [
   "sync-playlists",
   "sync-playlist-songs",
   "sync-liked-songs",
+  "sync-spotlights-metadata",
+  "sync-section",
+  "get-section-data",
   "get-cached-playlists",
   "get-cached-liked-songs",
   "get-cached-playlist-songs",
@@ -134,6 +137,15 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke("sync-playlist-songs", data),
     // いいねをキャッシュ
     syncLikedSongs: (data: any) => ipcRenderer.invoke("sync-liked-songs", data),
+    // スポットライトをキャッシュ
+    syncSpotlightsMetadata: (data: any[]) =>
+      ipcRenderer.invoke("sync-spotlights-metadata", data),
+    // セクションをキャッシュ
+    syncSection: (data: { key: string; data: any[] }) =>
+      ipcRenderer.invoke("sync-section", data),
+    // キャッシュからセクションデータを取得
+    getSectionData: (key: string, type: string) =>
+      ipcRenderer.invoke("get-section-data", { key, type }),
     // キャッシュからプレイリストを取得
     getCachedPlaylists: (userId: string) =>
       ipcRenderer.invoke("get-cached-playlists", userId),

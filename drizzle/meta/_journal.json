@@ -15,6 +15,20 @@
       "when": 1767067770243,
       "tag": "0001_ambiguous_rhino",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1767072832400,
+      "tag": "0002_amusing_black_tom",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1767073254064,
+      "tag": "0003_secret_sharon_ventura",
+      "breakpoints": true
     }
   ]
 }

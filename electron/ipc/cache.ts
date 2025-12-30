@@ -1,7 +1,14 @@
 import { ipcMain } from "electron";
 import { getDb } from "../db/client";
-import { songs, playlists, playlistSongs, likedSongs } from "../db/schema";
-import { eq, sql } from "drizzle-orm";
+import {
+  songs,
+  playlists,
+  playlistSongs,
+  likedSongs,
+  sectionCache,
+  spotlights,
+} from "../db/schema";
+import { eq, sql, inArray } from "drizzle-orm";
 
 /**
  * IDを文字列に強制変換し、".0" などの浮動小数点表記を除去する
@@ -254,6 +261,181 @@ export function setupCacheHandlers() {
       return [];
     }
   });
+
+  // --- Section Cache Handlers ---
+
+  ipcMain.handle("sync-spotlights-metadata", async (_, data: any[]) => {
+    try {
+      let count = 0;
+      for (const item of data) {
+        // IDの正規化は必要？Supabase UUIDならそのまま文字列化
+        const id = normalizeId(item.id);
+
+        const record = {
+          id: id,
+          title: String(item.title || "Unknown Title"),
+          author: String(item.author || "Unknown Author"),
+          description: item.description,
+          genre: item.genre,
+          originalVideoPath: item.video_path,
+          originalThumbnailPath: item.thumbnail_path,
+          // videoPath, thumbnailPath はローカルパスなので上書きしない
+          createdAt: item.created_at,
+        };
+
+        await db
+          .insert(spotlights)
+          .values(record)
+          .onConflictDoUpdate({
+            target: spotlights.id,
+            set: {
+              title: record.title,
+              author: record.author,
+              description: record.description,
+              genre: record.genre,
+              originalVideoPath: record.originalVideoPath,
+              originalThumbnailPath: record.originalThumbnailPath,
+              createdAt: record.createdAt,
+            },
+          });
+        count++;
+      }
+      return { success: true, count };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(
+    "sync-section",
+    async (_, { key, data }: { key: string; data: any[] }) => {
+      try {
+        // 1. IDリストを作成
+        const itemIds = data.map((item) => normalizeId(item.id));
+
+        // 2. セクションキャッシュを更新
+        await db
+          .insert(sectionCache)
+          .values({
+            key,
+            itemIds: itemIds as any,
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: sectionCache.key,
+            set: {
+              itemIds: itemIds as any,
+              updatedAt: new Date(),
+            },
+          });
+
+        return { success: true, count: itemIds.length };
+      } catch (error: any) {
+        console.error(`[Sync] Section ${key} Error:`, error);
+        return { success: false, error: error.message };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "get-section-data",
+    async (
+      _,
+      { key, type }: { key: string; type: "songs" | "spotlights" | "playlists" }
+    ) => {
+      try {
+        // 1. セクションキャッシュからIDリストを取得
+        const cache = await db.query.sectionCache.findFirst({
+          where: eq(sectionCache.key, key),
+        });
+
+        if (!cache || !cache.itemIds) {
+          return [];
+        }
+
+        const itemIds = cache.itemIds as unknown as string[];
+        if (itemIds.length === 0) return [];
+
+        let results: any[] = [];
+        let idMap = new Map<string, any>();
+
+        // 2. タイプに応じてデータ取得
+        if (type === "spotlights") {
+          results = await db
+            .select()
+            .from(spotlights)
+            .where(inArray(spotlights.id, itemIds));
+
+          results.forEach((item) =>
+            idMap.set(item.id, {
+              id: item.id,
+              title: item.title,
+              author: item.author,
+              description: item.description,
+              genre: item.genre,
+              video_path: item.originalVideoPath, // フロントエンドの型に合わせる
+              thumbnail_path: item.originalThumbnailPath,
+              local_video_path: item.videoPath || null,
+              local_thumbnail_path: item.thumbnailPath || null,
+              created_at: item.createdAt,
+            })
+          );
+        } else if (type === "playlists") {
+          results = await db
+            .select()
+            .from(playlists)
+            .where(inArray(playlists.id, itemIds));
+
+          results.forEach((p) =>
+            idMap.set(p.id, {
+              id: p.id,
+              user_id: p.userId,
+              title: p.title,
+              image_path: p.imagePath,
+              is_public: !!p.isPublic,
+              created_at: p.createdAt,
+            })
+          );
+        } else {
+          // songs
+          results = await db
+            .select()
+            .from(songs)
+            .where(inArray(songs.id, itemIds));
+
+          results.forEach((s) =>
+            idMap.set(s.id, {
+              id: s.id,
+              user_id: s.userId,
+              title: s.title,
+              author: s.author,
+              song_path: s.originalSongPath || null,
+              image_path: s.originalImagePath || null,
+              video_path: s.originalVideoPath || null,
+              is_downloaded: !!s.songPath,
+              local_song_path: s.songPath || null,
+              local_image_path: s.imagePath || null,
+              local_video_path: s.videoPath || null,
+              duration: s.duration,
+              genre: s.genre,
+              count: "0",
+              like_count: "0",
+              lyrics: s.lyrics,
+              created_at: s.createdAt || new Date().toISOString(),
+            })
+          );
+        }
+
+        // 3. 元のリスト順に並べ替え
+        return itemIds
+          .map((id) => idMap.get(id))
+          .filter((item) => item !== undefined);
+      } catch (error) {
+        console.error(`[IPC] get-section-data(${key}) error:`, error);
+        return [];
+      }
+    }
+  );
 
   ipcMain.handle("debug-dump-db", async () => {
     try {

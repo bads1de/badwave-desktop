@@ -2,7 +2,7 @@ import { Playlist } from "@/types";
 import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
-import { isNetworkError } from "@/libs/electron-utils";
+import { isNetworkError, electronAPI } from "@/libs/electron-utils";
 
 /**
  * パブリックプレイリストを取得するカスタムフック (クライアントサイド)
@@ -27,6 +27,16 @@ const useGetPublicPlaylists = (initialData?: Playlist[], limit: number = 6) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      // Electron環境: ローカルキャッシュから取得
+      if (electronAPI.isElectron()) {
+        const cacheKey = "home_public_playlists";
+        const cachedPlaylists = await electronAPI.cache.getSectionData(
+          cacheKey,
+          "playlists"
+        );
+        return (cachedPlaylists as Playlist[]) || [];
+      }
+
       // オフライン時はフェッチをスキップ
       if (!onlineManager.isOnline()) {
         return undefined;
@@ -56,6 +66,7 @@ const useGetPublicPlaylists = (initialData?: Playlist[], limit: number = 6) => {
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: false,
+    networkMode: "always",
   });
 
   const isPaused = fetchStatus === "paused";

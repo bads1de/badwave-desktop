@@ -1,9 +1,7 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
+const commonConfig = {
   preset: "ts-jest",
-  testEnvironment: "jsdom",
   roots: ["<rootDir>"],
-  testMatch: ["**/__tests__/**/*.test.ts", "**/__tests__/**/*.test.tsx"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
@@ -33,5 +31,23 @@ module.exports = {
     "components/**/*.{ts,tsx}",
     "!**/*.d.ts",
     "!**/node_modules/**",
+  ],
+};
+
+module.exports = {
+  projects: [
+    {
+      displayName: "electron-main",
+      testMatch: ["**/__tests__/**/*.test.ts"],
+      runner: "@kayahr/jest-electron-runner/main",
+      testEnvironment: "node",
+      ...commonConfig,
+    },
+    {
+      displayName: "dom",
+      testMatch: ["**/__tests__/**/*.test.tsx"],
+      testEnvironment: "jsdom",
+      ...commonConfig,
+    },
   ],
 };

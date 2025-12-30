@@ -3,7 +3,7 @@ import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
 import { subMonths, subWeeks, subDays } from "date-fns";
-import { isNetworkError } from "@/libs/electron-utils";
+import { isNetworkError, electronAPI } from "@/libs/electron-utils";
 
 /**
  * トレンド曲を取得するカスタムフック
@@ -27,7 +27,19 @@ const useGetTrendSongs = (
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      // オフライン時はフェッチをスキップ
+      // Electron環境: ローカルキャッシュから取得
+      if (electronAPI.isElectron()) {
+        const cacheKey = `trend_${period}`;
+        const cachedSongs = await electronAPI.cache.getSectionData(
+          cacheKey,
+          "songs"
+        );
+        // キャッシュがあればそれを返す。なければ空配列（同期は裏で行われる）
+        return (cachedSongs as Song[]) || [];
+      }
+
+      // Web環境 / フォールバック
+      // オフライン時はフェッチをスキップ (Web)
       if (!onlineManager.isOnline()) {
         return undefined;
       }
@@ -79,6 +91,7 @@ const useGetTrendSongs = (
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
     retry: false,
+    networkMode: "always",
   });
 
   // fetchStatus: 'paused' はオフライン状態を示す
