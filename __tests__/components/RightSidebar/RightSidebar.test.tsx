@@ -61,6 +61,7 @@ describe("RightSidebar - Close Feature", () => {
     mockUsePlayer.mockReturnValue({
       activeId: "song-1",
       getNextSongId: () => "song-2",
+      getLocalSong: () => null,
     } as any);
 
     mockStore.get.mockResolvedValue(null);

@@ -10,9 +10,20 @@ import {
 } from "@tanstack/react-query";
 import useGetPlaylists from "@/hooks/data/useGetPlaylists";
 import { useUser } from "@/hooks/auth/useUser";
+import { electronAPI } from "@/libs/electron-utils";
 
 // モック
 jest.mock("@/hooks/auth/useUser");
+jest.mock("@/libs/electron-utils", () => ({
+  electronAPI: {
+    isElectron: jest.fn(),
+    cache: {
+      getCachedPlaylists: jest.fn(),
+      syncPlaylists: jest.fn(),
+    },
+  },
+}));
+
 const mockFrom = jest.fn();
 jest.mock("@/libs/supabase/client", () => ({
   createClient: () => ({
@@ -30,6 +41,10 @@ const createWrapper = () => {
 };
 
 describe("useGetPlaylists", () => {
+  const mockIsElectron = electronAPI.isElectron as jest.Mock;
+  const mockGetCachedPlaylists = electronAPI.cache
+    .getCachedPlaylists as jest.Mock;
+
   beforeEach(() => {
     jest.clearAllMocks();
     (useUser as jest.Mock).mockReturnValue({ user: { id: "user-1" } });
@@ -38,8 +53,60 @@ describe("useGetPlaylists", () => {
     });
   });
 
-  describe("オンライン時", () => {
-    it("Supabaseからプレイリストを取得し、キャッシュに同期する", async () => {
+  describe("Electron環境（ローカルファースト）", () => {
+    beforeEach(() => {
+      mockIsElectron.mockReturnValue(true);
+    });
+
+    it("オンライン時もローカルDBからプレイリストを取得する", async () => {
+      const mockCachedPlaylists = [
+        { id: "p1", title: "Playlist 1", user_id: "user-1" },
+      ];
+      mockGetCachedPlaylists.mockResolvedValue(mockCachedPlaylists);
+
+      const { result } = renderHook(() => useGetPlaylists(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.playlists).toEqual(mockCachedPlaylists);
+      expect(mockGetCachedPlaylists).toHaveBeenCalledWith("user-1");
+      // APIは呼ばれない
+      expect(mockFrom).not.toHaveBeenCalled();
+    });
+
+    it("オフライン時もローカルDBからプレイリストを取得する", async () => {
+      act(() => {
+        onlineManager.setOnline(false);
+      });
+
+      const mockCachedPlaylists = [
+        { id: "p-cached", title: "Cached Playlist", user_id: "user-1" },
+      ];
+      mockGetCachedPlaylists.mockResolvedValue(mockCachedPlaylists);
+
+      const { result } = renderHook(() => useGetPlaylists(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.playlists).toEqual(mockCachedPlaylists);
+      expect(mockGetCachedPlaylists).toHaveBeenCalledWith("user-1");
+    });
+  });
+
+  describe("Web環境（非Electron）", () => {
+    beforeEach(() => {
+      mockIsElectron.mockReturnValue(false);
+    });
+
+    it("Supabaseからプレイリストを取得する", async () => {
       const mockPlaylists = [
         { id: "p1", title: "Playlist 1", user_id: "user-1" },
       ];
@@ -47,7 +114,9 @@ describe("useGetPlaylists", () => {
       mockFrom.mockReturnValue({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({ data: mockPlaylists, error: null }),
+        order: jest
+          .fn()
+          .mockResolvedValue({ data: mockPlaylists, error: null }),
       });
 
       const { result } = renderHook(() => useGetPlaylists(), {
@@ -59,37 +128,8 @@ describe("useGetPlaylists", () => {
       });
 
       expect(result.current.playlists).toEqual(mockPlaylists);
-      expect(window.electron.cache.syncPlaylists).toHaveBeenCalledWith(
-        mockPlaylists
-      );
-    });
-  });
-
-  describe("オフライン時", () => {
-    it("SQLiteキャッシュからプレイリストを取得する", async () => {
-      act(() => {
-        onlineManager.setOnline(false);
-      });
-
-      const mockCachedPlaylists = [
-        { id: "p-cached", title: "Cached Playlist", user_id: "user-1" },
-      ];
-      (window.electron.cache.getCachedPlaylists as jest.Mock).mockResolvedValue(
-        mockCachedPlaylists
-      );
-
-      const { result } = renderHook(() => useGetPlaylists(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.playlists).toEqual(mockCachedPlaylists);
-      expect(window.electron.cache.getCachedPlaylists).toHaveBeenCalledWith(
-        "user-1"
-      );
+      // ローカルDBは呼ばれない
+      expect(mockGetCachedPlaylists).not.toHaveBeenCalled();
     });
   });
 });

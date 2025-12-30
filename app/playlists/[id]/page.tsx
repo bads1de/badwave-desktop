@@ -13,6 +13,7 @@ import { useUser } from "@/hooks/auth/useUser";
 import SongListContent from "@/components/Song/SongListContent";
 import useGetPlaylist from "@/hooks/data/useGetPlaylist";
 import useGetPlaylistSongs from "@/hooks/data/useGetPlaylistSongs";
+import { useSyncPlaylistSongs } from "@/hooks/sync/useSyncPlaylistSongs";
 
 // --- Sub-components ---
 
@@ -129,6 +130,11 @@ const PlaylistPage = (props: {
   const playlistId = params.id;
 
   const { playlist, isLoading: playlistLoading } = useGetPlaylist(playlistId);
+
+  // バックグラウンド同期を開始
+  useSyncPlaylistSongs(playlistId, { autoSync: true });
+
+  // ローカルDBからデータを取得
   const { songs, isLoading: songsLoading } = useGetPlaylistSongs(playlistId);
 
   if (playlistLoading || songsLoading) {

@@ -1,11 +1,14 @@
 import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
-import { useQuery, onlineManager } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { electronAPI, isNetworkError } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron-utils";
 
 /**
- * ユーザーがいいねした曲を取得するカスタムフック
+ * ユーザーがいいねした曲を取得するカスタムフック (ローカルファースト)
+ *
+ * Electron環境では常にローカルDBから読み込みます。
+ * 同期は useSyncLikedSongs フックが担当します。
  *
  * networkMode: "always" により、オフライン時でも queryFn が実行され、
  * SQLite キャッシュからの取得が可能になります。
@@ -27,15 +30,13 @@ const useGetLikedSongs = (userId?: string) => {
         return [];
       }
 
-      const isOnline = onlineManager.isOnline();
-
-      // Electron環境かつオフラインの場合はSQLiteキャッシュから取得
-      if (electronAPI.isElectron() && !isOnline) {
+      // Electron環境では常にローカルDBから読み込む
+      if (electronAPI.isElectron()) {
         const cachedSongs = await electronAPI.cache.getCachedLikedSongs(userId);
-        // オフライン時はキャッシュを返す（空でも返す）
         return (cachedSongs as Song[]) || [];
       }
 
+      // Web版: Supabaseから直接取得
       const { data, error } = await supabaseClient
         .from("liked_songs_regular")
         .select("*, songs(*)")
@@ -43,38 +44,16 @@ const useGetLikedSongs = (userId?: string) => {
         .order("created_at", { ascending: false });
 
       if (error) {
-        // リクエスト中にオフラインになった場合、またはネットワークエラーの場合はキャッシュにフォールバック
-        if (!onlineManager.isOnline() || isNetworkError(error)) {
-          console.log(
-            "[useGetLikedSongs] Request failed due to offline/network error, falling back to cache"
-          );
-          if (electronAPI.isElectron()) {
-            const cachedSongs = await electronAPI.cache.getCachedLikedSongs(
-              userId
-            );
-            return (cachedSongs as Song[]) || [];
-          }
-          return undefined; // キャッシュがあればそれを使用
-        }
         console.error("Error fetching liked songs:", error);
         throw new Error("いいねした曲の取得に失敗しました");
       }
 
       if (!data) return [];
 
-      const songs = data.map((item) => ({
+      return data.map((item) => ({
         ...item.songs,
         songType: "regular" as const,
       })) as Song[];
-
-      // オフラインライブラリ用に SQLite キャッシュを同期（バックグラウンド）
-      if (electronAPI.isElectron()) {
-        electronAPI.cache.syncLikedSongs({ userId, songs }).catch((e) => {
-          console.error("Failed to sync liked songs with metadata:", e);
-        });
-      }
-
-      return songs;
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,

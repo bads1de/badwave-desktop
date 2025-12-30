@@ -9,79 +9,24 @@ import {
   onlineManager,
 } from "@tanstack/react-query";
 import useGetPlaylistSongs from "@/hooks/data/useGetPlaylistSongs";
+import { electronAPI } from "@/libs/electron-utils";
 
-// window.electron のモック（テスト開始前に設定）
-const mockGetOfflineSimulationStatus = jest.fn(() =>
-  Promise.resolve({ isOffline: false })
-);
-const mockSyncPlaylistSongs = jest.fn(() => Promise.resolve({ success: true }));
-const mockGetCachedPlaylistSongs = jest.fn(() =>
-  Promise.resolve([
-    {
-      id: "cached-song-1",
-      title: "Cached Song 1",
-      author: "Cached Author",
-      song_path: "cached/path.mp3",
-      image_path: "cached/image.jpg",
-    },
-  ])
-);
-
-Object.defineProperty(window, "electron", {
-  value: {
-    dev: {
-      getOfflineSimulationStatus: mockGetOfflineSimulationStatus,
-    },
-    ipc: {
-      on: jest.fn(() => () => {}),
-    },
+// electronAPI のモック
+jest.mock("@/libs/electron-utils", () => ({
+  electronAPI: {
+    isElectron: jest.fn(),
     cache: {
-      syncPlaylistSongs: mockSyncPlaylistSongs,
-      getCachedPlaylistSongs: mockGetCachedPlaylistSongs,
-    },
-    appInfo: {
-      isElectron: true,
+      getCachedPlaylistSongs: jest.fn(),
+      syncPlaylistSongs: jest.fn(),
     },
   },
-  writable: true,
-  configurable: true,
-});
+}));
 
 // Supabase モック
+const mockFrom = jest.fn();
 jest.mock("@/libs/supabase/client", () => ({
   createClient: () => ({
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          order: () =>
-            Promise.resolve({
-              data: [
-                {
-                  id: 1,
-                  songs: {
-                    id: "song-1",
-                    title: "Test Song 1",
-                    author: "Author 1",
-                    song_path: "path/to/song1.mp3",
-                    image_path: "path/to/image1.jpg",
-                  },
-                },
-                {
-                  id: 2,
-                  songs: {
-                    id: "song-2",
-                    title: "Test Song 2",
-                    author: "Author 2",
-                    song_path: "path/to/song2.mp3",
-                    image_path: "path/to/image2.jpg",
-                  },
-                },
-              ],
-              error: null,
-            }),
-        }),
-      }),
-    }),
+    from: mockFrom,
   }),
 }));
 
@@ -95,6 +40,10 @@ const createWrapper = () => {
 };
 
 describe("useGetPlaylistSongs", () => {
+  const mockIsElectron = electronAPI.isElectron as jest.Mock;
+  const mockGetCachedPlaylistSongs = electronAPI.cache
+    .getCachedPlaylistSongs as jest.Mock;
+
   beforeEach(() => {
     jest.clearAllMocks();
     act(() => {
@@ -102,8 +51,18 @@ describe("useGetPlaylistSongs", () => {
     });
   });
 
-  describe("オンライン時", () => {
-    it("Supabaseから取得し、SQLiteに同期する", async () => {
+  describe("Electron環境（ローカルファースト）", () => {
+    beforeEach(() => {
+      mockIsElectron.mockReturnValue(true);
+    });
+
+    it("オンライン時もローカルDBからプレイリスト曲を取得する", async () => {
+      const mockCachedSongs = [
+        { id: "song-1", title: "Cached Song 1", author: "Artist 1" },
+        { id: "song-2", title: "Cached Song 2", author: "Artist 2" },
+      ];
+      mockGetCachedPlaylistSongs.mockResolvedValue(mockCachedSongs);
+
       const { result } = renderHook(() => useGetPlaylistSongs("playlist-123"), {
         wrapper: createWrapper(),
       });
@@ -116,25 +75,20 @@ describe("useGetPlaylistSongs", () => {
         { timeout: 5000 }
       );
 
-      await waitFor(
-        () => {
-          expect(mockSyncPlaylistSongs).toHaveBeenCalled();
-        },
-        { timeout: 5000 }
-      );
-
-      expect(mockSyncPlaylistSongs).toHaveBeenCalledWith({
-        playlistId: "playlist-123",
-        songs: expect.any(Array),
-      });
+      expect(mockGetCachedPlaylistSongs).toHaveBeenCalledWith("playlist-123");
+      // APIは呼ばれない
+      expect(mockFrom).not.toHaveBeenCalled();
     });
-  });
 
-  describe("オフライン時", () => {
-    it("SQLiteから取得する", async () => {
+    it("オフライン時もローカルDBからプレイリスト曲を取得する", async () => {
       act(() => {
         onlineManager.setOnline(false);
       });
+
+      const mockCachedSongs = [
+        { id: "cached-song-1", title: "Cached Song", author: "Artist" },
+      ];
+      mockGetCachedPlaylistSongs.mockResolvedValue(mockCachedSongs);
 
       const { result } = renderHook(() => useGetPlaylistSongs("playlist-123"), {
         wrapper: createWrapper(),
@@ -149,6 +103,49 @@ describe("useGetPlaylistSongs", () => {
       );
 
       expect(mockGetCachedPlaylistSongs).toHaveBeenCalledWith("playlist-123");
+    });
+  });
+
+  describe("Web環境（非Electron）", () => {
+    beforeEach(() => {
+      mockIsElectron.mockReturnValue(false);
+    });
+
+    it("Supabaseからプレイリスト曲を取得する", async () => {
+      const mockSongsData = [
+        {
+          id: 1,
+          songs: { id: "song-1", title: "Test Song 1", author: "Author 1" },
+        },
+        {
+          id: 2,
+          songs: { id: "song-2", title: "Test Song 2", author: "Author 2" },
+        },
+      ];
+
+      mockFrom.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest
+          .fn()
+          .mockResolvedValue({ data: mockSongsData, error: null }),
+      });
+
+      const { result } = renderHook(() => useGetPlaylistSongs("playlist-123"), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(
+        () => {
+          expect(result.current.isLoading).toBe(false);
+          expect(result.current.songs).toHaveLength(2);
+        },
+        { timeout: 5000 }
+      );
+
+      expect(result.current.songs[0].title).toBe("Test Song 1");
+      // ローカルDBは呼ばれない
+      expect(mockGetCachedPlaylistSongs).not.toHaveBeenCalled();
     });
   });
 });

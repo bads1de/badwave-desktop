@@ -11,6 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
+    "rebuild:node": "npm rebuild better-sqlite3",
+    "rebuild:electron": "electron-rebuild -f -w better-sqlite3",
     "create-icons": "node scripts/create-icons.js",
     "dev:electron": "npm run build:electron && concurrently \"next dev\" \"wait-on http-get://localhost:3000 && electron .\"",
     "build:electron": "tsc -p electron",

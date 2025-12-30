@@ -7,6 +7,7 @@ import SongList from "@/components/Song/SongList";
 import BulkDownloadButton from "@/components/downloads/BulkDownloadButton";
 import { memo, useCallback } from "react";
 import useGetLikedSongs from "@/hooks/data/useGetLikedSongs";
+import { useSyncLikedSongs } from "@/hooks/sync/useSyncLikedSongs";
 import { useUser } from "@/hooks/auth/useUser";
 
 interface SongListContentProps {
@@ -24,7 +25,12 @@ const SongListContent: React.FC<SongListContentProps> = memo(
     showDownloadButton = true,
   }) => {
     const { user } = useUser();
-    // クライアントサイドでデータを取得（オフライン対応付き）
+
+    // バックグラウンド同期を開始（propSongsがない場合＝お気に入りページ）
+    // autoSync: true により、マウント時およびオンライン復帰時に自動同期
+    useSyncLikedSongs({ autoSync: !propSongs });
+
+    // クライアントサイドでデータを取得（ローカルDBから読み込み）
     const { likedSongs, isLoading } = useGetLikedSongs(
       propSongs ? undefined : user?.id
     );

@@ -6,11 +6,17 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { memo, useCallback } from "react";
 import useGetPlaylists from "@/hooks/data/useGetPlaylists";
+import { useSyncPlaylists } from "@/hooks/sync/useSyncPlaylists";
 
 // --- Sub-components ---
 
 const PlaylistContent: React.FC = memo(() => {
   const router = useRouter();
+
+  // バックグラウンド同期を開始
+  useSyncPlaylists({ autoSync: true });
+
+  // ローカルDBからデータを取得
   const { playlists, isLoading } = useGetPlaylists();
 
   const handlePlaylistClick = useCallback(

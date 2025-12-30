@@ -9,8 +9,20 @@ import {
   onlineManager,
 } from "@tanstack/react-query";
 import useGetLikedSongs from "@/hooks/data/useGetLikedSongs";
+import { electronAPI } from "@/libs/electron-utils";
 
-// モック
+// electronAPI のモック
+jest.mock("@/libs/electron-utils", () => ({
+  electronAPI: {
+    isElectron: jest.fn(),
+    cache: {
+      getCachedLikedSongs: jest.fn(),
+      syncLikedSongs: jest.fn(),
+    },
+  },
+}));
+
+// Supabaseのモック
 const mockFrom = jest.fn();
 jest.mock("@/libs/supabase/client", () => ({
   createClient: () => ({
@@ -28,6 +40,10 @@ const createWrapper = () => {
 };
 
 describe("useGetLikedSongs", () => {
+  const mockIsElectron = electronAPI.isElectron as jest.Mock;
+  const mockGetCachedLikedSongs = electronAPI.cache
+    .getCachedLikedSongs as jest.Mock;
+
   beforeEach(() => {
     jest.clearAllMocks();
     act(() => {
@@ -35,8 +51,60 @@ describe("useGetLikedSongs", () => {
     });
   });
 
-  describe("オンライン時", () => {
-    it("Supabaseからいいねした曲を取得し、キャッシュに同期する", async () => {
+  describe("Electron環境（ローカルファースト）", () => {
+    beforeEach(() => {
+      mockIsElectron.mockReturnValue(true);
+    });
+
+    it("オンライン時もローカルDBからいいねした曲を取得する", async () => {
+      const mockCachedSongs = [
+        { id: "s1", title: "Liked Song 1", author: "Artist 1" },
+      ];
+      mockGetCachedLikedSongs.mockResolvedValue(mockCachedSongs);
+
+      const { result } = renderHook(() => useGetLikedSongs("user-1"), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.likedSongs).toEqual(mockCachedSongs);
+      expect(mockGetCachedLikedSongs).toHaveBeenCalledWith("user-1");
+      // APIは呼ばれない
+      expect(mockFrom).not.toHaveBeenCalled();
+    });
+
+    it("オフライン時もローカルDBからいいねした曲を取得する", async () => {
+      act(() => {
+        onlineManager.setOnline(false);
+      });
+
+      const mockCachedSongs = [
+        { id: "s-cached", title: "Cached Liked Song", author: "Artist 1" },
+      ];
+      mockGetCachedLikedSongs.mockResolvedValue(mockCachedSongs);
+
+      const { result } = renderHook(() => useGetLikedSongs("user-1"), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.likedSongs).toEqual(mockCachedSongs);
+      expect(mockGetCachedLikedSongs).toHaveBeenCalledWith("user-1");
+    });
+  });
+
+  describe("Web環境（非Electron）", () => {
+    beforeEach(() => {
+      mockIsElectron.mockReturnValue(false);
+    });
+
+    it("Supabaseからいいねした曲を取得する", async () => {
       const mockSongs = [
         {
           id: "s1",
@@ -60,38 +128,8 @@ describe("useGetLikedSongs", () => {
 
       expect(result.current.likedSongs).toHaveLength(1);
       expect(result.current.likedSongs[0].title).toBe("Liked Song 1");
-      expect(window.electron.cache.syncLikedSongs).toHaveBeenCalledWith({
-        userId: "user-1",
-        songs: expect.any(Array),
-      });
-    });
-  });
-
-  describe("オフライン時", () => {
-    it("SQLiteキャッシュからいいねした曲を取得する", async () => {
-      act(() => {
-        onlineManager.setOnline(false);
-      });
-
-      const mockCachedSongs = [
-        { id: "s-cached", title: "Cached Liked Song", author: "Artist 1" },
-      ];
-      (window.electron.cache.getCachedLikedSongs as jest.Mock).mockResolvedValue(
-        mockCachedSongs
-      );
-
-      const { result } = renderHook(() => useGetLikedSongs("user-1"), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.likedSongs).toEqual(mockCachedSongs);
-      expect(window.electron.cache.getCachedLikedSongs).toHaveBeenCalledWith(
-        "user-1"
-      );
+      // ローカルDBは呼ばれない
+      expect(mockGetCachedLikedSongs).not.toHaveBeenCalled();
     });
   });
 });
