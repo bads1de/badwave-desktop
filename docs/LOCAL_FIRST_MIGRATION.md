@@ -150,27 +150,27 @@ _注: 検索やホーム画面（トレンドなど）は当面「オンライ�
 
 #### Step 1: Schema & IPC
 
-- [ ] `electron/db/schema.ts` に `section_cache` を追加。
-- [ ] `drizzle-kit generate:sqlite` でマイグレーションファイル作成。
-- [ ] IPC ハンドラ `get-section-songs` (Key -> Song[]) を `electron/ipc/cache.ts` に実装。
-- [ ] IPC ハンドラ `sync-section` (Key, Song[]) を実装。
+- [x] `electron/db/schema.ts` に `section_cache` を追加。
+- [x] `drizzle-kit generate:sqlite` でマイグレーションファイル作成。
+- [x] IPC ハンドラ `get-section-songs` (Key -> Song[]) を `electron/ipc/cache.ts` に実装。
+- [x] IPC ハンドラ `sync-section` (Key, Song[]) を実装.
 
 #### Step 2: Trends (トレンド)
 
-- [ ] `hooks/sync/useSyncTrends.ts` 作成。
-- [ ] `hooks/data/useGetTrendSongs.ts` を IPC 経由で取得するように修正。
-- [ ] `app/(site)/page.tsx` で Sync フックを呼び出し。
+- [x] `hooks/sync/useSyncTrends.ts` 作成。
+- [x] `hooks/data/useGetTrendSongs.ts` を IPC 経由で取得するように修正。
+- [x] `app/(site)/page.tsx` で Sync フックを呼び出し。
 
 #### Step 3: Spotlight & Latest
 
-- [ ] `hooks/sync/useSyncSpotlight.ts` 作成。
-- [ ] `hooks/sync/useSyncLatest.ts` 作成。
-- [ ] 各取得フック (`useGetSpotlight`, `useGetSongs`) を修正。
+- [x] `hooks/sync/useSyncSpotlight.ts` 作成。
+- [x] `hooks/sync/useSyncLatestSongs.ts` 作成。
+- [x] 各取得フック (`useGetSpotlight`, `useGetSongs`) を修正。
 
 #### Step 4: For You (Personalized)
 
-- [ ] `hooks/sync/useSyncRecommendations.ts` 作成。
-- [ ] `useGetRecommendations` をローカル対応。
+- [x] `hooks/sync/useSyncRecommendations.ts` 作成。
+- [x] `useGetRecommendations` をローカル対応。
 
 ### 考慮事項 (Garbage Collection)
 

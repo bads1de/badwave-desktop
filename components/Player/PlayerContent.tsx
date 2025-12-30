@@ -3,6 +3,7 @@ import { AiFillStepBackward, AiFillStepForward } from "react-icons/ai";
 import { BsRepeat1 } from "react-icons/bs";
 import { FaRandom } from "react-icons/fa";
 import { MdLyrics } from "react-icons/md";
+import { SlidersVertical } from "lucide-react";
 import { Playlist, Song } from "@/types";
 import LikeButton from "../LikeButton";
 import MediaItem from "../Song/MediaItem";
@@ -10,10 +11,18 @@ import Slider from "./Slider";
 import SeekBar from "./Seekbar";
 import AddPlaylist from "../Playlist/AddPlaylist";
 import useAudioPlayer from "@/hooks/audio/useAudioPlayer";
+import useAudioEqualizer from "@/hooks/audio/useAudioEqualizer";
 import useLyricsStore from "@/hooks/stores/useLyricsStore";
+import useEqualizerStore from "@/hooks/stores/useEqualizerStore";
 import { mediaControls } from "@/libs/electron";
 import { isLocalSong, getPlayablePath } from "@/libs/songUtils";
 import DisabledOverlay from "../common/DisabledOverlay";
+import EqualizerControl from "../Equalizer/EqualizerControl";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface PlayerContentProps {
   song: Song;
@@ -51,7 +60,12 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
       showVolumeSlider,
       setShowVolumeSlider,
     } = useAudioPlayer(playablePath, song);
+
+    // イコライザーを適用
+    useAudioEqualizer(audioRef);
+
     const { toggleLyrics } = useLyricsStore();
+    const isEqualizerEnabled = useEqualizerStore((state) => state.isEnabled);
 
     useEffect(() => {
       if (!showVolumeSlider) return;
@@ -93,7 +107,8 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
     return (
       <>
         {/* NOTE: srcはuseAudioPlayer内で設定されるため、ここでは指定しない */}
-        <audio ref={audioRef} loop={isRepeating} />
+        {/* crossOrigin属性はWeb Audio APIでイコライザーを使用するために必要 */}
+        <audio ref={audioRef} loop={isRepeating} crossOrigin="anonymous" />
 
         <div className="grid grid-cols-3 h-full bg-[#121212] border-t border-[#303030] rounded-t-xl">
           <div className="flex w-full justify-start px-4">
@@ -160,7 +175,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
           </div>
 
           <div className="flex w-full justify-end pr-6">
-            <div className="flex items-center gap-x-8 w-full md:w-[170px] lg:w-[200px]">
+            <div className="flex items-center gap-x-6 w-full md:w-[220px] lg:w-[260px]">
               <DisabledOverlay disabled={isLocalFile}>
                 <AddPlaylist
                   playlists={playlists}
@@ -192,6 +207,29 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
                   <MdLyrics size={22} />
                 </button>
               </DisabledOverlay>
+
+              {/* イコライザーボタン */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className={`cursor-pointer transition-all duration-300 hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] ${
+                      isEqualizerEnabled
+                        ? "text-theme-500 drop-shadow-[0_0_8px_var(--glow-color)]"
+                        : "text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    <SlidersVertical size={22} />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="top"
+                  align="end"
+                  sideOffset={10}
+                  className="w-auto p-0 border-none bg-transparent"
+                >
+                  <EqualizerControl />
+                </PopoverContent>
+              </Popover>
 
               <div className="relative">
                 <VolumeIcon

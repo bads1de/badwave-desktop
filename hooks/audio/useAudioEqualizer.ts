@@ -1,0 +1,144 @@
+import { useEffect, useRef, useCallback } from "react";
+import useEqualizerStore, { EQ_BANDS } from "@/hooks/stores/useEqualizerStore";
+
+interface EqualizerNodes {
+  context: AudioContext;
+  sourceNode: MediaElementAudioSourceNode;
+  filters: BiquadFilterNode[];
+  gainNode: GainNode;
+}
+
+/**
+ * オーディオ要素にイコライザーを適用するカスタムフック
+ * Web Audio API を使用して 6 バンドのイコライザーを実現
+ *
+ * @param audioRef - オーディオ要素への参照
+ */
+const useAudioEqualizer = (
+  audioRef: React.RefObject<HTMLAudioElement | null>
+) => {
+  const nodesRef = useRef<EqualizerNodes | null>(null);
+  const isInitializedRef = useRef<boolean>(false);
+
+  // ストアから状態を取得
+  const isEnabled = useEqualizerStore((state) => state.isEnabled);
+  const bands = useEqualizerStore((state) => state.bands);
+
+  // イコライザーノードの初期化
+  const initializeEqualizer = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || isInitializedRef.current) return;
+
+    try {
+      const context = new AudioContext();
+      const sourceNode = context.createMediaElementSource(audio);
+
+      // 6バンド分のBiquadFilterを作成
+      const filters: BiquadFilterNode[] = EQ_BANDS.map((band, index) => {
+        const filter = context.createBiquadFilter();
+        // 最初と最後はシェルビングフィルター、それ以外はピーキングフィルター
+        if (index === 0) {
+          filter.type = "lowshelf";
+        } else if (index === EQ_BANDS.length - 1) {
+          filter.type = "highshelf";
+        } else {
+          filter.type = "peaking";
+          filter.Q.value = 1.4; // Q値 (帯域幅)
+        }
+        filter.frequency.value = band.freq;
+        filter.gain.value = 0; // 初期値は0dB
+        return filter;
+      });
+
+      // ゲインノード（マスター音量調整用、将来の拡張性のため）
+      const gainNode = context.createGain();
+      gainNode.gain.value = 1;
+
+      // ノードを直列に接続: source -> filter1 -> filter2 -> ... -> gain -> destination
+      let currentNode: AudioNode = sourceNode;
+      filters.forEach((filter) => {
+        currentNode.connect(filter);
+        currentNode = filter;
+      });
+      currentNode.connect(gainNode);
+      gainNode.connect(context.destination);
+
+      nodesRef.current = {
+        context,
+        sourceNode,
+        filters,
+        gainNode,
+      };
+      isInitializedRef.current = true;
+
+      console.log("[useAudioEqualizer] Equalizer initialized successfully");
+    } catch (error) {
+      console.error(
+        "[useAudioEqualizer] Failed to initialize equalizer:",
+        error
+      );
+    }
+  }, [audioRef]);
+
+  // オーディオ要素の canplaythrough イベントで初期化
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleCanPlay = () => {
+      if (!isInitializedRef.current) {
+        initializeEqualizer();
+      }
+    };
+
+    // 既に再生可能な状態なら即初期化
+    if (audio.readyState >= 3) {
+      initializeEqualizer();
+    }
+
+    audio.addEventListener("canplaythrough", handleCanPlay);
+
+    return () => {
+      audio.removeEventListener("canplaythrough", handleCanPlay);
+    };
+  }, [audioRef, initializeEqualizer]);
+
+  // ストアのゲイン変更を反映
+  useEffect(() => {
+    const nodes = nodesRef.current;
+    if (!nodes) return;
+
+    nodes.filters.forEach((filter, index) => {
+      const band = bands[index];
+      if (band) {
+        // イコライザーが有効な場合のみゲインを適用
+        filter.gain.value = isEnabled ? band.gain : 0;
+      }
+    });
+  }, [bands, isEnabled]);
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      const nodes = nodesRef.current;
+      if (nodes) {
+        try {
+          nodes.sourceNode.disconnect();
+          nodes.filters.forEach((filter) => filter.disconnect());
+          nodes.gainNode.disconnect();
+          nodes.context.close();
+        } catch (error) {
+          console.error("[useAudioEqualizer] Cleanup error:", error);
+        }
+        nodesRef.current = null;
+        isInitializedRef.current = false;
+      }
+    };
+  }, []);
+
+  return {
+    isInitialized: isInitializedRef.current,
+  };
+};
+
+export default useAudioEqualizer;
