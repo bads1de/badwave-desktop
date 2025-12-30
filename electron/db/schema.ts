@@ -33,6 +33,8 @@ export const songs = sqliteTable("songs", {
   createdAt: text("created_at"), // SupabaseからのISO文字列
   downloadedAt: integer("downloaded_at", { mode: "timestamp" }), // ローカル保存日時
   lastPlayedAt: integer("last_played_at", { mode: "timestamp" }), // 「最近再生した曲」用
+  playCount: integer("play_count").default(0),
+  likeCount: integer("like_count").default(0),
 });
 
 // 2. Playlists: ユーザー作成のプレイリスト

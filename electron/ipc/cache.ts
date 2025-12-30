@@ -54,6 +54,8 @@ export function setupCacheHandlers() {
         duration: song.duration ? Number(song.duration) : null,
         genre: song.genre,
         lyrics: song.lyrics,
+        playCount: song.count ? Number(song.count) : 0,
+        likeCount: song.like_count ? Number(song.like_count) : 0,
         createdAt: song.created_at,
         downloadedAt: existing?.downloadedAt ?? null,
       };
@@ -72,6 +74,8 @@ export function setupCacheHandlers() {
             duration: record.duration,
             genre: record.genre,
             lyrics: record.lyrics,
+            playCount: record.playCount,
+            likeCount: record.likeCount,
             createdAt: record.createdAt,
           },
         });
@@ -201,6 +205,8 @@ export function setupCacheHandlers() {
           local_song_path: song?.songPath || null,
           local_image_path: song?.imagePath || null,
           local_video_path: song?.videoPath || null,
+          count: String(song?.playCount || 0),
+          like_count: String(song?.likeCount || 0),
           created_at: liked_songs.likedAt,
         };
       });
@@ -254,6 +260,8 @@ export function setupCacheHandlers() {
           local_song_path: song?.songPath || null,
           local_image_path: song?.imagePath || null,
           local_video_path: song?.videoPath || null,
+          count: String(song?.playCount || 0),
+          like_count: String(song?.likeCount || 0),
           created_at: playlist_songs.addedAt,
         };
       });
@@ -418,8 +426,8 @@ export function setupCacheHandlers() {
               local_video_path: s.videoPath || null,
               duration: s.duration,
               genre: s.genre,
-              count: "0",
-              like_count: "0",
+              count: String(s.playCount || 0),
+              like_count: String(s.likeCount || 0),
               lyrics: s.lyrics,
               created_at: s.createdAt || new Date().toISOString(),
             })
