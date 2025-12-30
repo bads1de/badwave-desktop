@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { AiFillStepBackward, AiFillStepForward } from "react-icons/ai";
 import { BsRepeat1 } from "react-icons/bs";
 import { FaRandom } from "react-icons/fa";
-import { SlidersVertical, Mic2 } from "lucide-react";
+import { Mic2 } from "lucide-react";
 import { Playlist, Song } from "@/types";
 import LikeButton from "../LikeButton";
 import MediaItem from "../Song/MediaItem";
@@ -12,16 +12,12 @@ import AddPlaylist from "../Playlist/AddPlaylist";
 import useAudioPlayer from "@/hooks/audio/useAudioPlayer";
 import useAudioEqualizer from "@/hooks/audio/useAudioEqualizer";
 import useLyricsStore from "@/hooks/stores/useLyricsStore";
-import useEqualizerStore from "@/hooks/stores/useEqualizerStore";
+import usePlaybackRate from "@/hooks/audio/usePlaybackRate";
 import { mediaControls } from "@/libs/electron";
 import { isLocalSong, getPlayablePath } from "@/libs/songUtils";
 import DisabledOverlay from "../common/DisabledOverlay";
-import EqualizerControl from "../Equalizer/EqualizerControl";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import PlaybackSpeedButton from "./PlaybackSpeedButton";
+import EqualizerButton from "./EqualizerButton";
 
 interface PlayerContentProps {
   song: Song;
@@ -46,9 +42,6 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
       audioRef,
       currentTime,
       duration,
-      isPlaying,
-      isRepeating,
-      isShuffling,
       handlePlay,
       handleSeek,
       onPlayNext,
@@ -58,13 +51,15 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
       handleVolumeClick,
       showVolumeSlider,
       setShowVolumeSlider,
+      isRepeating,
+      isShuffling,
     } = useAudioPlayer(playablePath, song);
 
     // イコライザーを適用
     useAudioEqualizer(audioRef);
 
     const { toggleLyrics } = useLyricsStore();
-    const isEqualizerEnabled = useEqualizerStore((state) => state.isEnabled);
+    usePlaybackRate(audioRef);
 
     useEffect(() => {
       if (!showVolumeSlider) return;
@@ -157,7 +152,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
               />
             </div>
 
-            <div className="flex items-center gap-x-2 mt-4 w-full lg:max-w-[800px] md:max-w-[300px]">
+            <div className="flex items-center gap-x-1 mt-4 w-full lg:max-w-[800px] md:max-w-[300px]">
               <span className="w-[50px] text-center inline-block text-[#f0f0f0]">
                 {formattedCurrentTime}
               </span>
@@ -208,28 +203,10 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
                 </button>
               </DisabledOverlay>
 
+              <PlaybackSpeedButton />
+
               {/* イコライザーボタン */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    className={`cursor-pointer transition-all duration-300 hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] ${
-                      isEqualizerEnabled
-                        ? "text-theme-500 drop-shadow-[0_0_8px_var(--glow-color)]"
-                        : "text-neutral-400 hover:text-white"
-                    }`}
-                  >
-                    <SlidersVertical size={20} />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  side="top"
-                  align="end"
-                  sideOffset={10}
-                  className="w-auto p-0 border-none bg-transparent"
-                >
-                  <EqualizerControl />
-                </PopoverContent>
-              </Popover>
+              <EqualizerButton />
 
               <div className="relative">
                 <VolumeIcon

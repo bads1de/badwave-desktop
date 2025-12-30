@@ -41,10 +41,12 @@ export default function RootLayout({
                 <PlaybackStateProvider>
                   <ModalProvider />
                   <WindowControls />
-                  <Sidebar>
-                    <RightSidebar>{children}</RightSidebar>
-                  </Sidebar>
-                  <Player />
+                  <div className="app-wrapper">
+                    <Sidebar>
+                      <RightSidebar>{children}</RightSidebar>
+                    </Sidebar>
+                    <Player />
+                  </div>
                   <OfflineIndicator />
                   <OfflineRedirector />
                 </PlaybackStateProvider>
