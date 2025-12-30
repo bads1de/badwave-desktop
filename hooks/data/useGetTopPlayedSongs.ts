@@ -1,7 +1,12 @@
 import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useQuery,
+  onlineManager,
+} from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { isNetworkError } from "@/libs/electron-utils";
 
 interface TopPlayedSong extends Song {
   play_count: number;
@@ -32,12 +37,23 @@ const useGetTopPlayedSongs = (userId?: string, period: Period = "day") => {
         return [];
       }
 
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       const { data, error } = await supabase.rpc("get_top_songs", {
         p_user_id: userId,
         p_period: period,
       });
 
       if (error) {
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[useGetTopPlayedSongs] Fetch skipped: offline/network error"
+          );
+          return undefined;
+        }
         throw new Error(`再生履歴の取得に失敗しました: ${error.message}`);
       }
 

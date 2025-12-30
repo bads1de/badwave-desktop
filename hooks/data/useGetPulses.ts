@@ -1,7 +1,8 @@
 import { Pulse } from "@/types";
 import { createClient } from "@/libs/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * Pulseデータを取得するカスタムフック (オフライン対応)
@@ -25,12 +26,21 @@ const useGetPulses = (initialData?: Pulse[]) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       const { data, error } = await supabaseClient
         .from("pulses")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) {
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log("[useGetPulses] Fetch skipped: offline/network error");
+          return undefined;
+        }
         console.error("Error fetching pulses:", error);
         throw new Error("Pulseの取得に失敗しました");
       }

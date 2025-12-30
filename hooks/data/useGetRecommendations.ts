@@ -1,8 +1,9 @@
 import { Song, SongWithRecommendation } from "@/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
 import { useUser } from "@/hooks/auth/useUser";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * おすすめ曲を取得するカスタムフック (クライアントサイド)
@@ -33,6 +34,11 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
         return [];
       }
 
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       try {
         const { data, error } = await supabase.rpc("get_recommendations", {
           p_user_id: user.id,
@@ -40,6 +46,12 @@ const useGetRecommendations = (initialData?: Song[], limit: number = 10) => {
         });
 
         if (error) {
+          if (!onlineManager.isOnline() || isNetworkError(error)) {
+            console.log(
+              "[useGetRecommendations] Fetch skipped: offline/network error"
+            );
+            return undefined;
+          }
           console.error("Error fetching recommendations:", error);
           throw error;
         }

@@ -1,7 +1,8 @@
 import { Song } from "@/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * 指定したジャンルの曲一覧を取得するカスタムフック (オフライン対応)
@@ -33,6 +34,11 @@ const useGetSongsByGenre = (genre: string | string[]) => {
         return [];
       }
 
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       // データベースから曲を検索
       const { data, error } = await supabase
         .from("songs")
@@ -41,6 +47,12 @@ const useGetSongsByGenre = (genre: string | string[]) => {
         .order("created_at", { ascending: false });
 
       if (error) {
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[useGetSongsByGenre] Fetch skipped: offline/network error"
+          );
+          return undefined;
+        }
         console.error("Error fetching songs by genre:", error.message);
         throw error;
       }

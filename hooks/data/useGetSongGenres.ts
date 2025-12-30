@@ -1,7 +1,8 @@
 import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * 指定されたジャンルに一致する曲を取得するカスタムフック
@@ -30,6 +31,11 @@ const useGetSongsByGenres = (genres: string[], excludeId?: string) => {
         return [];
       }
 
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       let query = supabaseClient.from("songs").select("*");
 
       // ジャンルのOR条件を構築
@@ -45,6 +51,12 @@ const useGetSongsByGenres = (genres: string[], excludeId?: string) => {
       const { data, error } = await query;
 
       if (error) {
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[useGetSongsByGenres] Fetch skipped: offline/network error"
+          );
+          return undefined;
+        }
         throw new Error(
           `ジャンルによる曲の取得に失敗しました: ${error.message}`
         );

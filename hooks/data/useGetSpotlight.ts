@@ -1,7 +1,8 @@
 import { Spotlight } from "@/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * スポットライトデータを取得するカスタムフック (クライアントサイド)
@@ -22,12 +23,21 @@ const useGetSpotlight = (initialData?: Spotlight[]) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       const { data, error } = await supabase
         .from("spotlights")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) {
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log("[useGetSpotlight] Fetch skipped: offline/network error");
+          return undefined;
+        }
         console.error("Error fetching spotlights:", error.message);
         throw error;
       }

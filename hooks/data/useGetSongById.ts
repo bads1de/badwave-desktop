@@ -1,7 +1,11 @@
 import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
-import { electronAPI } from "@/libs/electron-utils";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { electronAPI, isNetworkError } from "@/libs/electron-utils";
+import {
+  useQuery,
+  keepPreviousData,
+  onlineManager,
+} from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useEffect, useState, useRef } from "react";
@@ -32,7 +36,7 @@ const useGetSongById = (id?: string | number) => {
     fetchStatus,
   } = useQuery({
     queryKey,
-    queryFn: async (): Promise<Song | null> => {
+    queryFn: async (): Promise<Song | null | undefined> => {
       if (!normalizedId) {
         return null;
       }
@@ -42,6 +46,11 @@ const useGetSongById = (id?: string | number) => {
         return null;
       }
 
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       const { data, error } = await supabaseClient
         .from("songs")
         .select("*")
@@ -49,6 +58,10 @@ const useGetSongById = (id?: string | number) => {
         .maybeSingle();
 
       if (error) {
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log("[useGetSongById] Fetch skipped: offline/network error");
+          return undefined;
+        }
         throw new Error(`Failed to load song: ${error.message}`);
       }
 

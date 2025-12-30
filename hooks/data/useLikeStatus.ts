@@ -1,7 +1,8 @@
 import { createClient } from "@/libs/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * 曲のいいね状態を取得するカスタムフック
@@ -33,6 +34,11 @@ const useLikeStatus = (songId: string, userId?: string) => {
         .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
+        // オフラインまたはネットワークエラーの場合はfalseを返す
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log("[useLikeStatus] Fetch skipped: offline/network error");
+          return undefined; // キャッシュがあればそれを使用
+        }
         console.error("Error fetching like status:", error);
         throw new Error("いいねの状態の取得に失敗しました");
       }

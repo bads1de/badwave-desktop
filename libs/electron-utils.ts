@@ -7,6 +7,32 @@
 
 import { Song } from "@/types";
 
+/**
+ * ネットワークエラーかどうかを判定するヘルパー関数
+ * @param error エラーオブジェクト
+ * @returns ネットワークエラーかどうか
+ */
+export const isNetworkError = (error: any): boolean => {
+  if (!error) return false;
+
+  const errorMessage = error.message || error.toString();
+  const networkErrorPatterns = [
+    "Failed to fetch",
+    "NetworkError",
+    "Network request failed",
+    "fetch failed",
+    "net::ERR_",
+    "ENOTFOUND",
+    "ECONNREFUSED",
+    "ETIMEDOUT",
+    "ERR_NETWORK",
+  ];
+
+  return networkErrorPatterns.some((pattern) =>
+    errorMessage.toLowerCase().includes(pattern.toLowerCase())
+  );
+};
+
 // オフライン曲の型定義
 export interface OfflineSong {
   id: string;

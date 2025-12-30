@@ -2,7 +2,7 @@ import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI, isNetworkError } from "@/libs/electron-utils";
 
 /**
  * ユーザーがいいねした曲を取得するカスタムフック
@@ -43,6 +43,19 @@ const useGetLikedSongs = (userId?: string) => {
         .order("created_at", { ascending: false });
 
       if (error) {
+        // リクエスト中にオフラインになった場合、またはネットワークエラーの場合はキャッシュにフォールバック
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[useGetLikedSongs] Request failed due to offline/network error, falling back to cache"
+          );
+          if (electronAPI.isElectron()) {
+            const cachedSongs = await electronAPI.cache.getCachedLikedSongs(
+              userId
+            );
+            return (cachedSongs as Song[]) || [];
+          }
+          return undefined; // キャッシュがあればそれを使用
+        }
         console.error("Error fetching liked songs:", error);
         throw new Error("いいねした曲の取得に失敗しました");
       }

@@ -1,7 +1,8 @@
 import { Song } from "@/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * 最新曲を取得するカスタムフック (クライアントサイド)
@@ -26,6 +27,11 @@ const useGetSongs = (initialData?: Song[], limit: number = 12) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      // オフライン時はフェッチをスキップしてundefinedを返す（キャッシュがあればそれを使用）
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       const { data, error } = await supabase
         .from("songs")
         .select("*")
@@ -33,6 +39,11 @@ const useGetSongs = (initialData?: Song[], limit: number = 12) => {
         .limit(limit);
 
       if (error) {
+        // オフラインまたはネットワークエラーの場合はログのみ
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log("[useGetSongs] Fetch skipped: offline/network error");
+          return undefined;
+        }
         console.error("Error fetching songs:", error.message);
         throw error;
       }

@@ -1,7 +1,8 @@
 import { Playlist } from "@/types";
 import { createClient } from "@/libs/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * プレイリスト情報を取得するカスタムフック
@@ -26,6 +27,11 @@ const useGetPlaylist = (playlistId?: string) => {
         return null;
       }
 
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       const { data, error } = await supabaseClient
         .from("playlists")
         .select("*")
@@ -33,6 +39,10 @@ const useGetPlaylist = (playlistId?: string) => {
         .single();
 
       if (error) {
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log("[useGetPlaylist] Fetch skipped: offline/network error");
+          return undefined;
+        }
         console.error("Error fetching playlist:", error);
         throw new Error("プレイリストの取得に失敗しました");
       }

@@ -2,7 +2,7 @@ import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI, isNetworkError } from "@/libs/electron-utils";
 
 /**
  * プレイリストの曲を取得するカスタムフック
@@ -43,6 +43,19 @@ const useGetPlaylistSongs = (playlistId?: string) => {
         .order("created_at", { ascending: false });
 
       if (error) {
+        // リクエスト中にオフラインになった場合、またはネットワークエラーの場合はキャッシュにフォールバック
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[useGetPlaylistSongs] Request failed due to offline/network error, falling back to cache"
+          );
+          if (electronAPI.isElectron()) {
+            const cachedSongs = await electronAPI.cache.getCachedPlaylistSongs(
+              playlistId
+            );
+            return (cachedSongs as Song[]) || [];
+          }
+          return undefined; // キャッシュがあればそれを使用
+        }
         console.error("Error fetching playlist songs:", error);
         throw new Error("プレイリストの曲の取得に失敗しました");
       }

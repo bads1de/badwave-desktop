@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { createClient } from "@/libs/supabase/client";
 import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * タイトルでパブリックプレイリストを検索するカスタムフック (オフライン対応)
@@ -30,6 +31,11 @@ const useGetPlaylistsByTitle = (title: string) => {
         return [];
       }
 
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       const { data, error } = await supabase
         .from("playlists")
         .select("*")
@@ -38,6 +44,13 @@ const useGetPlaylistsByTitle = (title: string) => {
         .order("created_at", { ascending: false });
 
       if (error) {
+        // ネットワークエラーまたはオフラインの場合はエラーをスローしない
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[useGetPlaylistsByTitle] Network error, returning cached data"
+          );
+          return undefined;
+        }
         console.error("Error fetching playlists by title:", error.message);
         throw error;
       }

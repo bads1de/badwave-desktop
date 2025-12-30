@@ -1,7 +1,8 @@
 import { Song } from "@/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * タイトルで曲を検索するカスタムフック (オフライン対応)
@@ -25,6 +26,11 @@ const useGetSongsByTitle = (title: string) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       const query = supabase
         .from("songs")
         .select("*")
@@ -38,6 +44,12 @@ const useGetSongsByTitle = (title: string) => {
       const { data, error } = await query.limit(20);
 
       if (error) {
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[useGetSongsByTitle] Fetch skipped: offline/network error"
+          );
+          return undefined;
+        }
         console.error("Error fetching songs by title:", error.message);
         throw error;
       }

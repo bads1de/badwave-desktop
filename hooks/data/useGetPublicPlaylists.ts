@@ -1,7 +1,8 @@
 import { Playlist } from "@/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * パブリックプレイリストを取得するカスタムフック (クライアントサイド)
@@ -26,6 +27,11 @@ const useGetPublicPlaylists = (initialData?: Playlist[], limit: number = 6) => {
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       const { data, error } = await supabase
         .from("playlists")
         .select("*")
@@ -34,6 +40,12 @@ const useGetPublicPlaylists = (initialData?: Playlist[], limit: number = 6) => {
         .limit(limit);
 
       if (error) {
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[useGetPublicPlaylists] Fetch skipped: offline/network error"
+          );
+          return undefined;
+        }
         console.error("Error fetching public playlists:", error.message);
         throw error;
       }

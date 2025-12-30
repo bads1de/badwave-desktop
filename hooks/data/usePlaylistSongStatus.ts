@@ -1,8 +1,9 @@
 import { createClient } from "@/libs/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG } from "@/constants";
 import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * 曲がプレイリストに含まれているかどうかを確認するカスタムフック
@@ -36,6 +37,13 @@ const usePlaylistSongStatus = (songId: string, playlists: { id: string }[]) => {
         .in("playlist_id", playlistIds);
 
       if (error) {
+        // オフラインまたはネットワークエラーの場合は空オブジェクトを返す
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[usePlaylistSongStatus] Fetch skipped: offline/network error"
+          );
+          return undefined; // キャッシュがあればそれを使用
+        }
         console.error("Error fetching playlist song status:", error);
         throw new Error("プレイリスト曲の状態の取得に失敗しました");
       }

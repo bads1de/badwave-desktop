@@ -1,8 +1,9 @@
 import { Song } from "@/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
 import { subMonths, subWeeks, subDays } from "date-fns";
+import { isNetworkError } from "@/libs/electron-utils";
 
 /**
  * トレンド曲を取得するカスタムフック
@@ -26,6 +27,11 @@ const useGetTrendSongs = (
   } = useQuery({
     queryKey,
     queryFn: async () => {
+      // オフライン時はフェッチをスキップ
+      if (!onlineManager.isOnline()) {
+        return undefined;
+      }
+
       let query = supabase.from("songs").select("*");
 
       switch (period) {
@@ -57,6 +63,12 @@ const useGetTrendSongs = (
         .limit(10);
 
       if (error) {
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[useGetTrendSongs] Fetch skipped: offline/network error"
+          );
+          return undefined;
+        }
         console.error("Error fetching trend songs:", error.message);
         throw error;
       }

@@ -3,7 +3,7 @@ import { createClient } from "@/libs/supabase/client";
 import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useUser } from "@/hooks/auth/useUser";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI, isNetworkError } from "@/libs/electron-utils";
 
 /**
  * ユーザーのプレイリスト一覧を取得するカスタムフック
@@ -45,6 +45,19 @@ const useGetPlaylists = () => {
         .order("created_at", { ascending: false });
 
       if (error) {
+        // リクエスト中にオフラインになった場合、またはネットワークエラーの場合はキャッシュにフォールバック
+        if (!onlineManager.isOnline() || isNetworkError(error)) {
+          console.log(
+            "[useGetPlaylists] Request failed due to offline/network error, falling back to cache"
+          );
+          if (electronAPI.isElectron()) {
+            const cachedPlaylists = await electronAPI.cache.getCachedPlaylists(
+              user.id
+            );
+            return (cachedPlaylists as Playlist[]) || [];
+          }
+          return undefined; // キャッシュがあればそれを使用
+        }
         console.error("Error fetching playlists:", error.message);
         throw error;
       }
