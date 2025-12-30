@@ -1,4 +1,4 @@
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 import {
   describe,
   it,
@@ -8,7 +8,7 @@ import {
   jest,
 } from "@jest/globals";
 
-describe("libs/electron-utils", () => {
+describe("libs/electron", () => {
   // 元のwindowオブジェクトを保存
   const originalWindow = global.window;
 

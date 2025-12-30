@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Song } from "@/types";
 import toast from "react-hot-toast";
 
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 
 interface UseDownloadSongResult {
   download: () => Promise<void>;

@@ -10,11 +10,11 @@ import {
 } from "@tanstack/react-query";
 import useGetPlaylists from "@/hooks/data/useGetPlaylists";
 import { useUser } from "@/hooks/auth/useUser";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 
 // モック
 jest.mock("@/hooks/auth/useUser");
-jest.mock("@/libs/electron-utils", () => ({
+jest.mock("@/libs/electron/index", () => ({
   electronAPI: {
     isElectron: jest.fn(),
     cache: {

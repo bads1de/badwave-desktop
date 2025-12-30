@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import OfflinePage from "@/app/offline/page";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { useRouter } from "next/navigation";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 import usePlayer from "@/hooks/player/usePlayer";
 
 // Mock hooks and libraries
@@ -11,7 +11,7 @@ jest.mock("@/hooks/utils/useNetworkStatus");
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
-jest.mock("@/libs/electron-utils", () => ({
+jest.mock("@/libs/electron", () => ({
   electronAPI: {
     isElectron: jest.fn(),
     offline: {

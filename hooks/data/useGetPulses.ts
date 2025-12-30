@@ -2,7 +2,7 @@ import { Pulse } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { isNetworkError } from "@/libs/electron-utils";
+import { isNetworkError } from "@/libs/electron/index";
 
 /**
  * Pulseデータを取得するカスタムフック (オフライン対応)

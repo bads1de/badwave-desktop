@@ -9,10 +9,10 @@ import {
   onlineManager,
 } from "@tanstack/react-query";
 import useGetPlaylistSongs from "@/hooks/data/useGetPlaylistSongs";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 
 // electronAPI のモック
-jest.mock("@/libs/electron-utils", () => ({
+jest.mock("@/libs/electron/index", () => ({
   electronAPI: {
     isElectron: jest.fn(),
     cache: {

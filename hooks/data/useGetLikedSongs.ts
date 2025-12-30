@@ -2,7 +2,7 @@ import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 
 /**
  * ユーザーがいいねした曲を取得するカスタムフック (ローカルファースト)

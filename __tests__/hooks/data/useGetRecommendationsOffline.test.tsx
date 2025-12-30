@@ -40,6 +40,18 @@ describe("useGetRecommendations (Offline Support)", () => {
       onlineManager.setOnline(true);
     });
     mockUseUser.mockReturnValue({ user: { id: mockUserId } });
+
+    // Web環境をシミュレート
+    if (window.electron) {
+      window.electron.appInfo.isElectron = false;
+    }
+  });
+
+  afterEach(() => {
+    // Electron環境に戻す
+    if (window.electron) {
+      window.electron.appInfo.isElectron = true;
+    }
   });
 
   it("オンライン時はRPCメソッド get_recommendations を呼び出す", async () => {
@@ -65,7 +77,7 @@ describe("useGetRecommendations (Offline Support)", () => {
     });
   });
 
-  it("オフライン時はクエリが一時停止される", async () => {
+  it("オフライン時はフェッチを行わない", async () => {
     // オフライン設定
     act(() => {
       onlineManager.setOnline(false);
@@ -80,9 +92,10 @@ describe("useGetRecommendations (Offline Support)", () => {
       wrapper: createWrapper(),
     });
 
-    await waitFor(() => {
-      expect(result.current.isPaused).toBe(true);
-    });
+    // networkMode: "always" なので paused にはならない
+    expect(result.current.isPaused).toBe(false);
+    // データは空
+    expect(result.current.recommendations).toEqual([]);
 
     // RPCが呼ばれていないことを確認
     expect(mockRpc).not.toHaveBeenCalled();

@@ -5,7 +5,7 @@ import { HiDownload, HiTrash } from "react-icons/hi";
 import useBulkDownload from "@/hooks/downloads/useBulkDownload";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { Song } from "@/types";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron";
 import { toast } from "react-hot-toast";
 
 interface BulkDownloadButtonProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { onlineManager, focusManager } from "@tanstack/react-query";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 
 /**
  * TanStack Query の onlineManager を設定

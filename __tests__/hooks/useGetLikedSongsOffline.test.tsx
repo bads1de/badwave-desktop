@@ -5,11 +5,11 @@ import {
   onlineManager,
 } from "@tanstack/react-query";
 import useGetLikedSongs from "@/hooks/data/useGetLikedSongs";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 import React from "react";
 
 // モックの設定
-jest.mock("@/libs/electron-utils", () => ({
+jest.mock("@/libs/electron", () => ({
   electronAPI: {
     isElectron: jest.fn(),
     cache: {

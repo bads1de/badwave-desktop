@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Song } from "@/types";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 
 interface BulkDownloadState {
   isDownloading: boolean;

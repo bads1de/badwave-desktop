@@ -21,7 +21,7 @@ import useGetSavedLibraryInfo from "@/hooks/data/useGetSavedLibraryInfo";
 
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { formatTime } from "@/libs/helpers";
+import { formatTime } from "@/libs/utils";
 
 // --- Types ---
 

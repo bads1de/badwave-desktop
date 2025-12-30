@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/libs/supabase/client";
 import { uploadFileToR2, deleteFileFromR2 } from "@/actions/r2";
 import { checkIsAdmin } from "@/actions/checkAdmin";
-import { sanitizeTitle } from "@/libs/helpers";
+import { sanitizeTitle } from "@/libs/utils";
 import { CACHED_QUERIES } from "@/constants";
 import { Song } from "@/types";
 

@@ -3,7 +3,7 @@ import { createClient } from "@/libs/supabase/client";
 import { Playlist } from "@/types";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useUser } from "@/hooks/auth/useUser";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 
 /**
  * ユーザーのプレイリスト一覧を取得するカスタムフック (ローカルファースト)

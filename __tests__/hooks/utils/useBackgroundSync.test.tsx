@@ -5,7 +5,7 @@ import { useBackgroundSync } from "@/hooks/utils/useBackgroundSync";
 import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 import { useQueryClient } from "@tanstack/react-query";
 
 // モックのセットアップ
@@ -24,7 +24,7 @@ jest.mock("@/hooks/utils/useNetworkStatus", () => ({
 jest.mock("@/libs/supabase/client", () => ({
   createClient: () => mockSupabase,
 }));
-jest.mock("@/libs/electron-utils", () => ({
+jest.mock("@/libs/electron", () => ({
   electronAPI: {
     isElectron: jest.fn(),
     cache: {

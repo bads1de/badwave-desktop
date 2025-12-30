@@ -29,7 +29,7 @@ import useGetSongById from "@/hooks/data/useGetSongById";
 import { useUser } from "@/hooks/auth/useUser";
 import useGetSongsByGenres from "@/hooks/data/useGetSongGenres";
 import EditModal from "@/components/Modals/EditModal";
-import { downloadFile } from "@/libs/helpers";
+import { downloadFile } from "@/libs/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
@@ -37,7 +37,7 @@ import AudioWaveform from "@/components/AudioWaveform";
 import { getRandomColor } from "@/libs/utils";
 import useAudioWaveStore from "@/hooks/audio/useAudioWave";
 import useDownloadSong from "@/hooks/utils/useDownloadSong";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron";
 import { isLocalSong } from "@/libs/songUtils";
 
 interface SongPageProps {

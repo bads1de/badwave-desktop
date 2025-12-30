@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { RefreshCw, Database, LayoutGrid } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { isElectron } from "@/libs/electron-utils";
+import { isElectron } from "@/libs/electron";
 import { useSyncLikedSongs } from "@/hooks/sync/useSyncLikedSongs";
 import { useSyncPlaylists } from "@/hooks/sync/useSyncPlaylists";
 import { useSyncHomeAll } from "@/hooks/sync/useSyncHomeAll";

@@ -2,7 +2,7 @@
 
 import { useBackgroundSync } from "@/hooks/utils/useBackgroundSync";
 import { useEffect } from "react";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 
 /**
  * バックグラウンド同期を実行するコンポーネント

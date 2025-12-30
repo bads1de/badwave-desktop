@@ -3,7 +3,7 @@ import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG } from "@/constants";
 import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { isNetworkError } from "@/libs/electron-utils";
+import { isNetworkError } from "@/libs/electron/index";
 
 /**
  * 曲がプレイリストに含まれているかどうかを確認するカスタムフック

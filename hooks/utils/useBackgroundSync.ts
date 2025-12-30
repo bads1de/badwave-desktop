@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 import { Song, Playlist } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { CACHED_QUERIES } from "@/constants";

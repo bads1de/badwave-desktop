@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import { createClient } from "@/libs/supabase/client";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 import { useQueryClient } from "@tanstack/react-query";
 import { CACHED_QUERIES } from "@/constants";
 

@@ -29,11 +29,13 @@ jest.mock("electron", () => ({
 // グローバルなモック設定
 
 // navigator.onLine のモック
-Object.defineProperty(navigator, "onLine", {
-  writable: true,
-  configurable: true,
-  value: true,
-});
+if (typeof navigator !== "undefined") {
+  Object.defineProperty(navigator, "onLine", {
+    writable: true,
+    configurable: true,
+    value: true,
+  });
+}
 
 // atob / btoa のポリフィル
 if (typeof global.atob === "undefined") {
@@ -96,23 +98,25 @@ const mockElectron = {
   },
 };
 
-Object.defineProperty(window, "electron", {
-  value: mockElectron,
-  writable: true,
-  configurable: true,
-});
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "electron", {
+    value: mockElectron,
+    writable: true,
+    configurable: true,
+  });
 
-// matchMedia のモック
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: jest.fn().mockImplementation((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
+  // matchMedia のモック
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+}

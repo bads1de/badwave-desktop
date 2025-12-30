@@ -11,7 +11,7 @@ import SeekBar from "./Seekbar";
 import AddPlaylist from "../Playlist/AddPlaylist";
 import useAudioPlayer from "@/hooks/audio/useAudioPlayer";
 import useLyricsStore from "@/hooks/stores/useLyricsStore";
-import { mediaControls } from "@/libs/electron-utils";
+import { mediaControls } from "@/libs/electron";
 import { isLocalSong, getPlayablePath } from "@/libs/songUtils";
 import DisabledOverlay from "../common/DisabledOverlay";
 

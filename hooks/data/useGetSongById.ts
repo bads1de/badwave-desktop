@@ -1,6 +1,6 @@
 import { Song } from "@/types";
 import { createClient } from "@/libs/supabase/client";
-import { electronAPI, isNetworkError } from "@/libs/electron-utils";
+import { electronAPI, isNetworkError } from "@/libs/electron/index";
 import {
   useQuery,
   keepPreviousData,

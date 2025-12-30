@@ -6,7 +6,7 @@ import {
   onlineManager,
 } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { isNetworkError } from "@/libs/electron-utils";
+import { isNetworkError } from "@/libs/electron/index";
 
 interface TopPlayedSong extends Song {
   play_count: number;

@@ -2,7 +2,7 @@ import { Playlist } from "@/types";
 import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
-import { isNetworkError, electronAPI } from "@/libs/electron-utils";
+import { isNetworkError, electronAPI } from "@/libs/electron/index";
 
 /**
  * パブリックプレイリストを取得するカスタムフック (クライアントサイド)

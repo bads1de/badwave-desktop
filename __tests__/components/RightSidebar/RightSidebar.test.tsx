@@ -4,13 +4,13 @@ import "@testing-library/jest-dom";
 import RightSidebar from "@/components/RightSidebar/RightSidebar";
 import usePlayer from "@/hooks/player/usePlayer";
 import useGetSongById from "@/hooks/data/useGetSongById";
-import { store } from "@/libs/electron-utils";
+import { store } from "@/libs/electron/index";
 import { ELECTRON_STORE_KEYS } from "@/constants";
 
 // モックの設定
 jest.mock("@/hooks/player/usePlayer");
 jest.mock("@/hooks/data/useGetSongById");
-jest.mock("@/libs/electron-utils", () => ({
+jest.mock("@/libs/electron", () => ({
   store: {
     get: jest.fn(),
     set: jest.fn(),

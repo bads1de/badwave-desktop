@@ -8,7 +8,7 @@ import { twMerge } from "tailwind-merge";
 import { motion, useSpring } from "framer-motion";
 import { useDrag } from "@use-gesture/react";
 import { BsGripVertical, BsChevronLeft } from "react-icons/bs";
-import { store } from "@/libs/electron-utils";
+import { store } from "@/libs/electron/index";
 import { ELECTRON_STORE_KEYS } from "@/constants";
 
 interface RightSidebarProps {

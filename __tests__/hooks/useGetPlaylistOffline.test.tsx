@@ -8,7 +8,7 @@ import React from "react";
 // モックの設定
 jest.mock("@/hooks/utils/useNetworkStatus");
 jest.mock("@/hooks/auth/useUser");
-jest.mock("@/libs/electron-utils", () => ({
+jest.mock("@/libs/electron/index", () => ({
   electronAPI: {
     isElectron: jest.fn(() => true),
     auth: {

@@ -7,7 +7,7 @@ import { useUser } from "@/hooks/auth/useUser";
 import { createClient } from "@/libs/supabase/client";
 import { uploadFileToR2 } from "@/actions/r2";
 import { checkIsAdmin } from "@/actions/checkAdmin";
-import { sanitizeTitle } from "@/libs/helpers";
+import { sanitizeTitle } from "@/libs/utils";
 import uniqid from "uniqid";
 import { CACHED_QUERIES } from "@/constants";
 

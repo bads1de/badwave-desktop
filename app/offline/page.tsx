@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Song } from "@/types";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 import SongItem from "@/components/Song/SongItem";
 import Header from "@/components/Header/Header";

@@ -33,6 +33,17 @@ describe("useGetTrendSongs", () => {
     act(() => {
       onlineManager.setOnline(true);
     });
+    // Web環境をシミュレート
+    if (window.electron) {
+      window.electron.appInfo.isElectron = false;
+    }
+  });
+
+  afterEach(() => {
+    // Electron環境に戻す
+    if (window.electron) {
+      window.electron.appInfo.isElectron = true;
+    }
   });
 
   it("トレンド曲を取得する", async () => {
@@ -59,7 +70,7 @@ describe("useGetTrendSongs", () => {
     expect(mockFrom).toHaveBeenCalledWith("songs");
   });
 
-  it("オフライン時は一時停止状態になる", async () => {
+  it("オフライン時はフェッチを行わない", async () => {
     act(() => {
       onlineManager.setOnline(false);
     });
@@ -68,6 +79,8 @@ describe("useGetTrendSongs", () => {
       wrapper: createWrapper(),
     });
 
-    expect(result.current.isPaused).toBe(true);
+    // networkMode: "always" なので paused にはならない
+    expect(result.current.isPaused).toBe(false);
+    expect(result.current.trends).toEqual([]);
   });
 });

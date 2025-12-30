@@ -3,7 +3,7 @@ import useDownloadSong from "@/hooks/utils/useDownloadSong";
 import { Song } from "@/types";
 
 // electronAPIをモック（新しいオフラインAPI対応）
-jest.mock("@/libs/electron-utils", () => ({
+jest.mock("@/libs/electron/index", () => ({
   electronAPI: {
     isElectron: jest.fn(),
     offline: {
@@ -14,7 +14,7 @@ jest.mock("@/libs/electron-utils", () => ({
   },
 }));
 
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron";
 
 describe("useDownloadSong", () => {
   const mockSong: Song = {

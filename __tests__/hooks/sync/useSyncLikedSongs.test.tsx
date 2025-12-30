@@ -2,7 +2,7 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { useSyncLikedSongs } from "@/hooks/sync/useSyncLikedSongs";
 import { useUser } from "@/hooks/auth/useUser";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 import { createClient } from "@/libs/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { ReactNode } from "react";
@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Mocking dependencies
 jest.mock("@/hooks/auth/useUser");
 jest.mock("@/hooks/utils/useNetworkStatus");
-jest.mock("@/libs/electron-utils");
+jest.mock("@/libs/electron");
 jest.mock("@/libs/supabase/client");
 jest.mock("@tanstack/react-query", () => {
   const original = jest.requireActual("@tanstack/react-query");
@@ -82,7 +82,10 @@ describe("useSyncLikedSongs", () => {
       await syncPromise;
     });
 
-    expect(result.current.isSyncing).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isSyncing).toBe(false);
+    });
+    
     expect(queryClient.invalidateQueries).toHaveBeenCalled();
   });
 });

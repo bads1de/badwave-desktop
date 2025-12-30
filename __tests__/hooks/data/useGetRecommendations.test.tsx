@@ -36,6 +36,18 @@ describe("useGetRecommendations", () => {
       onlineManager.setOnline(true);
     });
     (useUser as jest.Mock).mockReturnValue({ user: { id: "user-123" } });
+    
+    // Web環境をシミュレート
+    if (window.electron) {
+      window.electron.appInfo.isElectron = false;
+    }
+  });
+
+  afterEach(() => {
+    // Electron環境に戻す
+    if (window.electron) {
+      window.electron.appInfo.isElectron = true;
+    }
   });
 
   it("ログインユーザーにおすすめ曲を返す", async () => {

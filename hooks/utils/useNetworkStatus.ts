@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { onlineManager } from "@tanstack/react-query";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 
 export interface NetworkStatus {
   /** 現在オンラインかどうか (onlineManager と同期) */

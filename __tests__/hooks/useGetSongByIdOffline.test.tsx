@@ -2,13 +2,13 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import useGetSongById from "@/hooks/data/useGetSongById";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 import React from "react";
 
 // モックの設定
 jest.mock("@/hooks/utils/useNetworkStatus");
 jest.mock("react-hot-toast");
-jest.mock("@/libs/electron-utils", () => ({
+jest.mock("@/libs/electron", () => ({
   isElectron: jest.fn(() => true),
   electronAPI: {
     isElectron: jest.fn(() => true),
@@ -86,7 +86,7 @@ describe("useGetSongById (Offline Support)", () => {
     // electronのモック拡張
     (electronAPI.offline.checkStatus as jest.Mock).mockResolvedValue({
       isDownloaded: true,
-      localPath: "file://C:/Downloads/Song.mp3"
+      localPath: "file://C:/Downloads/Song.mp3",
     });
 
     const { result } = renderHook(() => useGetSongById(mockSongId), {
@@ -96,7 +96,9 @@ describe("useGetSongById (Offline Support)", () => {
     await waitFor(
       () => {
         expect(result.current.song).toBeDefined();
-        expect(result.current.song?.song_path).toBe("file://C:/Downloads/Song.mp3");
+        expect(result.current.song?.song_path).toBe(
+          "file://C:/Downloads/Song.mp3"
+        );
       },
       { timeout: 10000 }
     );

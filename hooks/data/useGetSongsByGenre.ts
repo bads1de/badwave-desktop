@@ -2,7 +2,7 @@ import { Song } from "@/types";
 import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
-import { isNetworkError } from "@/libs/electron-utils";
+import { isNetworkError } from "@/libs/electron/index";
 
 /**
  * 指定したジャンルの曲一覧を取得するカスタムフック (オフライン対応)

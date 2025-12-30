@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { onlineManager } from "@tanstack/react-query";
-import { electronAPI } from "@/libs/electron-utils";
+import { electronAPI } from "@/libs/electron/index";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 /**

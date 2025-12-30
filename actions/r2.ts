@@ -1,7 +1,7 @@
 "use server";
 
 import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { sanitizeTitle } from "@/libs/helpers";
+import { sanitizeTitle } from "@/libs/utils";
 import s3Client from "@/libs/s3";
 import { requireAdmin } from "@/libs/admin";
 

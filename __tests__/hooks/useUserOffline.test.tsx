@@ -60,7 +60,7 @@ jest.mock("@/libs/supabase/client", () => ({
 }));
 
 // electronAPI のモック
-jest.mock("@/libs/electron-utils", () => ({
+jest.mock("@/libs/electron/index", () => ({
   electronAPI: {
     isElectron: jest.fn().mockReturnValue(true),
     auth: {
@@ -108,7 +108,7 @@ describe("useUser - オフラインログイン状態維持", () => {
 
   describe("オンライン時の動作", () => {
     it("ログイン時にユーザー情報がキャッシュされる", async () => {
-      const { electronAPI } = require("@/libs/electron-utils");
+      const { electronAPI } = require("@/libs/electron/index");
 
       // オンラインでセッションがある状態
       mockSession = {
@@ -141,7 +141,7 @@ describe("useUser - オフラインログイン状態維持", () => {
     });
 
     it("ログアウト時にキャッシュがクリアされる", async () => {
-      const { electronAPI } = require("@/libs/electron-utils");
+      const { electronAPI } = require("@/libs/electron/index");
 
       // 最初はログイン状態
       mockSession = {
@@ -174,7 +174,7 @@ describe("useUser - オフラインログイン状態維持", () => {
 
   describe("オフライン時の動作", () => {
     it("オフラインでアプリ起動時、キャッシュからユーザー情報を復元できる", async () => {
-      const { electronAPI } = require("@/libs/electron-utils");
+      const { electronAPI } = require("@/libs/electron/index");
 
       // オフライン状態を設定
       mockIsOnline = false;

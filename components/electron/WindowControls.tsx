@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Minus, Square, X } from "lucide-react";
-import { windowControls, isElectron, getPlatform } from "@/libs/electron-utils";
+import { windowControls, isElectron, getPlatform } from "@/libs/electron";
 
 interface WindowControlsProps {
   className?: string;
