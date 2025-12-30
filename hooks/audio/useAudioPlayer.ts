@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import usePlayer from "@/hooks/player/usePlayer";
 import { BsPauseFill, BsPlayFill } from "react-icons/bs";
-import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
+import { Volume2, VolumeX } from "lucide-react";
 import useVolumeStore from "@/hooks/stores/useVolumeStore";
 import usePlaybackStateStore, {
   POSITION_SAVE_INTERVAL_MS,
@@ -67,7 +67,7 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
   const hasRestoredRef = useRef<boolean>(false);
 
   const Icon = isPlaying ? BsPauseFill : BsPlayFill;
-  const VolumeIcon = volume === 0 ? HiSpeakerXMark : HiSpeakerWave;
+  const VolumeIcon = volume === 0 ? VolumeX : Volume2;
 
   const handlePlay = useCallback(() => {
     // 復元中フラグをクリア（以降は通常の自動再生を許可）

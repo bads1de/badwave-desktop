@@ -2,8 +2,7 @@ import React, { useEffect } from "react";
 import { AiFillStepBackward, AiFillStepForward } from "react-icons/ai";
 import { BsRepeat1 } from "react-icons/bs";
 import { FaRandom } from "react-icons/fa";
-import { MdLyrics } from "react-icons/md";
-import { SlidersVertical } from "lucide-react";
+import { SlidersVertical, Mic2 } from "lucide-react";
 import { Playlist, Song } from "@/types";
 import LikeButton from "../LikeButton";
 import MediaItem from "../Song/MediaItem";
@@ -174,7 +173,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
             </div>
           </div>
 
-          <div className="flex w-full justify-end pr-6">
+          <div className="flex w-full justify-end pr-2">
             <div className="flex items-center gap-x-6 w-full md:w-[220px] lg:w-[260px]">
               <DisabledOverlay disabled={isLocalFile}>
                 <AddPlaylist
@@ -191,6 +190,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
                   songId={song.id}
                   songType="regular"
                   disabled={isLocalFile}
+                  size={20}
                 />
               </DisabledOverlay>
 
@@ -204,7 +204,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
                   }`}
                   disabled={isLocalFile}
                 >
-                  <MdLyrics size={22} />
+                  <Mic2 size={20} />
                 </button>
               </DisabledOverlay>
 
@@ -218,7 +218,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
                         : "text-neutral-400 hover:text-white"
                     }`}
                   >
-                    <SlidersVertical size={22} />
+                    <SlidersVertical size={20} />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
@@ -235,7 +235,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
                 <VolumeIcon
                   onClick={handleVolumeClick}
                   className="cursor-pointer text-neutral-400 hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
-                  size={22}
+                  size={20}
                 />
                 <div
                   className={`absolute bottom-full rounded-xl mb-3 right-0 transition-all duration-200 z-50 bg-[#0c0c0c] p-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-[#333333] ${

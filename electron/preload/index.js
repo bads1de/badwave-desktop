@@ -53,6 +53,12 @@ var ALLOWED_INVOKE_CHANNELS = [
     "get-cached-liked-songs",
     "get-cached-playlist-songs",
     "debug-dump-db",
+    // Local-first mutation handlers
+    "add-liked-song",
+    "remove-liked-song",
+    "get-like-status",
+    "add-playlist-song",
+    "remove-playlist-song",
     // 認証キャッシュ
     "save-cached-user",
     "get-cached-user",
@@ -169,6 +175,22 @@ electron_1.contextBridge.exposeInMainWorld("electron", {
         },
         // DBの中身をダンプ (デバッグ用)
         debugDumpDb: function () { return electron_1.ipcRenderer.invoke("debug-dump-db"); },
+        // Local-first mutation methods
+        addLikedSong: function (data) {
+            return electron_1.ipcRenderer.invoke("add-liked-song", data);
+        },
+        removeLikedSong: function (data) {
+            return electron_1.ipcRenderer.invoke("remove-liked-song", data);
+        },
+        getLikeStatus: function (data) {
+            return electron_1.ipcRenderer.invoke("get-like-status", data);
+        },
+        addPlaylistSong: function (data) {
+            return electron_1.ipcRenderer.invoke("add-playlist-song", data);
+        },
+        removePlaylistSong: function (data) {
+            return electron_1.ipcRenderer.invoke("remove-playlist-song", data);
+        },
     },
     // 認証キャッシュ（オフラインログイン用）
     auth: {

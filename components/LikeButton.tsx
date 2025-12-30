@@ -2,7 +2,7 @@ import useAuthModal from "@/hooks/auth/useAuthModal";
 import { useUser } from "@/hooks/auth/useUser";
 import useLikeStatus from "@/hooks/data/useLikeStatus";
 import useLikeMutation from "@/hooks/mutations/useLikeMutation";
-import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
+import { Heart } from "lucide-react";
 import { memo, useCallback } from "react";
 
 interface LikeButtonProps {
@@ -23,8 +23,6 @@ const LikeButton: React.FC<LikeButtonProps> = memo(
 
     // いいね操作のミューテーション
     const likeMutation = useLikeMutation(songId, user?.id);
-
-    const Icon = isLiked ? AiFillHeart : AiOutlineHeart;
 
     // いいねボタンのクリックハンドラーをメモ化
     const handleLike = useCallback(() => {
@@ -49,7 +47,11 @@ const LikeButton: React.FC<LikeButtonProps> = memo(
         disabled={likeMutation.isPending || disabled}
       >
         <div className="flex items-center">
-          <Icon color={isLiked ? "#FF69B4" : "white"} size={size || 25} />
+          <Heart
+            fill={isLiked ? "#FF69B4" : "none"}
+            color={isLiked ? "#FF69B4" : "white"}
+            size={size || 25}
+          />
           {showText && (
             <span className="ml-2">{isLiked ? "いいね済み" : "いいね"}</span>
           )}

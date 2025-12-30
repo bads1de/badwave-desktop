@@ -593,6 +593,139 @@ function setupCacheHandlers() {
             }
         });
     }); });
+    // --- Local-First Mutation Handlers ---
+    /**
+     * いいねを追加（ローカルDB）
+     */
+    electron_1.ipcMain.handle("add-liked-song", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
+        var error_12;
+        var userId = _b.userId, songId = _b.songId;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, db
+                            .insert(schema_1.likedSongs)
+                            .values({
+                            userId: String(userId),
+                            songId: normalizeId(songId),
+                            likedAt: new Date().toISOString(),
+                        })
+                            .onConflictDoNothing()];
+                case 1:
+                    _c.sent();
+                    return [2 /*return*/, { success: true }];
+                case 2:
+                    error_12 = _c.sent();
+                    console.error("[IPC] add-liked-song error:", error_12);
+                    return [2 /*return*/, { success: false, error: error_12.message }];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
+    /**
+     * いいねを削除（ローカルDB）
+     */
+    electron_1.ipcMain.handle("remove-liked-song", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
+        var error_13;
+        var userId = _b.userId, songId = _b.songId;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, db
+                            .delete(schema_1.likedSongs)
+                            .where((0, drizzle_orm_1.sql)(templateObject_4 || (templateObject_4 = __makeTemplateObject(["", " = ", " AND ", " = ", ""], ["", " = ", " AND ", " = ", ""])), schema_1.likedSongs.userId, String(userId), schema_1.likedSongs.songId, normalizeId(songId)))];
+                case 1:
+                    _c.sent();
+                    return [2 /*return*/, { success: true }];
+                case 2:
+                    error_13 = _c.sent();
+                    console.error("[IPC] remove-liked-song error:", error_13);
+                    return [2 /*return*/, { success: false, error: error_13.message }];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
+    /**
+     * いいね状態を取得（ローカルDB）
+     */
+    electron_1.ipcMain.handle("get-like-status", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
+        var result, error_14;
+        var userId = _b.userId, songId = _b.songId;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, db.query.likedSongs.findFirst({
+                            where: (0, drizzle_orm_1.sql)(templateObject_5 || (templateObject_5 = __makeTemplateObject(["", " = ", " AND ", " = ", ""], ["", " = ", " AND ", " = ", ""])), schema_1.likedSongs.userId, String(userId), schema_1.likedSongs.songId, normalizeId(songId)),
+                        })];
+                case 1:
+                    result = _c.sent();
+                    return [2 /*return*/, { isLiked: !!result }];
+                case 2:
+                    error_14 = _c.sent();
+                    console.error("[IPC] get-like-status error:", error_14);
+                    return [2 /*return*/, { isLiked: false, error: error_14.message }];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
+    /**
+     * プレイリストに曲を追加（ローカルDB）
+     */
+    electron_1.ipcMain.handle("add-playlist-song", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
+        var psId, error_15;
+        var playlistId = _b.playlistId, songId = _b.songId;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    psId = "".concat(normalizeId(playlistId), "_").concat(normalizeId(songId));
+                    return [4 /*yield*/, db
+                            .insert(schema_1.playlistSongs)
+                            .values({
+                            id: psId,
+                            playlistId: normalizeId(playlistId),
+                            songId: normalizeId(songId),
+                            addedAt: new Date().toISOString(),
+                        })
+                            .onConflictDoNothing()];
+                case 1:
+                    _c.sent();
+                    return [2 /*return*/, { success: true }];
+                case 2:
+                    error_15 = _c.sent();
+                    console.error("[IPC] add-playlist-song error:", error_15);
+                    return [2 /*return*/, { success: false, error: error_15.message }];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
+    /**
+     * プレイリストから曲を削除（ローカルDB）
+     */
+    electron_1.ipcMain.handle("remove-playlist-song", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
+        var error_16;
+        var playlistId = _b.playlistId, songId = _b.songId;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, db
+                            .delete(schema_1.playlistSongs)
+                            .where((0, drizzle_orm_1.sql)(templateObject_6 || (templateObject_6 = __makeTemplateObject(["", " = ", " AND ", " = ", ""], ["", " = ", " AND ", " = ", ""])), schema_1.playlistSongs.playlistId, normalizeId(playlistId), schema_1.playlistSongs.songId, normalizeId(songId)))];
+                case 1:
+                    _c.sent();
+                    return [2 /*return*/, { success: true }];
+                case 2:
+                    error_16 = _c.sent();
+                    console.error("[IPC] remove-playlist-song error:", error_16);
+                    return [2 /*return*/, { success: false, error: error_16.message }];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
 }
-var templateObject_1, templateObject_2, templateObject_3;
+var templateObject_1, templateObject_2, templateObject_3, templateObject_4, templateObject_5, templateObject_6;
 //# sourceMappingURL=cache.js.map

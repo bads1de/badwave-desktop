@@ -6,7 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Playlist, Song } from "@/types";
-import { RiPlayListAddFill, RiPlayListFill } from "react-icons/ri";
+import { ListPlus, ListMusic, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import { useUser } from "@/hooks/auth/useUser";
 import useAuthModal from "@/hooks/auth/useAuthModal";
@@ -92,7 +92,7 @@ const AddPlaylist: React.FC<PlaylistMenuProps> = ({
             : "cursor-pointer hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
         }`}
       >
-        {children || <RiPlayListAddFill size={20} />}
+        {children || <ListPlus size={20} />}
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         {playlists.length === 0 ? (
@@ -105,10 +105,12 @@ const AddPlaylist: React.FC<PlaylistMenuProps> = ({
               className="flex items-center justify-between"
             >
               <div className="flex items-center">
-                <RiPlayListFill size={15} className="mr-1" />
+                <ListMusic size={16} className="mr-2" />
                 <span>{playlist.title}</span>
               </div>
-              {isInPlaylist[playlist.id] && <span className="ml-2">✓</span>}
+              {isInPlaylist[playlist.id] && (
+                <Check size={16} className="ml-2 text-theme-500" />
+              )}
             </DropdownMenuItem>
           ))
         )}
