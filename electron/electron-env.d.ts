@@ -161,6 +161,27 @@ interface ElectronAPI {
     getCachedLikedSongs: (userId: string) => Promise<any[]>;
     // キャッシュからプレイリスト内の曲を取得
     getCachedPlaylistSongs: (playlistId: string) => Promise<any[]>;
+    // Local-first mutation methods
+    addLikedSong: (data: {
+      userId: string;
+      songId: string;
+    }) => Promise<{ success: boolean; error?: string }>;
+    removeLikedSong: (data: {
+      userId: string;
+      songId: string;
+    }) => Promise<{ success: boolean; error?: string }>;
+    getLikeStatus: (data: {
+      userId: string;
+      songId: string;
+    }) => Promise<{ isLiked: boolean; error?: string }>;
+    addPlaylistSong: (data: {
+      playlistId: string;
+      songId: string;
+    }) => Promise<{ success: boolean; error?: string }>;
+    removePlaylistSong: (data: {
+      playlistId: string;
+      songId: string;
+    }) => Promise<{ success: boolean; error?: string }>;
   };
 }
 

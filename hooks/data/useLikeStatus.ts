@@ -2,10 +2,14 @@ import { createClient } from "@/libs/supabase/client";
 import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { isNetworkError } from "@/libs/electron/index";
+import {
+  isElectron,
+  cache as electronCache,
+  isNetworkError,
+} from "@/libs/electron";
 
 /**
- * 曲のいいね状態を取得するカスタムフック
+ * 曲のいいね状態を取得するカスタムフック（ローカルファースト）
  *
  * @param songId 曲のID
  * @param userId ユーザーID
@@ -26,6 +30,13 @@ const useLikeStatus = (songId: string, userId?: string) => {
         return false;
       }
 
+      // --- Electron: ローカルDBから取得（ローカルファースト）---
+      if (isElectron()) {
+        const result = await electronCache.getLikeStatus({ userId, songId });
+        return result.isLiked;
+      }
+
+      // --- Web: Supabaseから取得（フォールバック）---
       const { data, error } = await supabaseClient
         .from("liked_songs_regular")
         .select("*")
@@ -47,9 +58,9 @@ const useLikeStatus = (songId: string, userId?: string) => {
     },
     staleTime: CACHE_CONFIG.staleTime,
     gcTime: CACHE_CONFIG.gcTime,
-    // オフライン時はフェッチをスキップ
+    // Electron環境またはオンライン時に有効
     enabled:
-      isOnline &&
+      (isElectron() || isOnline) &&
       !!userId &&
       !(typeof songId === "string" && songId.startsWith("local_")),
   });

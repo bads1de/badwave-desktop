@@ -2,9 +2,10 @@ import { createClient } from "@/libs/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { CACHED_QUERIES } from "@/constants";
+import { isElectron, cache as electronCache } from "@/libs/electron";
 
 /**
- * いいねカウント更新のヘルパー関数
+ * いいねカウント更新のヘルパー関数（Supabase用）
  */
 const updateLikeCount = async (
   supabase: ReturnType<typeof createClient>,
@@ -40,7 +41,7 @@ const updateLikeCount = async (
 };
 
 /**
- * 曲のいいね操作を行うカスタムフック
+ * 曲のいいね操作を行うカスタムフック（ローカルファースト）
  *
  * @param songId 曲のID
  * @param userId ユーザーID
@@ -60,38 +61,61 @@ const useLikeMutation = (songId: string, userId?: string) => {
         throw new Error("ユーザーIDが必要です");
       }
 
-      if (isCurrentlyLiked) {
-        // いいねを削除
-        const { error } = await supabaseClient
-          .from("liked_songs_regular")
-          .delete()
-          .eq("user_id", userId)
-          .eq("song_id", songId);
-
-        if (error) {
-          throw error;
+      // --- Step 1: ローカルDBに書き込み（即時反映）---
+      if (isElectron()) {
+        if (isCurrentlyLiked) {
+          await electronCache.removeLikedSong({ userId, songId });
+        } else {
+          await electronCache.addLikedSong({ userId, songId });
         }
-
-        // いいねカウントを減らす
-        await updateLikeCount(supabaseClient, songId, -1);
-        return false;
-      } else {
-        // いいねを追加
-        const { error } = await supabaseClient
-          .from("liked_songs_regular")
-          .insert({
-            song_id: songId,
-            user_id: userId,
-          });
-
-        if (error) {
-          throw error;
-        }
-
-        // いいねカウントを増やす
-        await updateLikeCount(supabaseClient, songId, 1);
-        return true;
       }
+
+      // --- Step 2: Supabaseに同期（バックグラウンド）---
+      // エラーでも続行、次回同期時に整合性が取れる
+      try {
+        if (isCurrentlyLiked) {
+          // いいねを削除
+          const { error } = await supabaseClient
+            .from("liked_songs_regular")
+            .delete()
+            .eq("user_id", userId)
+            .eq("song_id", songId);
+
+          if (error) {
+            console.warn("[Like] Supabase delete failed:", error);
+          } else {
+            // いいねカウントを減らす（成功時のみ）
+            await updateLikeCount(supabaseClient, songId, -1).catch((e) =>
+              console.warn("[Like] like_count update failed:", e)
+            );
+          }
+        } else {
+          // いいねを追加
+          const { error } = await supabaseClient
+            .from("liked_songs_regular")
+            .insert({
+              song_id: songId,
+              user_id: userId,
+            });
+
+          if (error) {
+            console.warn("[Like] Supabase insert failed:", error);
+          } else {
+            // いいねカウントを増やす（成功時のみ）
+            await updateLikeCount(supabaseClient, songId, 1).catch((e) =>
+              console.warn("[Like] like_count update failed:", e)
+            );
+          }
+        }
+      } catch (syncError) {
+        console.warn(
+          "[Like] Supabase sync failed, will retry later:",
+          syncError
+        );
+        // オプション: 再試行キューに追加する処理をここに追加
+      }
+
+      return !isCurrentlyLiked;
     },
     onSuccess: (newLikeStatus) => {
       // いいね状態のキャッシュを更新

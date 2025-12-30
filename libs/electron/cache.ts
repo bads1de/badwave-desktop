@@ -122,4 +122,71 @@ export const cache = {
     }
     return [];
   },
+
+  // --- Local-first Mutation Methods ---
+
+  /**
+   * いいねを追加（ローカルDB）
+   */
+  addLikedSong: async (data: {
+    userId: string;
+    songId: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    if (isElectron()) {
+      return (window as any).electron.cache.addLikedSong(data);
+    }
+    return { success: false, error: "Not in Electron environment" };
+  },
+
+  /**
+   * いいねを削除（ローカルDB）
+   */
+  removeLikedSong: async (data: {
+    userId: string;
+    songId: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    if (isElectron()) {
+      return (window as any).electron.cache.removeLikedSong(data);
+    }
+    return { success: false, error: "Not in Electron environment" };
+  },
+
+  /**
+   * いいね状態を取得（ローカルDB）
+   */
+  getLikeStatus: async (data: {
+    userId: string;
+    songId: string;
+  }): Promise<{ isLiked: boolean; error?: string }> => {
+    if (isElectron()) {
+      return (window as any).electron.cache.getLikeStatus(data);
+    }
+    return { isLiked: false, error: "Not in Electron environment" };
+  },
+
+  /**
+   * プレイリストに曲を追加（ローカルDB）
+   */
+  addPlaylistSong: async (data: {
+    playlistId: string;
+    songId: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    if (isElectron()) {
+      return (window as any).electron.cache.addPlaylistSong(data);
+    }
+    return { success: false, error: "Not in Electron environment" };
+  },
+
+  /**
+   * プレイリストから曲を削除（ローカルDB）
+   */
+  removePlaylistSong: async (data: {
+    playlistId: string;
+    songId: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    if (isElectron()) {
+      return (window as any).electron.cache.removePlaylistSong(data);
+    }
+    return { success: false, error: "Not in Electron environment" };
+  },
 };

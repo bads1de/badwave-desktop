@@ -46,6 +46,12 @@ const ALLOWED_INVOKE_CHANNELS = [
   "get-cached-liked-songs",
   "get-cached-playlist-songs",
   "debug-dump-db",
+  // Local-first mutation handlers
+  "add-liked-song",
+  "remove-liked-song",
+  "get-like-status",
+  "add-playlist-song",
+  "remove-playlist-song",
   // 認証キャッシュ
   "save-cached-user",
   "get-cached-user",
@@ -157,6 +163,17 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke("get-cached-playlist-songs", playlistId),
     // DBの中身をダンプ (デバッグ用)
     debugDumpDb: () => ipcRenderer.invoke("debug-dump-db"),
+    // Local-first mutation methods
+    addLikedSong: (data: { userId: string; songId: string }) =>
+      ipcRenderer.invoke("add-liked-song", data),
+    removeLikedSong: (data: { userId: string; songId: string }) =>
+      ipcRenderer.invoke("remove-liked-song", data),
+    getLikeStatus: (data: { userId: string; songId: string }) =>
+      ipcRenderer.invoke("get-like-status", data),
+    addPlaylistSong: (data: { playlistId: string; songId: string }) =>
+      ipcRenderer.invoke("add-playlist-song", data),
+    removePlaylistSong: (data: { playlistId: string; songId: string }) =>
+      ipcRenderer.invoke("remove-playlist-song", data),
   },
 
   // 認証キャッシュ（オフラインログイン用）
