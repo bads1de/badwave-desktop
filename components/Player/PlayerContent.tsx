@@ -1,12 +1,11 @@
 import React, { useEffect } from "react";
 import { AiFillStepBackward, AiFillStepForward } from "react-icons/ai";
-import { BsRepeat1 } from "react-icons/bs";
+import { BsPauseFill, BsPlayFill, BsRepeat1 } from "react-icons/bs";
 import { FaRandom } from "react-icons/fa";
 import { Mic2 } from "lucide-react";
 import { Playlist, Song } from "@/types";
 import LikeButton from "../LikeButton";
 import MediaItem from "../Song/MediaItem";
-import Slider from "./Slider";
 import SeekBar from "./Seekbar";
 import AddPlaylist from "../Playlist/AddPlaylist";
 import useAudioPlayer from "@/hooks/audio/useAudioPlayer";
@@ -18,6 +17,7 @@ import { isLocalSong, getPlayablePath } from "@/libs/songUtils";
 import DisabledOverlay from "../common/DisabledOverlay";
 import PlaybackSpeedButton from "./PlaybackSpeedButton";
 import EqualizerButton from "./EqualizerButton";
+import VolumeControl from "./VolumeControl";
 
 interface PlayerContentProps {
   song: Song;
@@ -33,43 +33,29 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
     const playablePath = getPlayablePath(song);
 
     const {
-      Icon,
-      VolumeIcon,
       formattedCurrentTime,
       formattedDuration,
-      volume,
-      setVolume,
       audioRef,
       currentTime,
       duration,
+      isPlaying,
       handlePlay,
       handleSeek,
       onPlayNext,
       onPlayPrevious,
       toggleRepeat,
       toggleShuffle,
-      handleVolumeClick,
-      showVolumeSlider,
-      setShowVolumeSlider,
       isRepeating,
       isShuffling,
     } = useAudioPlayer(playablePath, song);
+
+    const Icon = isPlaying ? BsPauseFill : BsPlayFill;
 
     // イコライザーを適用
     useAudioEqualizer(audioRef);
 
     const { toggleLyrics } = useLyricsStore();
     usePlaybackRate(audioRef);
-
-    useEffect(() => {
-      if (!showVolumeSlider) return;
-
-      const timeout = setTimeout(() => {
-        setShowVolumeSlider(false);
-      }, 3000);
-
-      return () => clearTimeout(timeout);
-    }, [showVolumeSlider, setShowVolumeSlider]);
 
     // メディアコントロールのイベントを受け取る
     useEffect(() => {
@@ -208,27 +194,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
               {/* イコライザーボタン */}
               <EqualizerButton />
 
-              <div className="relative">
-                <VolumeIcon
-                  onClick={handleVolumeClick}
-                  className="cursor-pointer text-neutral-400 hover:text-white hover:filter hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
-                  size={20}
-                />
-                <div
-                  className={`absolute bottom-full rounded-xl mb-3 right-0 transition-all duration-200 z-50 bg-[#0c0c0c] p-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-[#333333] ${
-                    showVolumeSlider
-                      ? "opacity-100 transform translate-y-0"
-                      : "opacity-0 pointer-events-none transform translate-y-2"
-                  }`}
-                >
-                  <div className="flex flex-col items-center">
-                    <Slider
-                      value={volume !== null ? volume : undefined}
-                      onChange={(value) => setVolume(value)}
-                    />
-                  </div>
-                </div>
-              </div>
+              <VolumeControl />
             </div>
           </div>
         </div>

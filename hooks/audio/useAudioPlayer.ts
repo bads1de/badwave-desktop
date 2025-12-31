@@ -1,7 +1,5 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import usePlayer from "@/hooks/player/usePlayer";
-import { BsPauseFill, BsPlayFill } from "react-icons/bs";
-import { Volume2, VolumeX } from "lucide-react";
 import useVolumeStore from "@/hooks/stores/useVolumeStore";
 import usePlaybackStateStore, {
   POSITION_SAVE_INTERVAL_MS,
@@ -42,7 +40,6 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const isRepeating = usePlayer((state) => state.isRepeating);
   const isShuffling = usePlayer((state) => state.isShuffling);
@@ -66,8 +63,10 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
   const lastSaveTimeRef = useRef<number>(0);
   const hasRestoredRef = useRef<boolean>(false);
 
-  const Icon = isPlaying ? BsPauseFill : BsPlayFill;
-  const VolumeIcon = volume === 0 ? VolumeX : Volume2;
+  // --- Refパターン: イベントリスナー内から最新の状態を参照するため ---
+  const isPlayingRef = useRef(isPlaying);
+  const isRestoringRef = useRef(isRestoring);
+  const isRepeatingRef = useRef(isRepeating);
 
   const handlePlay = useCallback(() => {
     // 復元中フラグをクリア（以降は通常の自動再生を許可）
@@ -103,6 +102,9 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
     }
   }, [isRepeating, player]);
 
+  // onPlayNextをRef経由で参照（イベントリスナー内から最新のコールバックを呼ぶため）
+  const onPlayNextRef = useRef(onPlayNext);
+
   // 前の曲を再生する関数
   const onPlayPrevious = useCallback(() => {
     if (isRepeating) {
@@ -127,32 +129,52 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
     player.toggleShuffle();
   }, [player]);
 
+  // --- Refの同期: 状態が変わるたびにRefを更新 ---
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    isRestoringRef.current = isRestoring;
+  }, [isRestoring]);
+
+  useEffect(() => {
+    isRepeatingRef.current = isRepeating;
+  }, [isRepeating]);
+
+  useEffect(() => {
+    onPlayNextRef.current = onPlayNext;
+  }, [onPlayNext]);
+
   // オーディオ要素のイベントリスナーを設定
+  // 注意: Refパターンを使用して、songUrl/isLocalFile変更時のみリスナーを再登録
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
+
     const handleEnded = () => {
-      if (isRepeating) {
+      // Ref経由で最新の状態を参照
+      if (isRepeatingRef.current) {
         audio.currentTime = 0;
         audio.play();
       } else {
-        onPlayNext();
+        onPlayNextRef.current();
       }
     };
 
     // ローカルファイルの場合は自動再生を制御
     const handleCanPlayThrough = () => {
       // 復元中は自動再生しない（ユーザーが手動で再生ボタンを押すまで待つ）
-      if (isRestoring) {
+      if (isRestoringRef.current) {
         return;
       }
 
       if (isLocalFile) {
         // ローカルファイルの場合は明示的に再生状態をチェック
-        if (isPlaying) {
+        if (isPlayingRef.current) {
           audio.play().catch((error) => {
             console.error("Error playing local audio:", error);
             setIsPlaying(false);
@@ -165,9 +187,12 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
     };
 
     const handlePlay = () => setIsPlaying(true);
+
     const handlePause = () => {
       setIsPlaying(false);
       // 一時停止時に再生位置を保存
+      // 注意: player.activeId, player.ids, savePlaybackState はクロージャで
+      // キャプチャされるが、曲変更時にはuseEffectが再実行されるため問題なし
       const activeId = player.activeId;
       if (activeId) {
         savePlaybackState(activeId, audio.currentTime, player.ids);
@@ -197,17 +222,8 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
       audio.removeEventListener("pause", handlePause);
       audio.removeEventListener("error", handleError);
     };
-  }, [
-    songUrl,
-    isLocalFile,
-    isPlaying,
-    onPlayNext,
-    isRepeating,
-    isRestoring,
-    player.activeId,
-    player.ids,
-    savePlaybackState,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [songUrl, isLocalFile]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -320,20 +336,9 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
     [duration, formatTime]
   );
 
-  const handleVolumeClick = useCallback(() => {
-    setShowVolumeSlider((prev) => !prev);
-  }, []);
-
   return {
-    Icon,
-    VolumeIcon,
     formattedCurrentTime,
     formattedDuration,
-    volume,
-    setVolume,
-    showVolumeSlider,
-    setShowVolumeSlider,
-    handleVolumeClick,
     audioRef,
     currentTime,
     duration,

@@ -305,6 +305,9 @@ function setupCacheHandlers() {
                                 count: String((song === null || song === void 0 ? void 0 : song.playCount) || 0),
                                 like_count: String((song === null || song === void 0 ? void 0 : song.likeCount) || 0),
                                 created_at: liked_songs.likedAt,
+                                duration: (song === null || song === void 0 ? void 0 : song.duration) || null,
+                                genre: (song === null || song === void 0 ? void 0 : song.genre) || null,
+                                lyrics: (song === null || song === void 0 ? void 0 : song.lyrics) || null,
                             };
                         })];
                 case 2:
@@ -372,6 +375,9 @@ function setupCacheHandlers() {
                                 count: String((song === null || song === void 0 ? void 0 : song.playCount) || 0),
                                 like_count: String((song === null || song === void 0 ? void 0 : song.likeCount) || 0),
                                 created_at: playlist_songs.addedAt,
+                                duration: (song === null || song === void 0 ? void 0 : song.duration) || null,
+                                genre: (song === null || song === void 0 ? void 0 : song.genre) || null,
+                                lyrics: (song === null || song === void 0 ? void 0 : song.lyrics) || null,
                             };
                         })];
                 case 2:
