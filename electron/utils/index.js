@@ -100,7 +100,7 @@ function loadEnvVariables() {
 /**
  * 開発モードかどうかを判定
  */
-exports.isDev = process.env.NODE_ENV !== "production" || !electron_1.app.isPackaged;
+exports.isDev = !electron_1.app.isPackaged;
 /**
  * 条件付きでログを出力する
  * 開発モードの場合のみログを出力

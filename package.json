@@ -117,7 +117,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "png2icons": "^2.0.1",
     "postcss": "^8",
-    "sharp": "^0.34.2",
+    "sharp": "^0.34.5",
     "supabase": "^1.115.4",
     "tailwindcss": "^3.3.0",
     "ts-jest": "^29.2.5",
@@ -131,8 +131,29 @@
     "productName": "BadWave",
     "extraResources": [
       {
+        "from": ".next/standalone",
+        "to": "standalone",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": ".next/static",
+        "to": "standalone/.next/static",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
         "from": "public",
-        "to": "public",
+        "to": "standalone/public",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "drizzle",
+        "to": "drizzle",
         "filter": [
           "**/*"
         ]

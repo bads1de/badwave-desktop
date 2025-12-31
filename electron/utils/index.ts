@@ -52,7 +52,7 @@ export function loadEnvVariables(): boolean {
 /**
  * 開発モードかどうかを判定
  */
-export const isDev = process.env.NODE_ENV !== "production" || !app.isPackaged;
+export const isDev = !app.isPackaged;
 
 /**
  * 条件付きでログを出力する
