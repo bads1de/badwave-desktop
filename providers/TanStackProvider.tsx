@@ -11,7 +11,7 @@ import {
   setupOnlineManager,
   setupFocusManager,
   setupMutationResume,
-} from "@/libs/query-online-manager";
+} from "@/libs/queryOnlineManager";
 
 interface Props {
   children: React.ReactNode;

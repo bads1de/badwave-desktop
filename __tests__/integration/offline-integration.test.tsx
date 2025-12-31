@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { onlineManager } from "@tanstack/react-query";
 import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
-import { setupOnlineManager } from "@/libs/query-online-manager";
+import { setupOnlineManager } from "@/libs/queryOnlineManager";
 import { electronAPI } from "@/libs/electron/index";
 
 describe("Network Status Integration Test", () => {
