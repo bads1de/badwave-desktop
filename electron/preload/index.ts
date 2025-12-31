@@ -56,6 +56,8 @@ const ALLOWED_INVOKE_CHANNELS = [
   "save-cached-user",
   "get-cached-user",
   "clear-cached-user",
+  "get-song-by-id",
+  "get-playlist-by-id",
 ];
 
 const ALLOWED_ON_CHANNELS = [
@@ -174,6 +176,12 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke("add-playlist-song", data),
     removePlaylistSong: (data: { playlistId: string; songId: string }) =>
       ipcRenderer.invoke("remove-playlist-song", data),
+    // 単一の曲情報を取得（ローカルDB）
+    getSongById: (songId: string) =>
+      ipcRenderer.invoke("get-song-by-id", songId),
+    // 単一のプレイリスト情報を取得（ローカルDB）
+    getPlaylistById: (playlistId: string) =>
+      ipcRenderer.invoke("get-playlist-by-id", playlistId),
   },
 
   // 認証キャッシュ（オフラインログイン用）

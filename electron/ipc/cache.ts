@@ -588,4 +588,71 @@ export function setupCacheHandlers() {
       }
     }
   );
+
+  /**
+   * 単一の曲情報をローカルDBから取得
+   */
+  ipcMain.handle("get-song-by-id", async (_, songId: string) => {
+    try {
+      const normalizedId = normalizeId(songId);
+      const song = await db.query.songs.findFirst({
+        where: eq(songs.id, normalizedId),
+      });
+
+      if (!song) {
+        return null;
+      }
+
+      return {
+        id: song.id,
+        user_id: song.userId,
+        title: song.title,
+        author: song.author,
+        song_path: song.originalSongPath || "",
+        image_path: song.originalImagePath || "",
+        video_path: song.originalVideoPath || "",
+        is_downloaded: !!song.songPath,
+        local_song_path: song.songPath || undefined,
+        local_image_path: song.imagePath || undefined,
+        local_video_path: song.videoPath || undefined,
+        duration: song.duration,
+        genre: song.genre,
+        count: String(song.playCount || 0),
+        like_count: String(song.likeCount || 0),
+        lyrics: song.lyrics || undefined,
+        created_at: song.createdAt || new Date().toISOString(),
+      };
+    } catch (error: any) {
+      console.error(`[IPC] get-song-by-id(${songId}) error:`, error);
+      return null;
+    }
+  });
+
+  /**
+   * 単一のプレイリスト情報をローカルDBから取得
+   */
+  ipcMain.handle("get-playlist-by-id", async (_, playlistId: string) => {
+    try {
+      const normalizedId = normalizeId(playlistId);
+      const playlist = await db.query.playlists.findFirst({
+        where: eq(playlists.id, normalizedId),
+      });
+
+      if (!playlist) {
+        return null;
+      }
+
+      return {
+        id: playlist.id,
+        user_id: playlist.userId,
+        title: playlist.title,
+        image_path: playlist.imagePath || undefined,
+        is_public: !!playlist.isPublic,
+        created_at: playlist.createdAt,
+      };
+    } catch (error: any) {
+      console.error(`[IPC] get-playlist-by-id(${playlistId}) error:`, error);
+      return null;
+    }
+  });
 }

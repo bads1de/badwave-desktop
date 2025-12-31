@@ -5,6 +5,7 @@ import { CACHED_QUERIES } from "@/constants";
 import { useUser } from "@/hooks/auth/useUser";
 import { useRouter } from "next/navigation";
 import { isElectron, cache as electronCache } from "@/libs/electron";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 /**
  * プレイリスト曲の操作（追加・削除）を行うカスタムフック（ローカルファースト）
@@ -16,6 +17,7 @@ const useMutatePlaylistSong = () => {
   const queryClient = useQueryClient();
   const { user } = useUser();
   const router = useRouter();
+  const { isOnline } = useNetworkStatus();
 
   /**
    * プレイリストから曲を削除するミューテーション
@@ -36,7 +38,13 @@ const useMutatePlaylistSong = () => {
         throw new Error("ユーザーが認証されていません");
       }
 
-      // --- Step 1: ローカルDBから削除（即時反映）---
+      // オフライン時は操作を許可しない
+      if (!isOnline) {
+        throw new Error("オフライン時はプレイリストの編集操作ができません");
+      }
+
+      // --- Step 1: ローカルDBから削除（IPC経由）---
+      // オンライン時のみ、UX向上のためにローカルDBも更新しておく（これは同期的な整合性を保つため）
       if (isElectron()) {
         await electronCache.removePlaylistSong({ playlistId, songId });
       }
@@ -94,7 +102,13 @@ const useMutatePlaylistSong = () => {
         throw new Error("ユーザーが認証されていません");
       }
 
-      // --- Step 1: ローカルDBに追加（即時反映）---
+      // オフライン時は操作を許可しない
+      if (!isOnline) {
+        throw new Error("オフライン時はプレイリストの編集操作ができません");
+      }
+
+      // --- Step 1: ローカルDBに追加（IPC経由）---
+      // オンライン時のみ、UX向上のためにローカルDBも更新しておく（これは同期的な整合性を保つため）
       if (isElectron()) {
         await electronCache.addPlaylistSong({ playlistId, songId });
       }

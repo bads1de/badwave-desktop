@@ -46,6 +46,26 @@ const useGetSongById = (id?: string | number) => {
         return null;
       }
 
+      // Electron環境: ローカルDB (キャッシュ) から優先的に取得
+      if (electronAPI.isElectron()) {
+        try {
+          const localSong = await electronAPI.cache.getSongById(normalizedId);
+          if (localSong) {
+            // ダウンロード済みなら song_path をローカルパスに差し替え
+            if (localSong.is_downloaded && localSong.local_song_path) {
+              return {
+                ...localSong,
+                song_path: localSong.local_song_path,
+              } as Song;
+            }
+            return localSong as Song;
+          }
+        } catch (e) {
+          console.error("[useGetSongById] Local fetch failed:", e);
+        }
+        // ローカルにない場合は続行してSupabaseから取得を試みる
+      }
+
       // オフライン時はフェッチをスキップ
       if (!onlineManager.isOnline()) {
         return undefined;

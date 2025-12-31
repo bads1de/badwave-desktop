@@ -189,4 +189,24 @@ export const cache = {
     }
     return { success: false, error: "Not in Electron environment" };
   },
+
+  /**
+   * 単一の曲情報を取得（ローカルDB）
+   */
+  getSongById: async (songId: string): Promise<any | null> => {
+    if (isElectron()) {
+      return (window as any).electron.cache.getSongById(songId);
+    }
+    return null;
+  },
+
+  /**
+   * 単一のプレイリスト情報を取得（ローカルDB）
+   */
+  getPlaylistById: async (playlistId: string): Promise<any | null> => {
+    if (isElectron()) {
+      return (window as any).electron.cache.getPlaylistById(playlistId);
+    }
+    return null;
+  },
 };

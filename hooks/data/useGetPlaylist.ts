@@ -2,7 +2,7 @@ import { Playlist } from "@/types";
 import { createClient } from "@/libs/supabase/client";
 import { useQuery, onlineManager } from "@tanstack/react-query";
 import { CACHE_CONFIG, CACHED_QUERIES } from "@/constants";
-import { isNetworkError } from "@/libs/electron/index";
+import { isNetworkError, electronAPI } from "@/libs/electron/index";
 
 /**
  * プレイリスト情報を取得するカスタムフック
@@ -25,6 +25,21 @@ const useGetPlaylist = (playlistId?: string) => {
     queryFn: async () => {
       if (!playlistId) {
         return null;
+      }
+
+      // Electron環境: ローカルDB (キャッシュ) から優先的に取得
+      if (electronAPI.isElectron()) {
+        try {
+          const localPlaylist = await electronAPI.cache.getPlaylistById(
+            playlistId
+          );
+          if (localPlaylist) {
+            return localPlaylist as Playlist;
+          }
+        } catch (e) {
+          console.error("[useGetPlaylist] Local fetch failed:", e);
+        }
+        // ローカルにない場合は続行してSupabaseから取得を試みる
       }
 
       // オフライン時はフェッチをスキップ

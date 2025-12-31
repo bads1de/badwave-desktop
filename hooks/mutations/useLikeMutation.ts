@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { CACHED_QUERIES } from "@/constants";
 import { isElectron, cache as electronCache } from "@/libs/electron";
+import { useNetworkStatus } from "@/hooks/utils/useNetworkStatus";
 
 /**
  * いいねカウント更新のヘルパー関数（Supabase用）
@@ -50,6 +51,7 @@ const updateLikeCount = async (
 const useLikeMutation = (songId: string, userId?: string) => {
   const supabaseClient = createClient();
   const queryClient = useQueryClient();
+  const { isOnline } = useNetworkStatus();
 
   return useMutation({
     mutationFn: async (isCurrentlyLiked: boolean) => {
@@ -61,7 +63,13 @@ const useLikeMutation = (songId: string, userId?: string) => {
         throw new Error("ユーザーIDが必要です");
       }
 
-      // --- Step 1: ローカルDBに書き込み（即時反映）---
+      // オフライン時は操作を許可しない
+      if (!isOnline) {
+        throw new Error("オフライン時はいいね操作ができません");
+      }
+
+      // --- Step 1: ローカルDBに書き込み（IPC経由）---
+      // オンライン時のみ、UX向上のためにローカルDBも更新しておく（これは同期的な整合性を保つため）
       if (isElectron()) {
         if (isCurrentlyLiked) {
           await electronCache.removeLikedSong({ userId, songId });
@@ -70,8 +78,7 @@ const useLikeMutation = (songId: string, userId?: string) => {
         }
       }
 
-      // --- Step 2: Supabaseに同期（バックグラウンド）---
-      // エラーでも続行、次回同期時に整合性が取れる
+      // --- Step 2: Supabaseに更新 ---
       try {
         if (isCurrentlyLiked) {
           // いいねを削除
