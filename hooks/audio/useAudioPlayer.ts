@@ -6,51 +6,39 @@ import usePlaybackStateStore, {
 } from "@/hooks/stores/usePlaybackStateStore";
 import { isLocalFilePath, toFileUrl } from "@/libs/songUtils";
 import { Song } from "@/types";
+import { AudioEngine } from "@/libs/audio/AudioEngine";
 
 /**
- * オーディオプレイヤーの状態と操作を管理するカスタムフック
- * ストリーミング曲とローカルファイルの両方に対応
- *
- * @param {string} songUrl - 再生する曲のURL（ストリーミングまたはローカルファイルパス）
- * @param {Song} song - 曲オブジェクト（ローカル曲判定用）
- * @returns {Object} プレイヤーの状態と操作関数を含むオブジェクト
- * @property {React.ComponentType} Icon - 再生/一時停止アイコン
- * @property {React.ComponentType} VolumeIcon - 音量アイコン
- * @property {string} formattedCurrentTime - フォーマットされた現在の再生時間
- * @property {string} formattedDuration - フォーマットされた曲の長さ
- * @property {function} toggleMute - ミュート切り替え関数
- * @property {number} volume - 現在の音量
- * @property {function} setVolume - 音量設定関数
- * @property {React.RefObject} audioRef - オーディオ要素への参照
- * @property {number} currentTime - 現在の再生時間（秒）
- * @property {number} duration - 曲の長さ（秒）
- * @property {boolean} isPlaying - 再生中かどうか
- * @property {boolean} isRepeating - リピート再生中かどうか
- * @property {boolean} isShuffling - シャッフル再生中かどうか
- * @property {function} handlePlay - 再生/一時停止切り替え関数
- * @property {function} handleSeek - シーク操作関数
- * @property {function} onPlayNext - 次の曲を再生する関数
- * @property {function} onPlayPrevious - 前の曲を再生する関数
- * @property {function} toggleRepeat - リピート切り替え関数
- * @property {function} toggleShuffle - シャッフル切り替え関数
- * @property {boolean} isLocalFile - ローカルファイルかどうか
+ * AudioEngineシングルトンを使用するオーディオプレイヤーフック
+ * ページ遷移でもaudio要素が消えないため、再生が継続される
  */
 const useAudioPlayer = (songUrl: string, song?: Song) => {
   const player = usePlayer();
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const engine = AudioEngine.getInstance();
+
+  // クライアントサイドで初期化（サーバーサイドでは実行されない）
+  if (!engine.isInitialized) {
+    engine.initialize();
+  }
+
+  const audio = engine.audio;
+
+  // マウント時にエンジンの状態を引き継ぐ（リマウント対策の核心）
+  const [isPlaying, setIsPlaying] = useState(() =>
+    audio ? !audio.paused : false
+  );
+  const [currentTime, setCurrentTime] = useState(() =>
+    audio ? audio.currentTime : 0
+  );
+  const [duration, setDuration] = useState(() =>
+    audio ? audio.duration || 0 : 0
+  );
+
   const isRepeating = usePlayer((state) => state.isRepeating);
   const isShuffling = usePlayer((state) => state.isShuffling);
-
-  // song_pathがローカルファイルパスかどうかを判定（オーディオ再生時のURL変換に使用）
   const isLocalFile = useMemo(() => isLocalFilePath(songUrl), [songUrl]);
 
-  // ボリューム管理のカスタムフックを使用
-  const { volume, setVolume } = useVolumeStore();
-
-  // 再生状態の保存用
+  const { volume } = useVolumeStore();
   const {
     savePlaybackState,
     updatePosition,
@@ -60,76 +48,14 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
     isRestoring,
     setIsRestoring,
   } = usePlaybackStateStore();
+
   const lastSaveTimeRef = useRef<number>(0);
   const hasRestoredRef = useRef<boolean>(false);
-
-  // --- Refパターン: イベントリスナー内から最新の状態を参照するため ---
   const isPlayingRef = useRef(isPlaying);
   const isRestoringRef = useRef(isRestoring);
   const isRepeatingRef = useRef(isRepeating);
 
-  const handlePlay = useCallback(() => {
-    // 復元中フラグをクリア（以降は通常の自動再生を許可）
-    if (isRestoring) {
-      setIsRestoring(false);
-    }
-    setIsPlaying((prev) => !prev);
-  }, [isRestoring, setIsRestoring]);
-
-  const handleSeek = useCallback(
-    (time: number) => {
-      if (audioRef.current) {
-        audioRef.current.currentTime = time;
-        setCurrentTime(time);
-        // シーク時に再生位置を保存
-        const activeId = player.activeId;
-        if (activeId) {
-          savePlaybackState(activeId, time, player.ids);
-        }
-      }
-    },
-    [player.activeId, player.ids, savePlaybackState]
-  );
-
-  // 次の曲を再生する関数
-  const onPlayNext = useCallback(() => {
-    if (isRepeating) {
-      player.toggleRepeat();
-    }
-    const nextSongId = player.getNextSongId();
-    if (nextSongId) {
-      player.setId(nextSongId);
-    }
-  }, [isRepeating, player]);
-
-  // onPlayNextをRef経由で参照（イベントリスナー内から最新のコールバックを呼ぶため）
-  const onPlayNextRef = useRef(onPlayNext);
-
-  // 前の曲を再生する関数
-  const onPlayPrevious = useCallback(() => {
-    if (isRepeating) {
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-      }
-    } else {
-      const prevSongId = player.getPreviousSongId();
-      if (prevSongId) {
-        player.setId(prevSongId);
-      }
-    }
-  }, [isRepeating, player]);
-
-  // リピート切り替え関数
-  const toggleRepeat = useCallback(() => {
-    player.toggleRepeat();
-  }, [player]);
-
-  // シャッフル切り替え関数
-  const toggleShuffle = useCallback(() => {
-    player.toggleShuffle();
-  }, [player]);
-
-  // --- Refの同期: 状態が変わるたびにRefを更新 ---
+  // Ref同期
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
@@ -142,64 +68,105 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
     isRepeatingRef.current = isRepeating;
   }, [isRepeating]);
 
+  const handlePlay = useCallback(() => {
+    if (isRestoring) {
+      setIsRestoring(false);
+    }
+    setIsPlaying((prev) => !prev);
+  }, [isRestoring, setIsRestoring]);
+
+  const handleSeek = useCallback(
+    (time: number) => {
+      if (audio) {
+        audio.currentTime = time;
+        setCurrentTime(time);
+        const activeId = player.activeId;
+        if (activeId) {
+          savePlaybackState(activeId, time, player.ids);
+        }
+      }
+    },
+    [audio, player.activeId, player.ids, savePlaybackState]
+  );
+
+  const onPlayNext = useCallback(() => {
+    if (isRepeating) {
+      player.toggleRepeat();
+    }
+    const nextSongId = player.getNextSongId();
+    if (nextSongId) {
+      player.setId(nextSongId);
+    }
+  }, [isRepeating, player]);
+
+  const onPlayNextRef = useRef(onPlayNext);
   useEffect(() => {
     onPlayNextRef.current = onPlayNext;
   }, [onPlayNext]);
 
-  // オーディオ要素のイベントリスナーを設定
-  // 注意: Refパターンを使用して、songUrl/isLocalFile変更時のみリスナーを再登録
+  const onPlayPrevious = useCallback(() => {
+    if (isRepeating && audio) {
+      audio.currentTime = 0;
+    } else {
+      const prevSongId = player.getPreviousSongId();
+      if (prevSongId) {
+        player.setId(prevSongId);
+      }
+    }
+  }, [isRepeating, audio, player]);
+
+  const toggleRepeat = useCallback(() => {
+    player.toggleRepeat();
+  }, [player]);
+
+  const toggleShuffle = useCallback(() => {
+    player.toggleShuffle();
+  }, [player]);
+
+  // 再生/停止の同期
   useEffect(() => {
-    const audio = audioRef.current;
+    if (!audio) return;
+
+    // AudioContextをresumeする
+    if (isPlaying && engine.context?.state === "suspended") {
+      engine.resumeContext();
+    }
+
+    if (isPlaying && audio.paused) {
+      audio.play().catch(() => {});
+    } else if (!isPlaying && !audio.paused) {
+      audio.pause();
+    }
+  }, [isPlaying, audio, engine]);
+
+  // イベントリスナー
+  useEffect(() => {
     if (!audio) return;
 
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
-
     const handleEnded = () => {
-      // Ref経由で最新の状態を参照
       if (isRepeatingRef.current) {
         audio.currentTime = 0;
-        audio.play();
+        audio.play().catch(() => {});
       } else {
         onPlayNextRef.current();
       }
     };
-
-    // ローカルファイルの場合は自動再生を制御
     const handleCanPlayThrough = () => {
-      // 復元中は自動再生しない（ユーザーが手動で再生ボタンを押すまで待つ）
-      if (isRestoringRef.current) {
-        return;
-      }
-
-      if (isLocalFile) {
-        // ローカルファイルの場合は明示的に再生状態をチェック
-        if (isPlayingRef.current) {
-          audio.play().catch((error) => {
-            console.error("Error playing local audio:", error);
-            setIsPlaying(false);
-          });
-        }
-      } else {
-        // ストリーミングの場合は従来通り
-        audio.play();
+      if (isRestoringRef.current) return;
+      if (isPlayingRef.current && audio.paused) {
+        audio.play().catch(() => {});
       }
     };
-
     const handlePlay = () => setIsPlaying(true);
-
     const handlePause = () => {
       setIsPlaying(false);
-      // 一時停止時に再生位置を保存
-      // 注意: player.activeId, player.ids, savePlaybackState はクロージャで
-      // キャプチャされるが、曲変更時にはuseEffectが再実行されるため問題なし
       const activeId = player.activeId;
       if (activeId) {
         savePlaybackState(activeId, audio.currentTime, player.ids);
       }
     };
-
-    // ローカルファイルの場合のエラーハンドリング
     const handleError = (e: Event) => {
       console.error("Audio error:", e);
       setIsPlaying(false);
@@ -222,50 +189,43 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
       audio.removeEventListener("pause", handlePause);
       audio.removeEventListener("error", handleError);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [songUrl, isLocalFile]);
+  }, [audio, player.activeId, player.ids, savePlaybackState]);
 
+  // ボリューム適用
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.play();
-    } else {
-      audio.pause();
+    if (audio) {
+      audio.volume = volume;
     }
-  }, [isPlaying]);
+  }, [volume, audio]);
 
+  // 曲のロード（リマウント対策: 同一曲ならスキップ）
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !songUrl || !song?.id) return;
 
-    audio.volume = volume;
-  }, [volume]);
+    const newSongId = String(song.id);
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !songUrl) return;
+    // 同一曲なら再設定をスキップ
+    if (engine.currentSongId === newSongId && audio.src !== "") {
+      return;
+    }
 
+    engine.currentSongId = newSongId;
     audio.currentTime = 0;
 
-    // ローカルファイルの場合はfile://スキーマを付与
     if (isLocalFile) {
       audio.src = toFileUrl(songUrl);
-      console.log("[useAudioPlayer] Setting local file source:", audio.src);
     } else {
       audio.src = songUrl;
     }
-  }, [songUrl, isLocalFile]);
+  }, [songUrl, isLocalFile, song?.id, audio, engine]);
 
-  // 定期的な再生位置の保存（5秒ごと、デバウンス）
+  // 再生位置の自動保存
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || !audio) return;
 
     const interval = setInterval(() => {
-      const audio = audioRef.current;
       const activeId = player.activeId;
-      if (audio && activeId) {
+      if (activeId) {
         const now = Date.now();
         if (now - lastSaveTimeRef.current >= POSITION_SAVE_INTERVAL_MS) {
           updatePosition(audio.currentTime);
@@ -275,12 +235,11 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
     }, POSITION_SAVE_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [isPlaying, player.activeId, updatePosition]);
+  }, [isPlaying, player.activeId, updatePosition, audio]);
 
   // ページ離脱時に再生位置を保存
   useEffect(() => {
     const handleBeforeUnload = () => {
-      const audio = audioRef.current;
       const activeId = player.activeId;
       if (audio && activeId) {
         savePlaybackState(activeId, audio.currentTime, player.ids);
@@ -289,11 +248,10 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [player.activeId, player.ids, savePlaybackState]);
+  }, [audio, player.activeId, player.ids, savePlaybackState]);
 
   // 保存された再生位置から復元
   useEffect(() => {
-    const audio = audioRef.current;
     if (
       !audio ||
       !playbackStateHydrated ||
@@ -304,7 +262,6 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
       return;
     }
 
-    // 保存された曲と現在の曲が一致する場合のみ復元
     if (savedSongId === player.activeId && savedPosition > 0) {
       const handleCanPlay = () => {
         if (!hasRestoredRef.current && savedPosition > 0) {
@@ -316,7 +273,13 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
       audio.addEventListener("canplay", handleCanPlay, { once: true });
       return () => audio.removeEventListener("canplay", handleCanPlay);
     }
-  }, [playbackStateHydrated, savedSongId, savedPosition, player.activeId]);
+  }, [
+    audio,
+    playbackStateHydrated,
+    savedSongId,
+    savedPosition,
+    player.activeId,
+  ]);
 
   const formatTime = useMemo(() => {
     return (time: number) => {
@@ -330,7 +293,6 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
     () => formatTime(currentTime),
     [currentTime, formatTime]
   );
-
   const formattedDuration = useMemo(
     () => formatTime(duration),
     [duration, formatTime]
@@ -339,7 +301,6 @@ const useAudioPlayer = (songUrl: string, song?: Song) => {
   return {
     formattedCurrentTime,
     formattedDuration,
-    audioRef,
     currentTime,
     duration,
     isPlaying,

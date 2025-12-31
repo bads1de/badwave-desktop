@@ -1,207 +1,51 @@
-import { useEffect, useRef, useCallback, useState } from "react";
-import useEqualizerStore, { EQ_BANDS } from "@/hooks/stores/useEqualizerStore";
+import { useEffect } from "react";
+import useEqualizerStore from "@/hooks/stores/useEqualizerStore";
 import usePlaybackRateStore from "@/hooks/stores/usePlaybackRateStore";
-
-interface EqualizerNodes {
-  context: AudioContext;
-  sourceNode: MediaElementAudioSourceNode;
-  filters: BiquadFilterNode[];
-  gainNode: GainNode;
-  reverbGainNode: GainNode;
-  convolver: ConvolverNode;
-}
+import { AudioEngine } from "@/libs/audio/AudioEngine";
 
 /**
- * オーディオ要素にイコライザーを適用するカスタムフック
- * Web Audio API を使用して 6 バンドのイコライザーを実現
- *
- * @param audioRef - オーディオ要素への参照
+ * AudioEngineのイコライザーノードを制御するフック
+ * ストアの状態変更をエンジンに反映する
  */
-const useAudioEqualizer = (
-  audioRef: React.RefObject<HTMLAudioElement | null>
-) => {
-  const nodesRef = useRef<EqualizerNodes | null>(null);
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
-
-  // ストアから状態を取得
+const useAudioEqualizer = () => {
   const isEnabled = useEqualizerStore((state) => state.isEnabled);
   const bands = useEqualizerStore((state) => state.bands);
-
   const isSlowedReverb = usePlaybackRateStore((state) => state.isSlowedReverb);
 
-  // イコライザーノードの初期化
-  const initializeEqualizer = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || isInitialized) return;
-
-    try {
-      const context = new AudioContext();
-      const sourceNode = context.createMediaElementSource(audio);
-
-      // 6バンド分のBiquadFilterを作成
-      const filters: BiquadFilterNode[] = EQ_BANDS.map((band, index) => {
-        const filter = context.createBiquadFilter();
-        // 最初と最後はシェルビングフィルター、それ以外はピーキングフィルター
-        if (index === 0) {
-          filter.type = "lowshelf";
-        } else if (index === EQ_BANDS.length - 1) {
-          filter.type = "highshelf";
-        } else {
-          filter.type = "peaking";
-          filter.Q.value = 1.4; // Q値 (帯域幅)
-        }
-        filter.frequency.value = band.freq;
-        // 初期状態のストア値を反映
-        filter.gain.value = isEnabled ? bands[index]?.gain ?? 0 : 0;
-        return filter;
-      });
-
-      // ゲインノード（マスター音量調整用、将来の拡張性のため）
-      const gainNode = context.createGain();
-      gainNode.gain.value = 1;
-
-      // ノードを直列に接続: source -> filter1 -> filter2 -> ... -> gain -> destination
-      let currentNode: AudioNode = sourceNode;
-      filters.forEach((filter) => {
-        currentNode.connect(filter);
-        currentNode = filter;
-      });
-      currentNode.connect(gainNode);
-      gainNode.connect(context.destination);
-
-      // リバーブ用ノードの作成と接続
-      const convolver = context.createConvolver();
-      const reverbGainNode = context.createGain();
-
-      // シンプルなインパルス応答を生成 (3秒間、減衰あり)
-      const sampleRate = context.sampleRate;
-      const length = sampleRate * 3;
-      const impulse = context.createBuffer(2, length, sampleRate);
-      const left = impulse.getChannelData(0);
-      const right = impulse.getChannelData(1);
-
-      for (let i = 0; i < length; i++) {
-        const reverseIndex = length - i;
-        // 指数関数的減衰 + ランダムノイズ
-        const decay = Math.pow(reverseIndex / length, 2);
-        left[i] = (Math.random() * 2 - 1) * decay;
-        right[i] = (Math.random() * 2 - 1) * decay;
-      }
-      convolver.buffer = impulse;
-
-      // Filterの出力から分岐してリバーブへ
-      // 構成: LastFilter -> GainNode (Dry) -> Destination
-      //          |
-      //           -> ReverbGain (Wet) -> Convolver -> Destination
-
-      // 注: currentNodeは最後のフィルター
-      currentNode.connect(reverbGainNode);
-      reverbGainNode.connect(convolver);
-      convolver.connect(context.destination);
-
-      // 初期状態のリバーブゲインを反映 (デフォルトの1を回避)
-      reverbGainNode.gain.value = isSlowedReverb ? 0.4 : 0;
-
-      nodesRef.current = {
-        context,
-        sourceNode,
-        filters,
-        gainNode,
-        reverbGainNode,
-        convolver,
-      };
-      setIsInitialized(true);
-
-      console.log(
-        "[useAudioEqualizer] Equalizer & Reverb initialized successfully"
-      );
-    } catch (error) {
-      console.error(
-        "[useAudioEqualizer] Failed to initialize equalizer:",
-        error
-      );
-    }
-  }, [audioRef, bands, isEnabled, isSlowedReverb, isInitialized]);
-
-  // オーディオ要素の canplaythrough イベントで初期化
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handleCanPlay = () => {
-      if (!isInitialized) {
-        initializeEqualizer();
-      }
-    };
-
-    // 既に再生可能な状態なら即初期化
-    if (audio.readyState >= 3) {
-      initializeEqualizer();
-    }
-
-    audio.addEventListener("canplaythrough", handleCanPlay);
-
-    return () => {
-      audio.removeEventListener("canplaythrough", handleCanPlay);
-    };
-  }, [audioRef, initializeEqualizer]);
+  const engine = AudioEngine.getInstance();
 
   // ストアのゲイン変更を反映
   useEffect(() => {
-    const nodes = nodesRef.current;
-    if (!nodes) return;
+    if (!engine.isInitialized || !engine.filters) return;
 
-    nodes.filters.forEach((filter, index) => {
+    engine.filters.forEach((filter, index) => {
       const band = bands[index];
       if (band) {
-        // イコライザーが有効な場合のみゲインを適用
         filter.gain.value = isEnabled ? band.gain : 0;
       }
     });
-  }, [bands, isEnabled, isInitialized]);
+  }, [bands, isEnabled, engine.isInitialized, engine.filters]);
 
   // Slowed + Reverbの状態変更を反映
   useEffect(() => {
-    const nodes = nodesRef.current;
-    if (!nodes) return;
+    if (!engine.isInitialized || !engine.reverbGainNode || !engine.context)
+      return;
 
-    if (nodes.reverbGainNode) {
-      // リバーブのウェット成分 (isSlowedReverbが有効な場合のみ)
-      // 0.4くらいがちょうどいいアンビエンス感
-      const targetGain = isSlowedReverb ? 0.4 : 0;
-      nodes.reverbGainNode.gain.setTargetAtTime(
-        targetGain,
-        nodes.context.currentTime,
-        0.1
-      );
-    }
-  }, [isSlowedReverb, isInitialized]);
-
-  // クリーンアップ
-  useEffect(() => {
-    return () => {
-      const nodes = nodesRef.current;
-      if (nodes) {
-        try {
-          nodes.sourceNode.disconnect();
-          nodes.filters.forEach((filter) => filter.disconnect());
-          nodes.gainNode.disconnect();
-          // リバーブ系ノードの切断
-          nodes.reverbGainNode.disconnect();
-          nodes.convolver.disconnect();
-
-          nodes.context.close();
-        } catch (error) {
-          console.error("[useAudioEqualizer] Cleanup error:", error);
-        }
-        nodesRef.current = null;
-        setIsInitialized(false);
-      }
-    };
-  }, []);
+    const targetGain = isSlowedReverb ? 0.4 : 0;
+    engine.reverbGainNode.gain.setTargetAtTime(
+      targetGain,
+      engine.context.currentTime,
+      0.1
+    );
+  }, [
+    isSlowedReverb,
+    engine.isInitialized,
+    engine.reverbGainNode,
+    engine.context,
+  ]);
 
   return {
-    isInitialized,
+    isInitialized: engine.isInitialized,
   };
 };
 

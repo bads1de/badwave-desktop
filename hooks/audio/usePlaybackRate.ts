@@ -1,55 +1,53 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import usePlaybackRateStore from "@/hooks/stores/usePlaybackRateStore";
+import { AudioEngine } from "@/libs/audio/AudioEngine";
 
 /**
- * ストアから取得した再生速度をオーディオ要素に適用します。
- * @param audioRef オーディオ要素への参照
+ * AudioEngineのaudio要素に再生速度を適用するフック
  */
-const usePlaybackRate = (
-  audioRef: React.RefObject<HTMLAudioElement | null>
-) => {
+const usePlaybackRate = () => {
   const rate = usePlaybackRateStore((state) => state.rate);
   const isSlowedReverb = usePlaybackRateStore((state) => state.isSlowedReverb);
-  const audio = audioRef.current;
 
-  // 再生速度が変更された、またはオーディオ要素が利用可能になったときに適用します
+  const engine = AudioEngine.getInstance();
+  const audio = engine.audio;
+
+  // 再生速度を適用
   useEffect(() => {
-    if (audio) {
+    if (!audio) return;
+
+    const targetRate = isSlowedReverb ? 0.85 : rate;
+    audio.playbackRate = targetRate;
+
+    // preservesPitch プロパティの設定
+    // @ts-ignore
+    audio.preservesPitch = !isSlowedReverb;
+    // @ts-ignore
+    audio.mozPreservesPitch = !isSlowedReverb;
+    // @ts-ignore
+    audio.webkitPreservesPitch = !isSlowedReverb;
+  }, [audio, rate, isSlowedReverb]);
+
+  // ソース変更時に再生速度を再適用
+  useEffect(() => {
+    if (!audio) return;
+
+    const handleDurationChange = () => {
       const targetRate = isSlowedReverb ? 0.85 : rate;
       audio.playbackRate = targetRate;
 
-      // preservesPitch プロパティの設定（ベンダープレフィックス対応）
       // @ts-ignore
       audio.preservesPitch = !isSlowedReverb;
       // @ts-ignore
       audio.mozPreservesPitch = !isSlowedReverb;
       // @ts-ignore
       audio.webkitPreservesPitch = !isSlowedReverb;
-    }
-  }, [audio, rate, isSlowedReverb]);
-
-  // ソースが変更された場合に再生速度が再適用されるようにします（一部のブラウザではリセットされるため）
-  useEffect(() => {
-    const handleDurationChange = () => {
-      if (audio) {
-        const targetRate = isSlowedReverb ? 0.85 : rate;
-        audio.playbackRate = targetRate;
-
-        // @ts-ignore
-        audio.preservesPitch = !isSlowedReverb;
-        // @ts-ignore
-        audio.mozPreservesPitch = !isSlowedReverb;
-        // @ts-ignore
-        audio.webkitPreservesPitch = !isSlowedReverb;
-      }
     };
 
-    if (audio) {
-      audio.addEventListener("durationchange", handleDurationChange);
-      return () => {
-        audio.removeEventListener("durationchange", handleDurationChange);
-      };
-    }
+    audio.addEventListener("durationchange", handleDurationChange);
+    return () => {
+      audio.removeEventListener("durationchange", handleDurationChange);
+    };
   }, [audio, rate, isSlowedReverb]);
 
   return { rate };

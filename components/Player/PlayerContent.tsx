@@ -35,7 +35,6 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
     const {
       formattedCurrentTime,
       formattedDuration,
-      audioRef,
       currentTime,
       duration,
       isPlaying,
@@ -51,11 +50,11 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
 
     const Icon = isPlaying ? BsPauseFill : BsPlayFill;
 
-    // イコライザーを適用
-    useAudioEqualizer(audioRef);
+    // イコライザーと再生速度を適用（AudioEngineを使用）
+    useAudioEqualizer();
+    usePlaybackRate();
 
     const { toggleLyrics } = useLyricsStore();
-    usePlaybackRate(audioRef);
 
     // メディアコントロールのイベントを受け取る
     useEffect(() => {
@@ -86,10 +85,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
 
     return (
       <>
-        {/* NOTE: srcはuseAudioPlayer内で設定されるため、ここでは指定しない */}
-        {/* crossOrigin属性はWeb Audio APIでイコライザーを使用するために必要 */}
-        <audio ref={audioRef} loop={isRepeating} crossOrigin="anonymous" />
-
+        {/* audio要素はAudioEngineシングルトンで管理されるため、ここには不要 */}
         <div className="grid grid-cols-3 h-full bg-[#121212] border-t border-[#303030] rounded-t-xl">
           <div className="flex w-full justify-start px-4">
             <div className="flex items-center gap-x-4">
