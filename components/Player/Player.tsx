@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import useGetSongById from "@/hooks/data/useGetSongById";
 import usePlayer from "@/hooks/player/usePlayer";
 import useGetPlaylists from "@/hooks/data/useGetPlaylists";
@@ -7,6 +8,8 @@ import React, { memo, useMemo } from "react";
 import PlayerContent from "./PlayerContent";
 
 const Player = () => {
+  const pathname = usePathname();
+  const isPulsePage = pathname === "/pulse";
   const player = usePlayer();
   // クライアントサイドでプレイリストを取得（オフライン対応付き）
   const { playlists } = useGetPlaylists();
@@ -31,6 +34,11 @@ const Player = () => {
 
   // 最終的な曲を決定
   const finalSong = localSong || onlineSong;
+
+  // pulseページではプレイヤーを非表示
+  if (isPulsePage) {
+    return null;
+  }
 
   if (!finalSong || !finalSong.song_path) {
     return null;

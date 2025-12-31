@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { usePathname } from "next/navigation";
 import usePlayer from "@/hooks/player/usePlayer";
 import useGetSongById from "@/hooks/data/useGetSongById";
 import FullScreenLayout from "./FullScreenLayout";
@@ -17,6 +18,8 @@ interface RightSidebarProps {
 
 const RightSidebar: React.FC<RightSidebarProps> = ({ children }) => {
   const player = usePlayer();
+  const pathname = usePathname();
+  const isPulsePage = pathname === "/pulse";
 
   // まずローカルストアから曲を取得
   const localCurrentSong = useMemo(() => {
@@ -42,7 +45,8 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ children }) => {
   const currentSong = localCurrentSong || fetchedCurrentSong;
   const nextTrack = localNextSong || fetchedNextSong;
 
-  const showRightSidebar = currentSong && nextTrack;
+  // pulseページではRightSidebarを非表示
+  const showRightSidebar = currentSong && nextTrack && !isPulsePage;
 
   // サイドバーの幅の状態管理
   const [sidebarWidth, setSidebarWidth] = useState(384); // 初期値 w-96 (384px)

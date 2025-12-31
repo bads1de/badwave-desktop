@@ -189,11 +189,13 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
                 </button>
               </DisabledOverlay>
 
+              {/* プレイバックスピードボタン */}
               <PlaybackSpeedButton />
 
               {/* イコライザーボタン */}
               <EqualizerButton />
 
+              {/* 音量コントロール */}
               <VolumeControl />
             </div>
           </div>

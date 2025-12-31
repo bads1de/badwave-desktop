@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import useEqualizerStore, { EQ_BANDS } from "@/hooks/stores/useEqualizerStore";
 import usePlaybackRateStore from "@/hooks/stores/usePlaybackRateStore";
 
@@ -21,7 +21,7 @@ const useAudioEqualizer = (
   audioRef: React.RefObject<HTMLAudioElement | null>
 ) => {
   const nodesRef = useRef<EqualizerNodes | null>(null);
-  const isInitializedRef = useRef<boolean>(false);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   // ストアから状態を取得
   const isEnabled = useEqualizerStore((state) => state.isEnabled);
@@ -32,7 +32,7 @@ const useAudioEqualizer = (
   // イコライザーノードの初期化
   const initializeEqualizer = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio || isInitializedRef.current) return;
+    if (!audio || isInitialized) return;
 
     try {
       const context = new AudioContext();
@@ -51,7 +51,8 @@ const useAudioEqualizer = (
           filter.Q.value = 1.4; // Q値 (帯域幅)
         }
         filter.frequency.value = band.freq;
-        filter.gain.value = 0; // 初期値は0dB
+        // 初期状態のストア値を反映
+        filter.gain.value = isEnabled ? bands[index]?.gain ?? 0 : 0;
         return filter;
       });
 
@@ -98,6 +99,9 @@ const useAudioEqualizer = (
       reverbGainNode.connect(convolver);
       convolver.connect(context.destination);
 
+      // 初期状態のリバーブゲインを反映 (デフォルトの1を回避)
+      reverbGainNode.gain.value = isSlowedReverb ? 0.4 : 0;
+
       nodesRef.current = {
         context,
         sourceNode,
@@ -106,7 +110,7 @@ const useAudioEqualizer = (
         reverbGainNode,
         convolver,
       };
-      isInitializedRef.current = true;
+      setIsInitialized(true);
 
       console.log(
         "[useAudioEqualizer] Equalizer & Reverb initialized successfully"
@@ -117,7 +121,7 @@ const useAudioEqualizer = (
         error
       );
     }
-  }, [audioRef]);
+  }, [audioRef, bands, isEnabled, isSlowedReverb, isInitialized]);
 
   // オーディオ要素の canplaythrough イベントで初期化
   useEffect(() => {
@@ -125,7 +129,7 @@ const useAudioEqualizer = (
     if (!audio) return;
 
     const handleCanPlay = () => {
-      if (!isInitializedRef.current) {
+      if (!isInitialized) {
         initializeEqualizer();
       }
     };
@@ -154,7 +158,7 @@ const useAudioEqualizer = (
         filter.gain.value = isEnabled ? band.gain : 0;
       }
     });
-  }, [bands, isEnabled]);
+  }, [bands, isEnabled, isInitialized]);
 
   // Slowed + Reverbの状態変更を反映
   useEffect(() => {
@@ -171,7 +175,7 @@ const useAudioEqualizer = (
         0.1
       );
     }
-  }, [isSlowedReverb]);
+  }, [isSlowedReverb, isInitialized]);
 
   // クリーンアップ
   useEffect(() => {
@@ -191,13 +195,13 @@ const useAudioEqualizer = (
           console.error("[useAudioEqualizer] Cleanup error:", error);
         }
         nodesRef.current = null;
-        isInitializedRef.current = false;
+        setIsInitialized(false);
       }
     };
   }, []);
 
   return {
-    isInitialized: isInitializedRef.current,
+    isInitialized,
   };
 };
 
