@@ -208,6 +208,9 @@ export function setupCacheHandlers() {
           count: String(song?.playCount || 0),
           like_count: String(song?.likeCount || 0),
           created_at: liked_songs.likedAt,
+          duration: song?.duration || null,
+          genre: song?.genre || null,
+          lyrics: song?.lyrics || null,
         };
       });
     } catch (error) {
@@ -263,6 +266,9 @@ export function setupCacheHandlers() {
           count: String(song?.playCount || 0),
           like_count: String(song?.likeCount || 0),
           created_at: playlist_songs.addedAt,
+          duration: song?.duration || null,
+          genre: song?.genre || null,
+          lyrics: song?.lyrics || null,
         };
       });
     } catch (error) {

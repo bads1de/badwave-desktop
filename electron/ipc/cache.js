@@ -99,6 +99,8 @@ function setupCacheHandlers() {
                             duration: song.duration ? Number(song.duration) : null,
                             genre: song.genre,
                             lyrics: song.lyrics,
+                            playCount: song.count ? Number(song.count) : 0,
+                            likeCount: song.like_count ? Number(song.like_count) : 0,
                             createdAt: song.created_at,
                             downloadedAt: (_d = existing === null || existing === void 0 ? void 0 : existing.downloadedAt) !== null && _d !== void 0 ? _d : null,
                         };
@@ -116,6 +118,8 @@ function setupCacheHandlers() {
                                     duration: record.duration,
                                     genre: record.genre,
                                     lyrics: record.lyrics,
+                                    playCount: record.playCount,
+                                    likeCount: record.likeCount,
                                     createdAt: record.createdAt,
                                 },
                             })];
@@ -298,6 +302,8 @@ function setupCacheHandlers() {
                                 local_song_path: (song === null || song === void 0 ? void 0 : song.songPath) || null,
                                 local_image_path: (song === null || song === void 0 ? void 0 : song.imagePath) || null,
                                 local_video_path: (song === null || song === void 0 ? void 0 : song.videoPath) || null,
+                                count: String((song === null || song === void 0 ? void 0 : song.playCount) || 0),
+                                like_count: String((song === null || song === void 0 ? void 0 : song.likeCount) || 0),
                                 created_at: liked_songs.likedAt,
                             };
                         })];
@@ -363,6 +369,8 @@ function setupCacheHandlers() {
                                 local_song_path: (song === null || song === void 0 ? void 0 : song.songPath) || null,
                                 local_image_path: (song === null || song === void 0 ? void 0 : song.imagePath) || null,
                                 local_video_path: (song === null || song === void 0 ? void 0 : song.videoPath) || null,
+                                count: String((song === null || song === void 0 ? void 0 : song.playCount) || 0),
+                                like_count: String((song === null || song === void 0 ? void 0 : song.likeCount) || 0),
                                 created_at: playlist_songs.addedAt,
                             };
                         })];
@@ -546,8 +554,8 @@ function setupCacheHandlers() {
                             local_video_path: s.videoPath || null,
                             duration: s.duration,
                             genre: s.genre,
-                            count: "0",
-                            like_count: "0",
+                            count: String(s.playCount || 0),
+                            like_count: String(s.likeCount || 0),
                             lyrics: s.lyrics,
                             created_at: s.createdAt || new Date().toISOString(),
                         });

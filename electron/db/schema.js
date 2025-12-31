@@ -25,6 +25,8 @@ exports.songs = (0, sqlite_core_1.sqliteTable)("songs", {
     createdAt: (0, sqlite_core_1.text)("created_at"), // SupabaseからのISO文字列
     downloadedAt: (0, sqlite_core_1.integer)("downloaded_at", { mode: "timestamp" }), // ローカル保存日時
     lastPlayedAt: (0, sqlite_core_1.integer)("last_played_at", { mode: "timestamp" }), // 「最近再生した曲」用
+    playCount: (0, sqlite_core_1.integer)("play_count").default(0),
+    likeCount: (0, sqlite_core_1.integer)("like_count").default(0),
 });
 // 2. Playlists: ユーザー作成のプレイリスト
 exports.playlists = (0, sqlite_core_1.sqliteTable)("playlists", {
