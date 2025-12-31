@@ -86,12 +86,12 @@ const FrequencyCurve: React.FC<FrequencyCurveProps> = ({
         <linearGradient id="curveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop
             offset="0%"
-            stopColor={isEnabled ? "var(--theme-500)" : "#555"}
+            stopColor={isEnabled ? "rgb(var(--theme-500))" : "#555"}
             stopOpacity="0.8"
           />
           <stop
             offset="100%"
-            stopColor={isEnabled ? "var(--theme-500)" : "#555"}
+            stopColor={isEnabled ? "rgb(var(--theme-500))" : "#555"}
             stopOpacity="0.1"
           />
         </linearGradient>
@@ -101,14 +101,14 @@ const FrequencyCurve: React.FC<FrequencyCurveProps> = ({
       <path
         d={fillPath}
         fill="url(#curveGradient)"
-        opacity={isEnabled ? 0.3 : 0.1}
+        opacity={isEnabled ? 0.5 : 0.1}
       />
 
       {/* カーブ線 */}
       <path
         d={curvePath}
         fill="none"
-        stroke={isEnabled ? "var(--theme-500)" : "#555"}
+        stroke={isEnabled ? "rgb(var(--theme-500))" : "#555"}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -122,7 +122,7 @@ const FrequencyCurve: React.FC<FrequencyCurveProps> = ({
           cx={point.x}
           cy={point.y}
           r="3"
-          fill={isEnabled ? "var(--theme-400)" : "#666"}
+          fill={isEnabled ? "rgb(var(--theme-400))" : "#666"}
           className="transition-all duration-200"
         />
       ))}
