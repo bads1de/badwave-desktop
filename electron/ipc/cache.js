@@ -740,6 +740,85 @@ function setupCacheHandlers() {
             }
         });
     }); });
+    /**
+     * 単一の曲情報をローカルDBから取得
+     */
+    electron_1.ipcMain.handle("get-song-by-id", function (_, songId) { return __awaiter(_this, void 0, void 0, function () {
+        var normalizedId, song, error_17;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 2, , 3]);
+                    normalizedId = normalizeId(songId);
+                    return [4 /*yield*/, db.query.songs.findFirst({
+                            where: (0, drizzle_orm_1.eq)(schema_1.songs.id, normalizedId),
+                        })];
+                case 1:
+                    song = _a.sent();
+                    if (!song) {
+                        return [2 /*return*/, null];
+                    }
+                    return [2 /*return*/, {
+                            id: song.id,
+                            user_id: song.userId,
+                            title: song.title,
+                            author: song.author,
+                            song_path: song.originalSongPath || "",
+                            image_path: song.originalImagePath || "",
+                            video_path: song.originalVideoPath || "",
+                            is_downloaded: !!song.songPath,
+                            local_song_path: song.songPath || undefined,
+                            local_image_path: song.imagePath || undefined,
+                            local_video_path: song.videoPath || undefined,
+                            duration: song.duration,
+                            genre: song.genre,
+                            count: String(song.playCount || 0),
+                            like_count: String(song.likeCount || 0),
+                            lyrics: song.lyrics || undefined,
+                            created_at: song.createdAt || new Date().toISOString(),
+                        }];
+                case 2:
+                    error_17 = _a.sent();
+                    console.error("[IPC] get-song-by-id(".concat(songId, ") error:"), error_17);
+                    return [2 /*return*/, null];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
+    /**
+     * 単一のプレイリスト情報をローカルDBから取得
+     */
+    electron_1.ipcMain.handle("get-playlist-by-id", function (_, playlistId) { return __awaiter(_this, void 0, void 0, function () {
+        var normalizedId, playlist, error_18;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 2, , 3]);
+                    normalizedId = normalizeId(playlistId);
+                    return [4 /*yield*/, db.query.playlists.findFirst({
+                            where: (0, drizzle_orm_1.eq)(schema_1.playlists.id, normalizedId),
+                        })];
+                case 1:
+                    playlist = _a.sent();
+                    if (!playlist) {
+                        return [2 /*return*/, null];
+                    }
+                    return [2 /*return*/, {
+                            id: playlist.id,
+                            user_id: playlist.userId,
+                            title: playlist.title,
+                            image_path: playlist.imagePath || undefined,
+                            is_public: !!playlist.isPublic,
+                            created_at: playlist.createdAt,
+                        }];
+                case 2:
+                    error_18 = _a.sent();
+                    console.error("[IPC] get-playlist-by-id(".concat(playlistId, ") error:"), error_18);
+                    return [2 /*return*/, null];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
 }
 var templateObject_1, templateObject_2, templateObject_3, templateObject_4, templateObject_5, templateObject_6;
 //# sourceMappingURL=cache.js.map

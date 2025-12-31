@@ -63,6 +63,8 @@ var ALLOWED_INVOKE_CHANNELS = [
     "save-cached-user",
     "get-cached-user",
     "clear-cached-user",
+    "get-song-by-id",
+    "get-playlist-by-id",
 ];
 var ALLOWED_ON_CHANNELS = [
     "media-control",
@@ -190,6 +192,14 @@ electron_1.contextBridge.exposeInMainWorld("electron", {
         },
         removePlaylistSong: function (data) {
             return electron_1.ipcRenderer.invoke("remove-playlist-song", data);
+        },
+        // 単一の曲情報を取得（ローカルDB）
+        getSongById: function (songId) {
+            return electron_1.ipcRenderer.invoke("get-song-by-id", songId);
+        },
+        // 単一のプレイリスト情報を取得（ローカルDB）
+        getPlaylistById: function (playlistId) {
+            return electron_1.ipcRenderer.invoke("get-playlist-by-id", playlistId);
         },
     },
     // 認証キャッシュ（オフラインログイン用）
