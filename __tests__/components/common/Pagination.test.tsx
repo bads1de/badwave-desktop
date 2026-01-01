@@ -43,7 +43,7 @@ describe("Pagination", () => {
     );
 
     const currentPageButton = screen.getByText("1");
-    expect(currentPageButton).toHaveClass("bg-green-500");
+    expect(currentPageButton).toHaveAttribute("aria-current", "page");
   });
 
   it("ページ番号をクリックすると onPageChange が呼ばれる", () => {

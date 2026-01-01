@@ -3,6 +3,7 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/libs/utils";
+import useColorSchemeStore from "@/hooks/stores/useColorSchemeStore";
 
 interface PaginationProps {
   currentPage: number;
@@ -26,6 +27,9 @@ const Pagination: React.FC<PaginationProps> = ({
   siblingCount = 1,
   className,
 }) => {
+  const { getColorScheme } = useColorSchemeStore();
+  const theme = getColorScheme();
+
   // ページがない場合は表示しない
   if (totalPages <= 1) return null;
 
@@ -107,9 +111,14 @@ const Pagination: React.FC<PaginationProps> = ({
             className={cn(
               "flex items-center justify-center min-w-10 h-10 px-3 rounded-lg font-medium transition-colors",
               pageNum === currentPage
-                ? "bg-green-500 text-black"
+                ? "text-white shadow-md shadow-black/20"
                 : "text-neutral-400 hover:text-white hover:bg-neutral-800"
             )}
+            style={
+              pageNum === currentPage
+                ? { backgroundColor: theme.colors.accentFrom }
+                : undefined
+            }
             aria-current={pageNum === currentPage ? "page" : undefined}
           >
             {pageNum + 1}
