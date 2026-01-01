@@ -12,6 +12,7 @@ import useAudioPlayer from "@/hooks/audio/useAudioPlayer";
 import useAudioEqualizer from "@/hooks/audio/useAudioEqualizer";
 import useLyricsStore from "@/hooks/stores/useLyricsStore";
 import usePlaybackRate from "@/hooks/audio/usePlaybackRate";
+import useSpatialAudio from "@/hooks/audio/useSpatialAudio";
 import { mediaControls } from "@/libs/electron";
 import { isLocalSong, getPlayablePath } from "@/libs/songUtils";
 import DisabledOverlay from "../common/DisabledOverlay";
@@ -53,6 +54,7 @@ const PlayerContent: React.FC<PlayerContentProps> = React.memo(
     // イコライザーと再生速度を適用（AudioEngineを使用）
     useAudioEqualizer();
     usePlaybackRate();
+    useSpatialAudio();
 
     const { toggleLyrics } = useLyricsStore();
 
