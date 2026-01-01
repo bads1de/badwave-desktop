@@ -451,6 +451,64 @@ export function setupCacheHandlers() {
     }
   );
 
+  // --- Pagination Handlers ---
+
+  /**
+   * ページネーション対応の曲取得
+   * created_at 降順でソートし、offset/limit でページネーション
+   */
+  ipcMain.handle(
+    "get-songs-paginated",
+    async (_, { offset, limit }: { offset: number; limit: number }) => {
+      try {
+        const results = await db
+          .select()
+          .from(songs)
+          .orderBy(sql`${songs.createdAt} DESC`)
+          .limit(limit)
+          .offset(offset);
+
+        return results.map((s) => ({
+          id: s.id,
+          user_id: s.userId,
+          title: s.title,
+          author: s.author,
+          song_path: s.originalSongPath || null,
+          image_path: s.originalImagePath || null,
+          video_path: s.originalVideoPath || null,
+          is_downloaded: !!s.songPath,
+          local_song_path: s.songPath || null,
+          local_image_path: s.imagePath || null,
+          local_video_path: s.videoPath || null,
+          duration: s.duration,
+          genre: s.genre,
+          count: String(s.playCount || 0),
+          like_count: String(s.likeCount || 0),
+          lyrics: s.lyrics,
+          created_at: s.createdAt || new Date().toISOString(),
+        }));
+      } catch (error) {
+        console.error("[IPC] get-songs-paginated error:", error);
+        return [];
+      }
+    }
+  );
+
+  /**
+   * 曲の総件数を取得
+   */
+  ipcMain.handle("get-songs-total-count", async () => {
+    try {
+      const result = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(songs);
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error("[IPC] get-songs-total-count error:", error);
+      return 0;
+    }
+  });
+
   ipcMain.handle("debug-dump-db", async () => {
     try {
       const liked = await db.select().from(likedSongs).limit(10);

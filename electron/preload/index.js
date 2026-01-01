@@ -65,6 +65,9 @@ var ALLOWED_INVOKE_CHANNELS = [
     "clear-cached-user",
     "get-song-by-id",
     "get-playlist-by-id",
+    // ページネーション対応ハンドラー
+    "get-songs-paginated",
+    "get-songs-total-count",
 ];
 var ALLOWED_ON_CHANNELS = [
     "media-control",
@@ -201,6 +204,12 @@ electron_1.contextBridge.exposeInMainWorld("electron", {
         getPlaylistById: function (playlistId) {
             return electron_1.ipcRenderer.invoke("get-playlist-by-id", playlistId);
         },
+        // ページネーション対応の曲取得
+        getSongsPaginated: function (offset, limit) {
+            return electron_1.ipcRenderer.invoke("get-songs-paginated", { offset: offset, limit: limit });
+        },
+        // 曲の総件数を取得
+        getSongsTotalCount: function () { return electron_1.ipcRenderer.invoke("get-songs-total-count"); },
     },
     // 認証キャッシュ（オフラインログイン用）
     auth: {

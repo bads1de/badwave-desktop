@@ -58,6 +58,9 @@ const ALLOWED_INVOKE_CHANNELS = [
   "clear-cached-user",
   "get-song-by-id",
   "get-playlist-by-id",
+  // ページネーション対応ハンドラー
+  "get-songs-paginated",
+  "get-songs-total-count",
 ];
 
 const ALLOWED_ON_CHANNELS = [
@@ -182,6 +185,11 @@ contextBridge.exposeInMainWorld("electron", {
     // 単一のプレイリスト情報を取得（ローカルDB）
     getPlaylistById: (playlistId: string) =>
       ipcRenderer.invoke("get-playlist-by-id", playlistId),
+    // ページネーション対応の曲取得
+    getSongsPaginated: (offset: number, limit: number) =>
+      ipcRenderer.invoke("get-songs-paginated", { offset, limit }),
+    // 曲の総件数を取得
+    getSongsTotalCount: () => ipcRenderer.invoke("get-songs-total-count"),
   },
 
   // 認証キャッシュ（オフラインログイン用）

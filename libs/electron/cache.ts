@@ -209,4 +209,24 @@ export const cache = {
     }
     return null;
   },
+
+  /**
+   * ページネーション対応の曲取得（ローカルDB）
+   */
+  getSongsPaginated: async (offset: number, limit: number): Promise<any[]> => {
+    if (isElectron()) {
+      return (window as any).electron.cache.getSongsPaginated(offset, limit);
+    }
+    return [];
+  },
+
+  /**
+   * 曲の総件数を取得（ローカルDB）
+   */
+  getSongsTotalCount: async (): Promise<number> => {
+    if (isElectron()) {
+      return (window as any).electron.cache.getSongsTotalCount();
+    }
+    return 0;
+  },
 };

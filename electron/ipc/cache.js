@@ -580,8 +580,79 @@ function setupCacheHandlers() {
             }
         });
     }); });
+    // --- Pagination Handlers ---
+    /**
+     * ページネーション対応の曲取得
+     * created_at 降順でソートし、offset/limit でページネーション
+     */
+    electron_1.ipcMain.handle("get-songs-paginated", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
+        var results, error_11;
+        var offset = _b.offset, limit = _b.limit;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, db
+                            .select()
+                            .from(schema_1.songs)
+                            .orderBy((0, drizzle_orm_1.sql)(templateObject_3 || (templateObject_3 = __makeTemplateObject(["", " DESC"], ["", " DESC"])), schema_1.songs.createdAt))
+                            .limit(limit)
+                            .offset(offset)];
+                case 1:
+                    results = _c.sent();
+                    return [2 /*return*/, results.map(function (s) { return ({
+                            id: s.id,
+                            user_id: s.userId,
+                            title: s.title,
+                            author: s.author,
+                            song_path: s.originalSongPath || null,
+                            image_path: s.originalImagePath || null,
+                            video_path: s.originalVideoPath || null,
+                            is_downloaded: !!s.songPath,
+                            local_song_path: s.songPath || null,
+                            local_image_path: s.imagePath || null,
+                            local_video_path: s.videoPath || null,
+                            duration: s.duration,
+                            genre: s.genre,
+                            count: String(s.playCount || 0),
+                            like_count: String(s.likeCount || 0),
+                            lyrics: s.lyrics,
+                            created_at: s.createdAt || new Date().toISOString(),
+                        }); })];
+                case 2:
+                    error_11 = _c.sent();
+                    console.error("[IPC] get-songs-paginated error:", error_11);
+                    return [2 /*return*/, []];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
+    /**
+     * 曲の総件数を取得
+     */
+    electron_1.ipcMain.handle("get-songs-total-count", function () { return __awaiter(_this, void 0, void 0, function () {
+        var result, error_12;
+        var _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _b.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, db
+                            .select({ count: (0, drizzle_orm_1.sql)(templateObject_4 || (templateObject_4 = __makeTemplateObject(["count(*)"], ["count(*)"]))) })
+                            .from(schema_1.songs)];
+                case 1:
+                    result = _b.sent();
+                    return [2 /*return*/, ((_a = result[0]) === null || _a === void 0 ? void 0 : _a.count) || 0];
+                case 2:
+                    error_12 = _b.sent();
+                    console.error("[IPC] get-songs-total-count error:", error_12);
+                    return [2 /*return*/, 0];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); });
     electron_1.ipcMain.handle("debug-dump-db", function () { return __awaiter(_this, void 0, void 0, function () {
-        var liked, allSongs, joined, error_11;
+        var liked, allSongs, joined, error_13;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -595,14 +666,14 @@ function setupCacheHandlers() {
                     return [4 /*yield*/, db
                             .select()
                             .from(schema_1.likedSongs)
-                            .leftJoin(schema_1.songs, (0, drizzle_orm_1.sql)(templateObject_3 || (templateObject_3 = __makeTemplateObject(["CAST(", " AS TEXT) = CAST(", " AS TEXT)"], ["CAST(", " AS TEXT) = CAST(", " AS TEXT)"])), schema_1.likedSongs.songId, schema_1.songs.id))
+                            .leftJoin(schema_1.songs, (0, drizzle_orm_1.sql)(templateObject_5 || (templateObject_5 = __makeTemplateObject(["CAST(", " AS TEXT) = CAST(", " AS TEXT)"], ["CAST(", " AS TEXT) = CAST(", " AS TEXT)"])), schema_1.likedSongs.songId, schema_1.songs.id))
                             .limit(10)];
                 case 3:
                     joined = _a.sent();
                     return [2 /*return*/, { liked: liked, allSongs: allSongs, joined: joined }];
                 case 4:
-                    error_11 = _a.sent();
-                    return [2 /*return*/, { error: error_11.message }];
+                    error_13 = _a.sent();
+                    return [2 /*return*/, { error: error_13.message }];
                 case 5: return [2 /*return*/];
             }
         });
@@ -612,7 +683,7 @@ function setupCacheHandlers() {
      * いいねを追加（ローカルDB）
      */
     electron_1.ipcMain.handle("add-liked-song", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
-        var error_12;
+        var error_14;
         var userId = _b.userId, songId = _b.songId;
         return __generator(this, function (_c) {
             switch (_c.label) {
@@ -630,9 +701,9 @@ function setupCacheHandlers() {
                     _c.sent();
                     return [2 /*return*/, { success: true }];
                 case 2:
-                    error_12 = _c.sent();
-                    console.error("[IPC] add-liked-song error:", error_12);
-                    return [2 /*return*/, { success: false, error: error_12.message }];
+                    error_14 = _c.sent();
+                    console.error("[IPC] add-liked-song error:", error_14);
+                    return [2 /*return*/, { success: false, error: error_14.message }];
                 case 3: return [2 /*return*/];
             }
         });
@@ -641,7 +712,7 @@ function setupCacheHandlers() {
      * いいねを削除（ローカルDB）
      */
     electron_1.ipcMain.handle("remove-liked-song", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
-        var error_13;
+        var error_15;
         var userId = _b.userId, songId = _b.songId;
         return __generator(this, function (_c) {
             switch (_c.label) {
@@ -649,14 +720,14 @@ function setupCacheHandlers() {
                     _c.trys.push([0, 2, , 3]);
                     return [4 /*yield*/, db
                             .delete(schema_1.likedSongs)
-                            .where((0, drizzle_orm_1.sql)(templateObject_4 || (templateObject_4 = __makeTemplateObject(["", " = ", " AND ", " = ", ""], ["", " = ", " AND ", " = ", ""])), schema_1.likedSongs.userId, String(userId), schema_1.likedSongs.songId, normalizeId(songId)))];
+                            .where((0, drizzle_orm_1.sql)(templateObject_6 || (templateObject_6 = __makeTemplateObject(["", " = ", " AND ", " = ", ""], ["", " = ", " AND ", " = ", ""])), schema_1.likedSongs.userId, String(userId), schema_1.likedSongs.songId, normalizeId(songId)))];
                 case 1:
                     _c.sent();
                     return [2 /*return*/, { success: true }];
                 case 2:
-                    error_13 = _c.sent();
-                    console.error("[IPC] remove-liked-song error:", error_13);
-                    return [2 /*return*/, { success: false, error: error_13.message }];
+                    error_15 = _c.sent();
+                    console.error("[IPC] remove-liked-song error:", error_15);
+                    return [2 /*return*/, { success: false, error: error_15.message }];
                 case 3: return [2 /*return*/];
             }
         });
@@ -665,22 +736,22 @@ function setupCacheHandlers() {
      * いいね状態を取得（ローカルDB）
      */
     electron_1.ipcMain.handle("get-like-status", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
-        var result, error_14;
+        var result, error_16;
         var userId = _b.userId, songId = _b.songId;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
                     _c.trys.push([0, 2, , 3]);
                     return [4 /*yield*/, db.query.likedSongs.findFirst({
-                            where: (0, drizzle_orm_1.sql)(templateObject_5 || (templateObject_5 = __makeTemplateObject(["", " = ", " AND ", " = ", ""], ["", " = ", " AND ", " = ", ""])), schema_1.likedSongs.userId, String(userId), schema_1.likedSongs.songId, normalizeId(songId)),
+                            where: (0, drizzle_orm_1.sql)(templateObject_7 || (templateObject_7 = __makeTemplateObject(["", " = ", " AND ", " = ", ""], ["", " = ", " AND ", " = ", ""])), schema_1.likedSongs.userId, String(userId), schema_1.likedSongs.songId, normalizeId(songId)),
                         })];
                 case 1:
                     result = _c.sent();
                     return [2 /*return*/, { isLiked: !!result }];
                 case 2:
-                    error_14 = _c.sent();
-                    console.error("[IPC] get-like-status error:", error_14);
-                    return [2 /*return*/, { isLiked: false, error: error_14.message }];
+                    error_16 = _c.sent();
+                    console.error("[IPC] get-like-status error:", error_16);
+                    return [2 /*return*/, { isLiked: false, error: error_16.message }];
                 case 3: return [2 /*return*/];
             }
         });
@@ -689,7 +760,7 @@ function setupCacheHandlers() {
      * プレイリストに曲を追加（ローカルDB）
      */
     electron_1.ipcMain.handle("add-playlist-song", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
-        var psId, error_15;
+        var psId, error_17;
         var playlistId = _b.playlistId, songId = _b.songId;
         return __generator(this, function (_c) {
             switch (_c.label) {
@@ -709,9 +780,9 @@ function setupCacheHandlers() {
                     _c.sent();
                     return [2 /*return*/, { success: true }];
                 case 2:
-                    error_15 = _c.sent();
-                    console.error("[IPC] add-playlist-song error:", error_15);
-                    return [2 /*return*/, { success: false, error: error_15.message }];
+                    error_17 = _c.sent();
+                    console.error("[IPC] add-playlist-song error:", error_17);
+                    return [2 /*return*/, { success: false, error: error_17.message }];
                 case 3: return [2 /*return*/];
             }
         });
@@ -720,7 +791,7 @@ function setupCacheHandlers() {
      * プレイリストから曲を削除（ローカルDB）
      */
     electron_1.ipcMain.handle("remove-playlist-song", function (_1, _a) { return __awaiter(_this, [_1, _a], void 0, function (_, _b) {
-        var error_16;
+        var error_18;
         var playlistId = _b.playlistId, songId = _b.songId;
         return __generator(this, function (_c) {
             switch (_c.label) {
@@ -728,14 +799,14 @@ function setupCacheHandlers() {
                     _c.trys.push([0, 2, , 3]);
                     return [4 /*yield*/, db
                             .delete(schema_1.playlistSongs)
-                            .where((0, drizzle_orm_1.sql)(templateObject_6 || (templateObject_6 = __makeTemplateObject(["", " = ", " AND ", " = ", ""], ["", " = ", " AND ", " = ", ""])), schema_1.playlistSongs.playlistId, normalizeId(playlistId), schema_1.playlistSongs.songId, normalizeId(songId)))];
+                            .where((0, drizzle_orm_1.sql)(templateObject_8 || (templateObject_8 = __makeTemplateObject(["", " = ", " AND ", " = ", ""], ["", " = ", " AND ", " = ", ""])), schema_1.playlistSongs.playlistId, normalizeId(playlistId), schema_1.playlistSongs.songId, normalizeId(songId)))];
                 case 1:
                     _c.sent();
                     return [2 /*return*/, { success: true }];
                 case 2:
-                    error_16 = _c.sent();
-                    console.error("[IPC] remove-playlist-song error:", error_16);
-                    return [2 /*return*/, { success: false, error: error_16.message }];
+                    error_18 = _c.sent();
+                    console.error("[IPC] remove-playlist-song error:", error_18);
+                    return [2 /*return*/, { success: false, error: error_18.message }];
                 case 3: return [2 /*return*/];
             }
         });
@@ -744,7 +815,7 @@ function setupCacheHandlers() {
      * 単一の曲情報をローカルDBから取得
      */
     electron_1.ipcMain.handle("get-song-by-id", function (_, songId) { return __awaiter(_this, void 0, void 0, function () {
-        var normalizedId, song, error_17;
+        var normalizedId, song, error_19;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -778,8 +849,8 @@ function setupCacheHandlers() {
                             created_at: song.createdAt || new Date().toISOString(),
                         }];
                 case 2:
-                    error_17 = _a.sent();
-                    console.error("[IPC] get-song-by-id(".concat(songId, ") error:"), error_17);
+                    error_19 = _a.sent();
+                    console.error("[IPC] get-song-by-id(".concat(songId, ") error:"), error_19);
                     return [2 /*return*/, null];
                 case 3: return [2 /*return*/];
             }
@@ -789,7 +860,7 @@ function setupCacheHandlers() {
      * 単一のプレイリスト情報をローカルDBから取得
      */
     electron_1.ipcMain.handle("get-playlist-by-id", function (_, playlistId) { return __awaiter(_this, void 0, void 0, function () {
-        var normalizedId, playlist, error_18;
+        var normalizedId, playlist, error_20;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -812,13 +883,13 @@ function setupCacheHandlers() {
                             created_at: playlist.createdAt,
                         }];
                 case 2:
-                    error_18 = _a.sent();
-                    console.error("[IPC] get-playlist-by-id(".concat(playlistId, ") error:"), error_18);
+                    error_20 = _a.sent();
+                    console.error("[IPC] get-playlist-by-id(".concat(playlistId, ") error:"), error_20);
                     return [2 /*return*/, null];
                 case 3: return [2 /*return*/];
             }
         });
     }); });
 }
-var templateObject_1, templateObject_2, templateObject_3, templateObject_4, templateObject_5, templateObject_6;
+var templateObject_1, templateObject_2, templateObject_3, templateObject_4, templateObject_5, templateObject_6, templateObject_7, templateObject_8;
 //# sourceMappingURL=cache.js.map
