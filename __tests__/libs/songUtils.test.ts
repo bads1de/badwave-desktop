@@ -131,7 +131,7 @@ describe("songUtils", () => {
         is_downloaded: true,
         local_song_path: null,
         song_path: "https://example.com/song.mp3",
-      } as Song;
+      } as unknown as Song;
       expect(getPlayablePath(song)).toBe("https://example.com/song.mp3");
     });
 
@@ -168,7 +168,7 @@ describe("songUtils", () => {
         is_downloaded: true,
         local_image_path: null,
         image_path: "https://example.com/cover.jpg",
-      } as Song;
+      } as unknown as Song;
       expect(getPlayableImagePath(song)).toBe("https://example.com/cover.jpg");
     });
 

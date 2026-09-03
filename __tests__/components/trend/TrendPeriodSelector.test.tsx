@@ -7,7 +7,7 @@ import TrendPeriodSelector from "@/components/trend/TrendPeriodSelector";
 
 describe("TrendPeriodSelector", () => {
   it("should render period buttons", () => {
-    render(<TrendPeriodSelector />);
+    render(<TrendPeriodSelector selectedPeriod="week" onPeriodChange={jest.fn()} />);
     expect(screen.getByText(/week/i)).toBeInTheDocument();
     expect(screen.getByText(/month/i)).toBeInTheDocument();
   });

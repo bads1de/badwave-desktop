@@ -63,7 +63,7 @@ jest.mock("@/components/ui/dropdown-menu", () => ({
 
 describe("AddPlaylist", () => {
   const mockPlaylists = [
-    { id: "playlist-1", title: "My Playlist", user_id: "user-1" },
+    { id: "playlist-1", title: "My Playlist", user_id: "user-1", is_public: true, created_at: "2023-01-01" },
   ];
 
   beforeEach(() => {

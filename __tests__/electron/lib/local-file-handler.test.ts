@@ -101,7 +101,7 @@ describe("serveLocalFile", () => {
     const { done, value } = await reader!.read();
     expect(done).toBe(false);
     expect(value).toBeDefined();
-    expect(value.length).toBeGreaterThan(0);
+    expect(value!.length).toBeGreaterThan(0);
 
     // Cancel the stream from consumer side (mimicking seek/abort/close)
     await reader!.cancel();

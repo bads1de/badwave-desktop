@@ -55,7 +55,7 @@ describe("libs/supabase/server", () => {
   });
 
   it("should ignore errors in setAll when in production", async () => {
-    process.env.NODE_ENV = "production";
+    (process.env as unknown as { NODE_ENV: string }).NODE_ENV = "production";
     mockCookieStore.set.mockImplementation(() => {
       throw new Error("Server Component cookie error");
     });

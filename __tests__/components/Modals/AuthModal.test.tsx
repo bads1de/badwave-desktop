@@ -29,12 +29,12 @@ describe("AuthModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    (useAuthModal as jest.Mock).mockReturnValue({
+    (useAuthModal as unknown as jest.Mock).mockReturnValue({
       isOpen: true,
       onClose: mockOnClose,
     });
 
-    (createClient as jest.Mock).mockReturnValue(mockSupabase);
+    (createClient as unknown as jest.Mock).mockReturnValue(mockSupabase);
   });
 
   it("renders modal when isOpen is true", async () => {
@@ -64,7 +64,7 @@ describe("AuthModal", () => {
   });
 
   it("does not render when isOpen is false", () => {
-    (useAuthModal as jest.Mock).mockReturnValue({
+    (useAuthModal as unknown as jest.Mock).mockReturnValue({
       isOpen: false,
       onClose: mockOnClose,
     });

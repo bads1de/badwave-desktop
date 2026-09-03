@@ -261,6 +261,7 @@ describe("electron/lib/ipc-validate", () => {
         "https://example.com/audio.mp3",
         "lyrics text",
       ]);
+      if (!Array.isArray(result)) throw new Error("Expected tuple form");
       expect(result[0]).toBe("https://example.com/audio.mp3");
       expect(result[1]).toBe("lyrics text");
     });
@@ -270,6 +271,7 @@ describe("electron/lib/ipc-validate", () => {
         audioPath: "https://example.com/audio.mp3",
         lyricsText: "lyrics text",
       });
+      if (Array.isArray(result)) throw new Error("Expected object form");
       expect(result.audioPath).toBe("https://example.com/audio.mp3");
     });
   });

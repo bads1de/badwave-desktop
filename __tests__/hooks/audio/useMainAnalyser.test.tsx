@@ -135,7 +135,7 @@ describe("useMainAnalyser", () => {
   });
 
   it("should return null analyser if AudioEngine has no analyser", () => {
-    mockEngine.analyser = null;
+    mockEngine.analyser = null as unknown as typeof mockAnalyser;
     const { result } = renderHook(() => useMainAnalyser());
     expect(result.current.analyser).toBeNull();
   });

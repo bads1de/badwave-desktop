@@ -18,7 +18,7 @@ jest.mock("@/hooks/stores/usePlaybackStateStore");
 // filterStaleLocalSongs をモック（非同期処理を同期的に扱う）
 const mockFilterStaleLocalSongs = jest.fn((ids: string[]) => Promise.resolve(ids));
 jest.mock("@/libs/electron/files", () => ({
-  filterStaleLocalSongs: (...args: any[]) => mockFilterStaleLocalSongs(...args),
+  filterStaleLocalSongs: (...args: [string[]]) => mockFilterStaleLocalSongs(...args),
   checkLocalFileExists: jest.fn(),
 }));
 

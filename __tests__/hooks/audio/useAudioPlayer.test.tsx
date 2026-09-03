@@ -14,13 +14,26 @@ jest.mock("@/hooks/stores/useVolumeStore");
 jest.mock("@/hooks/stores/usePlaybackStateStore");
 
 // Mock AudioEngine
-const mockAudio = {
+const mockAudio: {
+  paused: boolean;
+  currentTime: number;
+  duration: number;
+  volume: number;
+  src: string;
+  loop: boolean;
+  crossOrigin: string | null;
+  play: jest.Mock;
+  pause: jest.Mock;
+  addEventListener: jest.Mock;
+  removeEventListener: jest.Mock;
+} = {
   paused: true,
   currentTime: 0,
   duration: 180,
   volume: 1,
   src: "",
   loop: false,
+  crossOrigin: null,
   play: jest.fn().mockResolvedValue(undefined),
   pause: jest.fn(),
   addEventListener: jest.fn(),

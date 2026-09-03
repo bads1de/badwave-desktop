@@ -17,7 +17,10 @@ jest.mock("zustand/middleware", () => ({
 
 describe("createPersistedStore", () => {
   it("should create a store with initial state and hasHydrated", () => {
-    const useTestStore = createPersistedStore(
+    const useTestStore = createPersistedStore<{
+      value: string;
+      setValue: (v: string) => void;
+    }>(
       (set) => ({
         value: "initial",
         setValue: (v: string) => set({ value: v } as any),
@@ -31,7 +34,10 @@ describe("createPersistedStore", () => {
   });
 
   it("should update state when setter is called", () => {
-    const useTestStore = createPersistedStore(
+    const useTestStore = createPersistedStore<{
+      count: number;
+      increment: () => void;
+    }>(
       (set) => ({
         count: 0,
         increment: () => set({ count: 1 } as any),

@@ -11,10 +11,8 @@ describe("useSpotlightModal", () => {
   const mockSpotlight: Spotlight = {
     id: "spot-1",
     title: "Test Spotlight",
-    image_path: "/test.jpg",
-    song_path: "/test.mp3",
+    video_path: "/test.mp4",
     author: "Test Author",
-    user_id: "user-1",
     created_at: "2023-01-01",
   };
 

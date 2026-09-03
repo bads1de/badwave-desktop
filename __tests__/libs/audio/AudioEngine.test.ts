@@ -63,6 +63,7 @@ const mockAudioContext = {
   sampleRate: 44100,
   state: "suspended",
   resume: jest.fn(),
+  destination: {},
 };
 
 global.AudioContext = jest.fn(() => mockAudioContext) as any;

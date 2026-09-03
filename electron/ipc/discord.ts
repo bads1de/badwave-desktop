@@ -64,6 +64,8 @@ export const setupDiscordHandlers = () => {
     }
   });
 
-  // 起動時に初期化を試みる（エラーは無視）
-  initRpc().catch(() => {});
+  // 起動時に初期化を試みる（Discord未起動時はwarnのみで継続）
+  initRpc().catch((err) => {
+    console.warn("[Discord] 初期化をスキップ（Discord未起動の可能性）:", err?.message ?? err);
+  });
 };

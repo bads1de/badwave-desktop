@@ -8,7 +8,7 @@ import Modal from "@/components/modals/Modal";
 describe("Modal", () => {
   it("should render children when open", () => {
     render(
-      <Modal isOpen={true} onClose={jest.fn()}>
+      <Modal isOpen={true} onChange={jest.fn()} title="Test Modal" description="Test description">
         Modal Content
       </Modal>
     );
@@ -17,7 +17,7 @@ describe("Modal", () => {
 
   it("should render title when provided", () => {
     render(
-      <Modal isOpen={true} onClose={jest.fn()} title="Test Title">
+      <Modal isOpen={true} onChange={jest.fn()} title="Test Title" description="Test description">
         Content
       </Modal>
     );
@@ -26,7 +26,7 @@ describe("Modal", () => {
 
   it("should not render children when closed", () => {
     render(
-      <Modal isOpen={false} onClose={jest.fn()}>
+      <Modal isOpen={false} onChange={jest.fn()} title="Test Modal" description="Test description">
         Hidden Content
       </Modal>
     );

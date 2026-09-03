@@ -11,7 +11,7 @@ describe("VolumeControl", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    (useVolumeStore as jest.Mock).mockReturnValue({
+    (useVolumeStore as unknown as jest.Mock).mockReturnValue({
       volume: 0.8,
       setVolume: mockSetVolume,
     });
@@ -37,7 +37,7 @@ describe("VolumeControl", () => {
   });
 
   it("shows mute icon when volume is 0", () => {
-    (useVolumeStore as jest.Mock).mockReturnValue({
+    (useVolumeStore as unknown as jest.Mock).mockReturnValue({
       volume: 0,
       setVolume: mockSetVolume,
     });

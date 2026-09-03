@@ -7,7 +7,7 @@ import GenreSelect from "@/components/genre/GenreSelect";
 
 describe("GenreSelect", () => {
   it("should render genre dropdown", () => {
-    render(<GenreSelect />);
+    render(<GenreSelect onGenreChange={jest.fn()} />);
     expect(screen.getByRole("combobox")).toBeInTheDocument();
   });
 });
