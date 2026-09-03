@@ -437,6 +437,3 @@ contextBridge.exposeInMainWorld("electron", {
     },
   },
 });
-
-// コンソールにプリロードスクリプトが実行されたことを表示
-console.log("Preload script has been loaded");

@@ -7,6 +7,7 @@ import * as https from "https";
 import * as http from "http";
 import { z } from "zod";
 import { validateInput } from "../lib/ipc-validate";
+import { debugLog } from "../utils";
 
 const audioPathSchema = z.string().min(1).max(2048);
 const lyricsTextSchema = z.string().max(50000);
@@ -76,7 +77,7 @@ export function setupTranscriptionHandlers() {
           );
         }
 
-        console.log(`[Transcribe] Request - Path: ${audioPath}`);
+        debugLog(`[Transcribe] Request - Path: ${audioPath}`);
 
         // Python実行環境の存在確認
         if (!fs.existsSync(pythonPath)) {
@@ -88,7 +89,7 @@ export function setupTranscriptionHandlers() {
 
         // Python実行コア
         const runPython = (targetPath: string, isTemp: boolean = false) => {
-          console.log(`[Transcribe] Executing Python with: ${targetPath}`);
+          debugLog(`[Transcribe] Executing Python with: ${targetPath}`);
           const pythonProcess = spawn(pythonPath, [
             scriptPath,
             targetPath,
@@ -138,7 +139,7 @@ export function setupTranscriptionHandlers() {
           audioPath.startsWith("http://") || audioPath.startsWith("https://");
 
         if (isUrl) {
-          console.log(`[Transcribe] Remote URL detected. Downloading...`);
+          debugLog(`[Transcribe] Remote URL detected. Downloading...`);
           const tempPath = path.join(
             app.getPath("temp"),
             `badwave_transcribe_${Date.now()}.mp3`,
@@ -167,7 +168,7 @@ export function setupTranscriptionHandlers() {
             resolve({ status: "error", message: `通信エラー: ${err.message}` });
           });
         } else {
-          console.log(`[Transcribe] Local path detected.`);
+          debugLog(`[Transcribe] Local path detected.`);
 
           // 安全なパスと拡張子のチェック
           const ALLOWED_EXTENSIONS = new Set([

@@ -39,7 +39,7 @@ export function loadEnvVariables(): boolean {
   try {
     const envPath = path.join(app.getAppPath(), ".env.local");
     if (fs.existsSync(envPath)) {
-      console.log("Loading environment variables from:", envPath);
+      debugLog("Loading environment variables from:", envPath);
       const envConfig = dotenv.parse(fs.readFileSync(envPath));
       for (const key in envConfig) {
         process.env[key] = envConfig[key];

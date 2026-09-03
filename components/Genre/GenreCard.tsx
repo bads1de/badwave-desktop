@@ -6,7 +6,6 @@ import { ROUTES } from "@/constants";
 
 interface GenreCardProps {
   genre: string;
-  color: string;
 }
 
 const GenreCard: React.FC<GenreCardProps> = memo(({ genre }) => {
