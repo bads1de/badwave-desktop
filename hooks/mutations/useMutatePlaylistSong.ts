@@ -199,6 +199,9 @@ const useMutatePlaylistSong = () => {
         queryKey: [CACHED_QUERIES.playlists, playlistId, "songs"],
       });
       queryClient.invalidateQueries({ queryKey: [CACHED_QUERIES.playlists] });
+      queryClient.invalidateQueries({
+        queryKey: [CACHED_QUERIES.playlistSongStatus],
+      });
       toast.success("プレイリストに曲が追加されました！");
     },
     onError: (error: Error, _variables, context) => {

@@ -11,7 +11,7 @@ import {
 } from "../db/schema";
 import { eq, sql, inArray } from "drizzle-orm";
 import { mapDbSongToResponse, createUnknownSongFallback, normalizeId } from "../utils";
-import { SectionItem } from "../../types";
+import { SectionItem } from "../../types/local";
 import { getErrorMessage } from "../lib/error";
 
 export function setupQueryHandlers() {
@@ -161,7 +161,7 @@ export function setupQueryHandlers() {
             .where(inArray(songs.id, itemIds));
 
           results.forEach((s) => {
-            const song = mapDbSongToResponse(s as unknown as import("../../types").DbSongRow);
+            const song = mapDbSongToResponse(s as unknown as import("../../types/local").DbSongRow);
             idMap.set(s.id as string, song as unknown as SectionItem);
           });
         }

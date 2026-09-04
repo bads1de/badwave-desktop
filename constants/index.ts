@@ -55,6 +55,7 @@ export const CACHED_QUERIES = {
   recommendations: "recommendations",
   publicPlaylists: "publicPlaylists",
   userStats: "userStats",
+  playlistSongStatus: "playlistSongStatus",
 } as const;
 
 /**

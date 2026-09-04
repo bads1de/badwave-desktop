@@ -1,21 +1,11 @@
 "use client";
 
-import { Song } from "@/types";
+import { Song, PaginatedSongsResult } from "@/types";
 import { CACHED_QUERIES, TABLES } from "@/constants";
 import { createClient } from "@/libs/supabase/client";
 import { electronAPI } from "@/libs/electron";
 import { useSectionQuery } from "@/libs/query/useSectionQuery";
 import { getErrorMessage } from "@/libs/utils/error";
-
-/**
- * ページネーション対応の曲取得結果
- */
-interface PaginatedSongsResult {
-  songs: Song[];
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
-}
 
 /**
  * ページネーション対応の曲取得フック

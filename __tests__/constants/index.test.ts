@@ -64,6 +64,7 @@ describe("constants/index", () => {
       expect(CACHED_QUERIES.playlists).toBe("playlists");
       expect(CACHED_QUERIES.likedSongs).toBe("likedSongs");
       expect(CACHED_QUERIES.spotlight).toBe("spotlight");
+      expect(CACHED_QUERIES.playlistSongStatus).toBe("playlistSongStatus");
     });
   });
 

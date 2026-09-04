@@ -3,7 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as dotenv from "dotenv";
 import { fileURLToPath } from "url";
-import { DbSongRow } from "../../types";
+import { DbSongRow } from "../../types/local";
 
 /**
  * file:// または badwave:// URLをローカルパスに変換するヘルパー

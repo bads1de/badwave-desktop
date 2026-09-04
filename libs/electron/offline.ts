@@ -1,5 +1,5 @@
 import { isElectron } from "./common";
-import type { OfflineSong, SongDownloadPayload } from "@/types";
+import type { OfflineSong, SongDownloadPayload } from "@/types/local";
 
 export type { OfflineSong, SongDownloadPayload };
 

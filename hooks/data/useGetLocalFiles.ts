@@ -2,8 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CHANNELS } from "@/electron/channels";
 import { CACHED_QUERIES } from "@/constants";
-import { LocalFile } from "@/types/local";
-import { FileMetadata } from "@/types";
+import { LocalFile, FileMetadata } from "@/types/local";
 
 /**
  * スキャン情報の型

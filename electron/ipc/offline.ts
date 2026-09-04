@@ -9,7 +9,7 @@ import { toLocalPath, mapDbSongToResponse } from "../utils";
 import { getDb } from "../db/client";
 import { songs } from "../db/schema";
 import { eq, isNotNull } from "drizzle-orm";
-import type { SongDownloadPayload } from "../../types";
+import type { SongDownloadPayload } from "../../types/local";
 import { validateInput, songDownloadPayloadSchema, idSchema } from "../lib/ipc-validate";
 import { getErrorMessage } from "../lib/error";
 

@@ -7,7 +7,7 @@ import store from "../lib/store";
 import { debugLog } from "../utils";
 import { getMainWindow } from "../lib/window-manager";
 import { validateInput, filePathSchema } from "../lib/ipc-validate";
-import { MusicLibrary, FileMetadata } from "../../types";
+import { MusicLibrary, FileMetadata } from "../../types/local";
 import { getErrorMessage } from "../lib/error";
 
 // サポートされている音声ファイルの拡張子

@@ -1,5 +1,6 @@
 import { isElectron } from "./common";
-import type { SongForSync, PlaylistForSync, SpotlightForSync, SectionItem } from "@/types";
+import type { SongForSync, PlaylistForSync, SpotlightForSync } from "@/types";
+import type { SectionItem } from "@/types/local";
 
 /**
  * キャッシュ機能（オフラインライブラリ表示用）

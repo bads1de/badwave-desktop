@@ -1,6 +1,7 @@
 /// <reference types="electron" />
 
-import type { OfflineSong, SongDownloadPayload, SongForSync, PlaylistForSync, SpotlightForSync, SectionItem, Playlist } from "../types";
+import type { SongForSync, PlaylistForSync, SpotlightForSync, Playlist } from "../types";
+import type { OfflineSong, SongDownloadPayload, SectionItem } from "../types/local";
 
 // Electronのウィンドウオブジェクトに公開されるAPIの型定義
 export interface ElectronAPI {
