@@ -219,10 +219,13 @@ class AudioEngine {
    * ディストーションカーブを生成
    * amount: 0 ~ 100+ (大きいほど歪む)
    */
-  private makeDistortionCurve(amount: number): Float32Array {
+  private makeDistortionCurve(amount: number): Float32Array<ArrayBuffer> {
     const k = typeof amount === "number" ? amount : 50;
     const n_samples = 44100;
-    const curve = new Float32Array(n_samples);
+    // WaveShaperNode expects a Float32Array backed by an ArrayBuffer.
+    const curve = new Float32Array(
+      new ArrayBuffer(n_samples * Float32Array.BYTES_PER_ELEMENT),
+    );
     const deg = Math.PI / 180;
 
     for (let i = 0; i < n_samples; ++i) {
@@ -307,7 +310,10 @@ class AudioEngine {
 
     this.audio.preservesPitch = preserve;
     // クロスブラウザ対応
-    const audio = this.audio as HTMLAudioElement & { mozPreservesPitch?: boolean; webkitPreservesPitch?: boolean };
+    const audio = this.audio as HTMLAudioElement & {
+      mozPreservesPitch?: boolean;
+      webkitPreservesPitch?: boolean;
+    };
     audio.mozPreservesPitch = preserve;
     audio.webkitPreservesPitch = preserve;
   }
@@ -366,8 +372,9 @@ class AudioEngine {
       !this.retroHighPass ||
       !this.distortionNode ||
       !this.context
-    )
+    ) {
       return;
+    }
 
     const now = this.context.currentTime;
 

@@ -68,14 +68,18 @@ export function useSectionQuery<T>(options: SectionQueryOptions<T>) {
     if (electron && electronAPI.isElectron()) {
       const { sectionKey, sectionType, getLocal } = electron;
       if (getLocal) {
+        
         const local = await getLocal();
+
         if (local != null) return local;
+
         // ローカルに見つからない場合は Web 取得にフォールバック
       } else if (sectionKey) {
         const cached = await electronAPI.cache.getSectionData(
           sectionKey,
           sectionType ?? "songs",
         );
+
         if (cached != null) return cached as unknown as T;
         return emptySectionFallback ?? undefined;
       }

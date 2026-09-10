@@ -11,7 +11,6 @@ import { createBrowserClient } from "@supabase/ssr";
  * @see https://supabase.com/docs/guides/auth/server-side/creating-a-client
  */
 export function createClient() {
-  // 通常のクライアントを作成
   const client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
